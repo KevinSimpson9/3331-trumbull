@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3331 Trumbull — Site Model</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/controls/OrbitControls.js": "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js",
+    "three/addons/exporters/OBJExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js",
+    "three/addons/exporters/GLTFExporter.js": "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js"
+  },
+  "integrity": {
+    "https://unpkg.com/three@0.184.0/build/three.module.js": "sha384-8FCZ1eVO6it4+pbec2aDtnTrwjWXZLJRC+MAGCIPDgsYnUrl/E0A2YlF8ioMKI/J",
+    "https://unpkg.com/three@0.184.0/build/three.core.js": "sha384-dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT",
+    "https://unpkg.com/three@0.184.0/examples/jsm/controls/OrbitControls.js": "sha384-4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/OBJExporter.js": "sha384-nbwtoZENJD3Vq+ACK0CuGQdPMuDWHkamC2KJD70EV5nfg6jQjfppKOea07YJN+N3",
+    "https://unpkg.com/three@0.184.0/examples/jsm/exporters/GLTFExporter.js": "sha384-VofkvpG6HERhFCYbsUOHeNXBCqID2nfqkQqnVzE1jc/oPcz+qJ13ADdXH08hE+cQ"
+  }
+}
+</script>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#1d5260}
+  three-d-stage:not(:defined){visibility:hidden}
+  three-d-stage{width:100vw;height:100vh;display:block}
+</style>
+</head>
+<body>
+<three-d-stage name="3331-trumbull-site" background="#1d5260" autorotate=""></three-d-stage>
+<script src="three-d-stage.js"></script>
+<script>
+window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "palette": ["#e9e5da", "#ded6c4", "#b9854a", "#2b2d2f"],
+  "background": "#1d5260",
+  "autorotate": true,
+  "context": true
+}/*EDITMODE-END*/;
+window.__tweaks = Object.assign({}, window.TWEAK_DEFAULTS);
+</script>
+<script type="module">
+const stage = document.querySelector('three-d-stage');
+const { THREE } = await stage.ready;
+
+// —— render quality: filmic tonemapping, sun with site-wide soft shadows, sky env for reflections
+{
+  const r = stage._renderer;
+  r.toneMapping = THREE.ACESFilmicToneMapping;
+  r.toneMappingExposure = 1.0;
+  const key = stage._key;
+  key.intensity = 3.0;
+  key.color.set(0xfff2df);
+  key.position.set(-42, 68, -24);
+  if (key.shadow.map) { key.shadow.map.dispose(); key.shadow.map = null; }
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.bias = -0.00035;
+  key.shadow.normalBias = 0.04;
+  const sc = key.shadow.camera;
+  sc.left = -70; sc.right = 70; sc.top = 70; sc.bottom = -70; sc.near = 1; sc.far = 300;
+  sc.updateProjectionMatrix();
+  // simple sky environment so glass and metal have something to reflect
+  const skyCanvas = document.createElement('canvas'); skyCanvas.width = 512; skyCanvas.height = 256;
+  const sg = skyCanvas.getContext('2d');
+  const grad = sg.createLinearGradient(0, 0, 0, 256);
+  grad.addColorStop(0, '#bfd3e2'); grad.addColorStop(0.55, '#e8e4d8'); grad.addColorStop(0.62, '#8d8f84'); grad.addColorStop(1, '#5c5e56');
+  sg.fillStyle = grad; sg.fillRect(0, 0, 512, 256);
+  sg.fillStyle = 'rgba(255,250,235,0.95)'; sg.beginPath(); sg.arc(390, 55, 26, 0, 7); sg.fill();
+  const skyTex = new THREE.CanvasTexture(skyCanvas);
+  skyTex.mapping = THREE.EquirectangularReflectionMapping;
+  skyTex.colorSpace = THREE.SRGBColorSpace;
+  const pmrem = new THREE.PMREMGenerator(r);
+  stage._scene.environment = pmrem.fromEquirectangular(skyTex).texture;
+  stage._scene.environmentIntensity = 0.35;
+  stage._scene.traverse ? null : null;
+}
+
+// ——— Built from the 4545 Architecture 75% CD set (07/06/2026): SP1.1 site plan,
+// A3.x elevations, A5.1 3D views. Five buildings (6+6+4+4+5 = 25 homes) around a
+// central 13-space parking court; rear-loaded garages; architectural brick,
+// Hardie panel + woodtone lap siding, charcoal accent towers, aluminum guardrails.
+const UW = 5.04, DEP = 9.45, FH = 3.15, H = FH * 3;
+
+function canvasTex(w, h, draw, repX, repY) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repX, repY);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+// grayscale patterns (tinted by material color)
+const brickTex = canvasTex(512, 512, (g, w, h) => {
+  g.fillStyle = '#cfcfcf'; g.fillRect(0, 0, w, h);
+  const bh = 13, bw = 34;
+  for (let y = 0; y < h; y += bh) {
+    const off = (y / bh) % 2 ? bw / 2 : 0;
+    for (let x = -bw; x < w + bw; x += bw) {
+      const v = 214 + Math.floor(Math.random() * 24);
+      const t = Math.random();
+      g.fillStyle = t < 0.04 ? `rgb(${v-30},${v-36},${v-42})` : `rgb(${v},${v-4},${v-10})`;
+      g.fillRect(x + off + 1, y + 1, bw - 2, bh - 2);
+    }
+  }
+}, 3.4, 3.4);
+const lapTex = canvasTex(64, 128, (g, w, h) => {
+  g.fillStyle = '#e0e0e0'; g.fillRect(0, 0, w, h);
+  for (let y = 0; y < h; y += 10) {
+    g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(0, y, w, 2);
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(0, y + 2, w, 1);
+  }
+}, 3, 6);
+const seamTex = canvasTex(128, 64, (g, w, h) => {
+  g.fillStyle = '#cfcfcf'; g.fillRect(0, 0, w, h);
+  for (let x = 0; x < w; x += 26) {
+    g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(x, 0, 2, h);
+    g.fillStyle = 'rgba(255,255,255,0.1)'; g.fillRect(x + 2, 0, 1, h);
+  }
+}, 3, 1);
+const asphaltTex = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#8a8a8a'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 2600; i++) {
+    const v = 110 + Math.floor(Math.random() * 60);
+    g.fillStyle = `rgba(${v},${v},${v},0.5)`;
+    g.fillRect(Math.random() * w, Math.random() * h, 1.6, 1.6);
+  }
+}, 6, 6);
+const lawnTex = canvasTex(256, 256, (g, w, h) => {
+  g.fillStyle = '#9aa886'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 3200; i++) {
+    const v = 120 + Math.floor(Math.random() * 70);
+    g.fillStyle = `rgba(${v},${v + 14},${v - 24},0.45)`;
+    g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+  }
+}, 8, 8);
+const panelTex = canvasTex(128, 128, (g, w, h) => {
+  g.fillStyle = '#e2e2e2'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = 'rgba(0,0,0,0.14)'; g.lineWidth = 1.5;
+  g.strokeRect(1, 1, w - 2, h - 2); g.beginPath(); g.moveTo(0, h/2); g.lineTo(w, h/2); g.stroke();
+}, 2, 3);
+
+function makeMats(pal) {
+  const [brick, panel, wood, charcoal] = pal;
+  const woodLight = new THREE.Color(wood).lerp(new THREE.Color('#ffffff'), 0.18).getStyle();
+  return {
+    brick:    new THREE.MeshStandardMaterial({ name:'architectural_brick', color:brick, map:brickTex, roughness:0.94 }),
+    panel:    new THREE.MeshStandardMaterial({ name:'hardie_panel', color:panel, map:panelTex, roughness:0.82 }),
+    lap:      new THREE.MeshStandardMaterial({ name:'hardie_lap_siding', color:new THREE.Color(panel).multiplyScalar(0.88).getStyle(), map:lapTex, roughness:0.85 }),
+    wood:     new THREE.MeshStandardMaterial({ name:'woodtone_teak_lap', color:woodLight, map:lapTex, roughness:0.6 }),
+    charcoal: new THREE.MeshStandardMaterial({ name:'charcoal_standing_seam', color:charcoal, roughness:0.55, metalness:0.2 }),
+    rib:      new THREE.MeshStandardMaterial({ name:'charcoal_seam_rib', color:new THREE.Color(charcoal).multiplyScalar(1.45).getStyle(), roughness:0.5, metalness:0.25 }),
+    charFlat: new THREE.MeshStandardMaterial({ name:'charcoal_trim', color:new THREE.Color(charcoal).multiplyScalar(0.85).getStyle(), roughness:0.6 }),
+    glass:    new THREE.MeshStandardMaterial({ name:'glazing', color:0x8fa9b8, roughness:0.06, metalness:0.7, envMapIntensity:1.4 }),
+    glassDk:  new THREE.MeshStandardMaterial({ name:'glazing_dark', color:0x36454f, roughness:0.1, metalness:0.4 }),
+    frame:    new THREE.MeshStandardMaterial({ name:'window_frame_black', color:0x141518, roughness:0.45 }),
+    garage:   new THREE.MeshStandardMaterial({ name:'flat_panel_garage', color:0x43464a, map:panelTex, roughness:0.45, metalness:0.25 }),
+    door:     new THREE.MeshStandardMaterial({ name:'entry_door', color:0x2a2c2e, roughness:0.5 }),
+    alum:     new THREE.MeshStandardMaterial({ name:'aluminum_guardrail', color:0xc4c7c9, roughness:0.3, metalness:0.45 }),
+    roof:     new THREE.MeshStandardMaterial({ name:'roof_membrane', color:0x8e8b83, roughness:0.96 }),
+    deck:     new THREE.MeshStandardMaterial({ name:'roof_deck_pavers', color:0xb3ac9d, map:panelTex, roughness:0.9 }),
+    concrete: new THREE.MeshStandardMaterial({ name:'concrete_walk', color:0xd3cfc4, map:panelTex, roughness:0.95 }),
+    asphalt:  new THREE.MeshStandardMaterial({ name:'asphalt', color:0x4a4b4d, map:asphaltTex, roughness:1 }),
+    stripe:   new THREE.MeshStandardMaterial({ name:'parking_stripe', color:0xe3e0d6, roughness:0.9 }),
+    lawn:     new THREE.MeshStandardMaterial({ name:'lawn', color:0x77855c, map:lawnTex, roughness:1 }),
+    canopyM:  new THREE.MeshStandardMaterial({ name:'tree_canopy', color:0x5f7444, roughness:0.95 }),
+    canopyM2: new THREE.MeshStandardMaterial({ name:'tree_canopy_light', color:0x74874f, roughness:0.95 }),
+    trunk:    new THREE.MeshStandardMaterial({ name:'tree_trunk', color:0x5d4c3e, roughness:0.95 }),
+    fascia:   new THREE.MeshStandardMaterial({ name:'metal_fascia', color:0x2e3033, roughness:0.5, metalness:0.3 }),
+  };
+}
+
+function bx(parent, name, mat, w, h, d, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.name = name; m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true;
+  parent.add(m); return m;
+}
+
+function win(g, name, M, w, h, x, y, z, proud) {
+  bx(g, name + '_fr', M.frame, w, h, 0.12, x, y, z);
+  bx(g, name + '_gl', M.glass, w - 0.14, h - 0.14, 0.08, x, y, z - 0.015);
+  bx(g, name + '_mullion_v', M.frame, 0.05, h - 0.14, 0.15, x, y, z);
+  if (h > 1.9) bx(g, name + '_transom', M.frame, w - 0.14, 0.05, 0.15, x, y + h/2 - 0.62, z);
+  bx(g, name + '_sill', M.charFlat, w + 0.1, 0.07, 0.16, x, y - h/2 - 0.03, z);
+}
+
+// type 'mix' (6- and 5-unit: panel/lap + charcoal towers) | 'brick' (4-unit: all brick)
+function building(name, n, M, type) {
+  const g = new THREE.Group(); g.name = name;
+  const W = n * UW, fz = -DEP/2, rz = DEP/2;
+  for (let i = 0; i < n; i++) {
+    const x = -W/2 + UW/2 + i*UW;
+    const upperMat = type === 'brick' ? M.brick : (i % 2 === 0 ? M.panel : M.lap);
+    // massing: brick base + upper field
+    bx(g, name+'_u'+i+'_base', M.brick, UW, FH, DEP, x, FH/2, 0);
+    bx(g, name+'_u'+i+'_upper', upperMat, UW, 2*FH, DEP - 0.03, x, 2*FH, 0);
+    // stepped parapet (alternating heights per A5.1)
+    const pTop = (i % 2 === 0) ? 0.45 : 0.85;
+    bx(g, name+'_u'+i+'_parapet', M.charFlat, UW, pTop, DEP + 0.02, x, H + pTop/2, 0);
+    bx(g, name+'_u'+i+'_coping', M.fascia, UW, 0.08, DEP + 0.06, x, H + pTop + 0.04, 0);
+    // FRONT ground: storefront glazing + entry with canopy
+    bx(g, name+'_u'+i+'_storefront_fr', M.frame, 2.6, 2.55, 0.1, x - 1.0, 1.4, fz - 0.04);
+    bx(g, name+'_u'+i+'_storefront', M.glass, 2.42, 2.4, 0.08, x - 1.0, 1.4, fz - 0.025);
+    bx(g, name+'_u'+i+'_sf_mullion1', M.frame, 0.06, 2.4, 0.13, x - 1.42, 1.4, fz - 0.04);
+    bx(g, name+'_u'+i+'_sf_mullion2', M.frame, 0.06, 2.4, 0.13, x - 0.58, 1.4, fz - 0.04);
+    bx(g, name+'_u'+i+'_sf_transom', M.frame, 2.42, 0.06, 0.13, x - 1.0, 2.15, fz - 0.04);
+    bx(g, name+'_u'+i+'_belt', M.charFlat, UW, 0.14, DEP + 0.05, x, FH + 0.03, 0);
+    bx(g, name+'_u'+i+'_entry_door', M.door, 0.98, 2.25, 0.1, x + 1.3, 1.16, fz - 0.04);
+    bx(g, name+'_u'+i+'_entry_side', M.glassDk, 0.4, 2.25, 0.09, x + 2.0, 1.16, fz - 0.04);
+    bx(g, name+'_u'+i+'_canopy', M.fascia, 1.95, 0.12, 1.3, x + 1.5, 2.6, fz - 0.6);
+    bx(g, name+'_u'+i+'_canopy_post', M.fascia, 0.06, 2.5, 0.06, x + 2.3, 1.3, fz - 1.15);
+    // teak lap bay over entry, slightly projecting (mix type only)
+    if (type !== 'brick') bx(g, name+'_u'+i+'_teak_bay', M.wood, 1.7, 2*FH, 0.14, x + 1.5, 2*FH, fz - 0.05);
+    // FRONT upper windows: tall paired stacks
+    for (const [lvl, yy] of [[2, FH*1.5 + 0.15], [3, FH*2.5 + 0.15]]) {
+      win(g, name+'_u'+i+'_f'+lvl+'a', M, 1.0, 2.25, x - 1.6, yy, fz - 0.045);
+      win(g, name+'_u'+i+'_f'+lvl+'b', M, 1.0, 2.25, x - 0.4, yy, fz - 0.045);
+      if (type !== 'brick') win(g, name+'_u'+i+'_f'+lvl+'c', M, 0.85, 1.6, x + 1.5, yy + 0.1, fz - 0.16);
+    }
+    // REAR: flat-panel garage + man door + windows
+    bx(g, name+'_u'+i+'_garage', M.garage, 2.95, 2.4, 0.1, x - 0.85, 1.22, rz + 0.045);
+    bx(g, name+'_u'+i+'_garage_trim', M.charFlat, 3.15, 2.55, 0.06, x - 0.85, 1.3, rz + 0.02);
+    bx(g, name+'_u'+i+'_rear_door', M.charFlat, 0.95, 2.15, 0.09, x + 1.55, 1.1, rz + 0.045);
+    for (const [lvl, yy] of [[2, FH*1.5 + 0.15], [3, FH*2.5 + 0.15]]) {
+      win(g, name+'_u'+i+'_r'+lvl+'a', M, 1.7, 1.75, x - 0.6, yy, rz + 0.05);
+      win(g, name+'_u'+i+'_r'+lvl+'b', M, 0.75, 1.75, x + 1.55, yy, rz + 0.05);
+    }
+    // ROOF: deck pavers, stair bulkhead, aluminum guardrail
+    bx(g, name+'_u'+i+'_deck', M.deck, UW - 0.3, 0.1, DEP - 0.4, x, H + 0.05, 0);
+    bx(g, name+'_u'+i+'_bulkhead', M.charcoal, 2.4, 2.15, 3.1, x - 1.1, H + 1.07, rz - 1.95);
+    bx(g, name+'_u'+i+'_bulkhead_cap', M.fascia, 2.5, 0.07, 3.2, x - 1.1, H + 2.18, rz - 1.95);
+    const ry = H + pTop + 0.5;
+    bx(g, name+'_u'+i+'_rail_f', M.alum, UW - 0.5, 0.05, 0.05, x, ry + 0.42, fz + 0.42);
+    bx(g, name+'_u'+i+'_rail_f_mid', M.alum, UW - 0.5, 0.03, 0.03, x, ry + 0.12, fz + 0.42);
+    for (let p = 0; p < 4; p++) bx(g, name+'_u'+i+'_rail_post'+p, M.alum, 0.04, 0.9, 0.04, x - (UW-0.6)/2 + p*(UW-0.6)/3, ry, fz + 0.42);
+  }
+  if (type !== 'brick') {
+    // charcoal standing-seam corner towers, projecting + taller (A5.1) — geometric seam ribs (no texture moiré)
+    for (const side of [-1, 1]) {
+      const tx = side * (W/2 - 1.1), tn = name + '_tower_' + (side < 0 ? 'w' : 'e');
+      bx(g, tn, M.charcoal, 2.36, H + 1.7, DEP + 0.5, tx + side*0.08, (H + 1.7)/2, -0.05);
+      bx(g, tn + '_cap', M.fascia, 2.44, 0.08, DEP + 0.56, tx + side*0.08, H + 1.74, -0.05);
+      for (let rb = 0; rb < 6; rb++) bx(g, tn + '_rib_f' + rb, M.rib, 0.035, H + 1.6, 0.06, tx - 0.93 + rb * 0.37, (H + 1.6)/2, -DEP/2 - 0.33);
+      for (let rb = 0; rb < 19; rb++) bx(g, tn + '_rib_s' + rb, M.rib, 0.05, H + 1.6, 0.035, side * (W/2 + 0.11), (H + 1.6)/2, -DEP/2 - 0.28 + 0.08 + rb * 0.53);
+      for (const [lvl, yy] of [[1, FH*0.5 + 0.2], [2, FH*1.5 + 0.15], [3, FH*2.5 + 0.15]]) {
+        win(g, tn + '_w' + lvl, M, 0.9, 2.3, tx, yy, -DEP/2 - 0.47);
+      }
+      // side-wall fenestration (A3.x side elevations)
+      const sw = new THREE.Group(); sw.name = tn + '_sidewall';
+      sw.rotation.y = side < 0 ? Math.PI/2 : -Math.PI/2;
+      sw.position.set(side * (W/2 + 0.02), 0, 0); g.add(sw);
+      for (const [lvl, yy] of [[2, FH*1.5 + 0.15], [3, FH*2.5 + 0.15]]) {
+        win(sw, tn + '_sw' + lvl + 'a', M, 1.1, 1.9, -2.2, yy, -0.14);
+        win(sw, tn + '_sw' + lvl + 'b', M, 1.1, 1.9, 1.6, yy, -0.14);
+      }
+      win(sw, tn + '_sw1', M, 0.9, 1.6, -2.2, FH*0.5 + 0.35, -0.14);
+    }
+  } else {
+    // brick end walls with punched windows
+    for (const side of [-1, 1]) {
+      const sw = new THREE.Group(); sw.name = name + '_sidewall_' + (side < 0 ? 'w' : 'e');
+      sw.rotation.y = side < 0 ? Math.PI/2 : -Math.PI/2;
+      sw.position.set(side * (W/2 + 0.001), 0, 0); g.add(sw);
+      for (const [lvl, yy] of [[2, FH*1.5 + 0.15], [3, FH*2.5 + 0.15]]) {
+        win(sw, name + '_sw' + (side<0?'w':'e') + lvl + 'a', M, 1.1, 1.9, -2.6, yy, -0.1);
+        win(sw, name + '_sw' + (side<0?'w':'e') + lvl + 'b', M, 1.1, 1.9, 0, yy, -0.1);
+        win(sw, name + '_sw' + (side<0?'w':'e') + lvl + 'c', M, 1.1, 1.9, 2.6, yy, -0.1);
+      }
+      win(sw, name + '_sw' + (side<0?'w':'e') + '1', M, 0.9, 1.5, -2.6, FH*0.5 + 0.4, -0.1);
+      win(sw, name + '_sw' + (side<0?'w':'e') + '1b', M, 0.9, 1.5, 2.6, FH*0.5 + 0.4, -0.1);
+    }
+  }
+  return g;
+}
+
+function tree(c, i, M, tx, tz, s) {
+  const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.12*s, 0.18*s, 3.0*s, 10), M.trunk);
+  tr.name = 'tree_'+i+'_trunk'; tr.position.set(tx, 1.5*s, tz); tr.castShadow = true; c.add(tr);
+  const c1 = new THREE.Mesh(new THREE.SphereGeometry(1.6*s, 20, 16), M.canopyM);
+  c1.name = 'tree_'+i+'_canopy'; c1.position.set(tx + 0.3, 4.0*s, tz); c1.scale.y = 1.15; c1.castShadow = true; c.add(c1);
+  const c2 = new THREE.Mesh(new THREE.SphereGeometry(1.15*s, 18, 14), M.canopyM2);
+  c2.name = 'tree_'+i+'_canopy2'; c2.position.set(tx - 0.7, 4.7*s, tz + 0.3); c2.castShadow = true; c.add(c2);
+}
+
+function buildSite(t) {
+  const M = makeMats(t.palette);
+  const site = new THREE.Group(); site.name = 'trumbull_site';
+  const b6w = building('bldg_6unit_west', 6, M, 'mix'); b6w.position.set(-19.5, 0, -17.3); site.add(b6w);
+  const b6e = building('bldg_6unit_east', 6, M, 'mix'); b6e.position.set(19.5, 0, -17.3); site.add(b6e);
+  const b4w = building('bldg_4unit_sycamore', 4, M, 'brick'); b4w.rotation.y = Math.PI/2; b4w.position.set(-31.5, 0, 8.5); site.add(b4w);
+  const b4e = building('bldg_4unit_ash', 4, M, 'brick'); b4e.rotation.y = -Math.PI/2; b4e.position.set(31.5, 0, 8.5); site.add(b4e);
+  const b5s = building('bldg_5unit_south', 5, M, 'mix'); b5s.rotation.y = Math.PI; b5s.position.set(0, 0, 20.5); site.add(b5s);
+
+  if (t.context) {
+    const c = new THREE.Group(); c.name = 'site_context'; site.add(c);
+    bx(c, 'lot_lawn', M.lawn, 78, 0.12, 58, 0, -0.06, 0.5);
+    bx(c, 'trumbull_st', M.asphalt, 96, 0.14, 9.5, 0, -0.07, -31.8);
+    bx(c, 'sycamore_st', M.asphalt, 9.5, 0.14, 66, -43.6, -0.07, 0);
+    bx(c, 'ash_st', M.asphalt, 9.5, 0.14, 66, 43.6, -0.07, 0);
+    bx(c, 'centerline_t', M.stripe, 60, 0.145, 0.18, 0, -0.068, -31.8);
+    bx(c, 'walk_trumbull', M.concrete, 78, 0.16, 3.2, 0, -0.05, -25.4);
+    bx(c, 'walk_sycamore', M.concrete, 3.2, 0.16, 58, -37.2, -0.05, 0.5);
+    bx(c, 'walk_ash', M.concrete, 3.2, 0.16, 58, 37.2, -0.05, 0.5);
+    // —— paving per SP1.1: rear lane behind the 6-unit rows (one apron per unit garage),
+    // central guest court with striped stalls + wheel stops, side-street curb cuts
+    bx(c, 'rear_lane', M.asphalt, 78, 0.16, 6.5, 0, -0.045, -9.45);
+    bx(c, 'guest_court', M.asphalt, 53.6, 0.16, 22.2, 0, -0.046, 4.9);
+    // one concrete apron pad outside every garage
+    for (const cx of [-19.5, 19.5]) for (let i = 0; i < 6; i++)
+      bx(c, 'apron_6_'+(cx<0?'w':'e')+i, M.concrete, 3.1, 0.165, 5.7, cx - 15.12 + i*5.04 - 0.85, -0.042, -9.75);
+    for (let i = 0; i < 4; i++) {
+      bx(c, 'apron_4w_'+i, M.concrete, 5.6, 0.165, 3.1, -23.95, -0.042, 8.5 - (-7.56 + i*5.04) + 0.85);
+      bx(c, 'apron_4e_'+i, M.concrete, 5.6, 0.165, 3.1, 23.95, -0.042, 8.5 + (-7.56 + i*5.04) - 0.85);
+    }
+    for (const gx of [10.93, 5.89, 0.85, -4.19, -9.23])
+      bx(c, 'apron_5_'+gx, M.concrete, 3.1, 0.165, 5.7, gx, -0.042, 12.9);
+    // guest stalls: two striped banks of 5 flanking the south lane, 3 parallel stalls on the lane = 13
+    // guest stalls per SP1.1: banks facing the rear lane + a side bank west of the 5-unit = 13
+    for (const s of [-1, 1]) {
+      for (let i = 0; i <= 4; i++) bx(c, 'guest_stripe_'+(s<0?'w':'e')+i, M.stripe, 0.12, 0.17, 5.5, s*(12.15 + i*2.75), -0.04, -3.45);
+      bx(c, 'guest_head_'+(s<0?'w':'e'), M.stripe, 11.12, 0.17, 0.12, s*17.65, -0.04, -0.7);
+      for (let i = 0; i < 4; i++) bx(c, 'wheelstop_'+(s<0?'w':'e')+i, M.fascia, 2.0, 0.14, 0.16, s*(13.525 + i*2.75), 0.02, -1.25);
+    }
+    for (let i = 0; i <= 4; i++) bx(c, 'guest_side_stripe_'+i, M.stripe, 2.4, 0.17, 0.12, -14.2, -0.04, 7.6 + i*2.6);
+    bx(c, 'guest_side_head', M.stripe, 0.12, 0.17, 10.4, -15.4, -0.04, 12.8);
+    // parallel parking ticks along Trumbull curb
+    for (let i = 0; i < 8; i++) bx(c, 'curb_tick_'+i, M.stripe, 0.1, 0.155, 2.0, -28 + i*8, -0.065, -28.1);
+    bx(c, 'walk_6w', M.concrete, 30.5, 0.17, 1.3, -19.5, -0.04, -23.2);
+    bx(c, 'walk_6e', M.concrete, 30.5, 0.17, 1.3, 19.5, -0.04, -23.2);
+    bx(c, 'walk_4w', M.concrete, 1.3, 0.17, 20.5, -35.4, -0.04, 8.5);
+    bx(c, 'walk_4e', M.concrete, 1.3, 0.17, 20.5, 35.4, -0.04, 8.5);
+    bx(c, 'walk_5s', M.concrete, 25.6, 0.17, 1.3, 0, -0.04, 26.4);
+    bx(c, 'masonry_wall', M.brick, 12, 1.85, 0.3, -19, 0.92, 25.6);
+    let ti = 0;
+    for (let i = 0; i < 6; i++) tree(c, ti++, M, -32 + i*12.8, -26.2, 1 + (i%3)*0.12);
+    for (let i = 0; i < 3; i++) { tree(c, ti++, M, -38.4, -16 + i*16, 1.05); tree(c, ti++, M, 38.4, -16 + i*16, 0.95); }
+  } else {
+    bx(site, 'lot_pad', M.concrete, 78, 0.12, 58, 0, -0.06, 0.5);
+  }
+  return site;
+}
+
+function apply(t) {
+  stage.setObject(buildSite(t));
+  stage.style.setProperty('--stage-bg', t.background);
+  if (stage._controls) stage._controls.autoRotate = !!t.autorotate;
+  if (stage._camera && stage._controls) {  // tighter hero framing than the default auto-fit
+    const center = new THREE.Vector3(0, 2.5, -2);
+    const dir = new THREE.Vector3(1, 0.62, 1.2).normalize();
+    stage._camera.position.copy(center).add(dir.multiplyScalar(86));
+    stage._camera.updateProjectionMatrix();
+    stage._controls.target.copy(center);
+    stage._controls.update();
+  }
+}
+window.__rebuild = apply;
+apply(window.__tweaks);
+</script>
+</body>
+</html>
