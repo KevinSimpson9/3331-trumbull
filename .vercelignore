@@ -1,0 +1,4 @@
+# The marketing-site Vercel project serves the repo root as static files.
+# Keep the portal app source out of that static deployment — it deploys from
+# its own Vercel project with Root Directory = portal/.
+portal

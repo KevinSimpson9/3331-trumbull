@@ -1,0 +1,62 @@
+# 3331 Trumbull — Investor Portal
+
+Private investor portal for the 3331 Trumbull $350K capital raise (AK Capital Investments LLC × Bondy Construction & Design). Rebuilt from the design handoff prototype as a real application: **Next.js (App Router) + Supabase** (auth, Postgres with row-level security, private file storage).
+
+## What it does
+
+- **Investor side** — each investor signs in and sees only their own room: position stats (principal / rate / term / docs signed), three in-portal e-sign documents (Promissory Note, Personal Guarantee Acknowledgment, Accredited Investor Verification), the shared project document library, and a private 1:1 message thread with Kevin.
+- **Admin back office** (`kevin@akcapital.fund`) — investor roster with signing progress, add investor (sends a portal invite email with a set-password link), remove investor, per-investor message threads with unread indicators, "message everyone" broadcast, and a bannered "View their portal →" impersonation view.
+
+Access control is enforced in the database with Postgres row-level security: an investor's session can only ever read their own investor row, their own signatures, and their own message thread. The roster, other investors, and aggregate figures are admin-only.
+
+## One-time setup
+
+### 1. Create the Supabase project
+
+1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
+2. In **SQL Editor**, paste and run `supabase/schema.sql` from this folder. This creates the tables, security policies, the private `project-documents` storage bucket, and seeds the shared document list.
+3. In **Authentication → Users**, click **Add user** and create the admin account `kevin@akcapital.fund` with a password (check "Auto confirm user").
+4. In **Authentication → URL Configuration**, set the Site URL to the portal's public URL (e.g. `https://portal.trumbullnorth.com`) and add `https://portal.trumbullnorth.com/auth/confirm` to the redirect allow list.
+
+### 2. Deploy on Vercel
+
+1. In Vercel, **Add New → Project**, import this same GitHub repo (`KevinSimpson9/3331-trumbull`), and set **Root Directory** to `portal/`. Vercel auto-detects Next.js. (The existing marketing-site project keeps serving the repo root — don't touch it.)
+2. Add the environment variables from `.env.example`:
+   - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase → Settings → API
+   - `SUPABASE_SERVICE_ROLE_KEY` — same page (keep secret; server-only)
+   - `NEXT_PUBLIC_SITE_URL` — the portal's public URL
+   - `ADMIN_EMAIL` — `kevin@akcapital.fund`
+3. Deploy, then attach the domain (e.g. `portal.trumbullnorth.com`).
+
+### 3. Upload the project documents
+
+In Supabase → **Storage → project-documents**, upload the shared files with these names (they match the seeded library; edit rows in the `project_documents` table to change titles or filenames):
+
+- `investor-overview-deck.pdf`
+- `independent-appraisal.pdf`
+- `senior-loan-term-sheet.pdf`
+- `detailed-build-budget.xlsx`
+- `architectural-plans.pdf`
+
+The "Project Website" card links to trumbullnorth.com. Files are private; the app serves them through short-lived signed URLs to signed-in users only.
+
+## Day-to-day use
+
+- Add an investor from the admin roster → they receive a Supabase invite email → the link lands on the portal's set-password screen → they sign in and see their room.
+- Signing a document records the typed legal name, timestamp, user agent, and IP in the `signatures` table and flips the investor to Active.
+- The gold dot on a thread means the last message is from the investor and unread; opening the thread clears it.
+
+## Local development
+
+```bash
+cd portal
+npm install
+cp .env.example .env.local   # fill in your Supabase values
+npm run dev
+```
+
+## Not yet wired (deliberate v1 scope)
+
+- **Signed PDF generation** — signatures are recorded in the database with a full audit trail, but flattened PDF copies aren't generated/emailed yet.
+- **Email notifications** beyond the Supabase invite/reset emails (e.g. "new message" pings) — add a Resend/Postmark integration in the server actions when wanted.
+- If invite emails need custom branding or higher volume, configure custom SMTP in Supabase → Authentication → Emails.
