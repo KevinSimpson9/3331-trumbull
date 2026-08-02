@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ADMIN_EMAIL } from "@/lib/supabase/admin";
+import { isAdminUser } from "@/lib/auth";
 import { DEFAULT_PROJECT_DOCS } from "@/lib/docs";
 import type { Investor, Message, ProjectDocument, Signature } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
@@ -16,7 +16,7 @@ export default async function ViewAsInvestorPage({ params }: { params: { id: str
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
-  if ((user.email || "").toLowerCase() !== ADMIN_EMAIL) redirect("/room");
+  if (!(await isAdminUser(supabase))) redirect("/room");
 
   const { data: investor } = await supabase
     .from("investors")

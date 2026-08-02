@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminUser } from "@/lib/auth";
 
 export interface FormState {
   error?: string;
@@ -24,7 +25,7 @@ export async function signInAction(_prev: FormState, formData: FormData): Promis
     return { error: "Incorrect email or password. First time? Use the link in your invitation email." };
   }
 
-  if (email === ADMIN_EMAIL) redirect("/admin");
+  if (await isAdminUser(supabase)) redirect("/admin");
 
   const { data: investor } = await supabase
     .from("investors")
@@ -62,8 +63,9 @@ export async function setPasswordAction(_prev: FormState, formData: FormData): P
   if (error) return { error: error.message };
 
   // Ensure the investor row is linked to this auth user (invites are linked at
-  // creation; this covers accounts created before the link existed).
-  if (user.email && user.email.toLowerCase() !== ADMIN_EMAIL) {
+  // creation; this covers accounts created before the link existed). No-op for
+  // the admin — no investor row carries that email.
+  if (user.email) {
     const admin = createAdminClient();
     await admin
       .from("investors")
@@ -73,7 +75,7 @@ export async function setPasswordAction(_prev: FormState, formData: FormData): P
   }
 
   // New investors land directly in the LOI signing flow.
-  redirect(user.email && user.email.toLowerCase() === ADMIN_EMAIL ? "/admin" : "/room?sign=loi");
+  redirect((await isAdminUser(supabase)) ? "/admin" : "/room?sign=loi");
 }
 
 export async function requestPasswordResetAction(

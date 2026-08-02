@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ADMIN_EMAIL } from "@/lib/supabase/admin";
+import { isAdminUser } from "@/lib/auth";
 import { DOC_COUNT } from "@/lib/docs";
 import { fmtDate, fmtMoney, initials } from "@/lib/format";
 import type { Investor, Message, Signature } from "@/lib/types";
@@ -21,7 +21,7 @@ export default async function AdminPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
-  if ((user.email || "").toLowerCase() !== ADMIN_EMAIL) redirect("/room");
+  if (!(await isAdminUser(supabase))) redirect("/room");
 
   const [{ data: investorsData }, { data: signaturesData }, { data: messagesData }] =
     await Promise.all([

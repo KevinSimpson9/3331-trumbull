@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import type { FormState } from "./auth";
 
@@ -11,7 +12,7 @@ async function requireAdmin() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user || (user.email || "").toLowerCase() !== ADMIN_EMAIL) {
+  if (!user || !(await isAdminUser(supabase))) {
     throw new Error("Not authorized");
   }
   return user;

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ADMIN_EMAIL } from "@/lib/supabase/admin";
+import { isAdminUser } from "@/lib/auth";
 import SignInForm from "@/components/SignInForm";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export default async function SignInPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (user) {
-    redirect((user.email || "").toLowerCase() === ADMIN_EMAIL ? "/admin" : "/room");
+    redirect((await isAdminUser(supabase)) ? "/admin" : "/room");
   }
 
   return (
