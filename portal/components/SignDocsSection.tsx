@@ -23,6 +23,8 @@ interface Props {
   /** Query string for the signed-copy download link ("" for the investor,
    *  "?investor=<id>" when the admin is viewing a room). */
   downloadQuery?: string;
+  /** Doc key whose signing modal opens automatically when still unsigned. */
+  autoOpenKey?: string;
 }
 
 function AdoptButton() {
@@ -120,8 +122,13 @@ export default function SignDocsSection({
   todayLabel: today,
   viewingAs,
   downloadQuery = "",
+  autoOpenKey,
 }: Props) {
-  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(() =>
+    !viewingAs && autoOpenKey && docs.some((d) => d.key === autoOpenKey && !d.signedAt)
+      ? autoOpenKey
+      : null
+  );
   const openDoc = docs.find((d) => d.key === openKey) ?? null;
 
   return (

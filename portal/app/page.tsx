@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/supabase/admin";
@@ -31,6 +32,16 @@ export default async function SignInPage() {
         </div>
         <div className="login-title">Investor sign-in</div>
         <SignInForm />
+        <div
+          style={{
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            paddingTop: 14,
+            textAlign: "center",
+            fontSize: 12.5,
+          }}
+        >
+          Interested in investing? <Link href="/subscribe">Subscribe →</Link>
+        </div>
       </div>
     </div>
   );

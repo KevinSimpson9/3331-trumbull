@@ -9,7 +9,11 @@ import { sendInvestorMessage } from "@/app/actions/investor";
 
 export const dynamic = "force-dynamic";
 
-export default async function RoomPage() {
+export default async function RoomPage({
+  searchParams,
+}: {
+  searchParams: { sign?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
@@ -46,6 +50,7 @@ export default async function RoomPage() {
         messages={(messages as Message[]) ?? []}
         projectDocs={docs}
         sendAction={sendInvestorMessage}
+        autoOpenKey={searchParams.sign}
       />
     </div>
   );
