@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import AddInvestorForm from "./AddInvestorForm";
+import EditInvestorForm from "./EditInvestorForm";
 import RosterActions from "./RosterActions";
 
 export interface RosterRowVM {
@@ -14,10 +15,14 @@ export interface RosterRowVM {
   active: boolean;
   statusLabel: string;
   docsLabel: string;
+  principalRaw: number;
+  rateRaw: number;
+  termRaw: number;
 }
 
 export default function AllInvestorsCard({ rows }: { rows: RosterRowVM[] }) {
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   return (
     <div className="admin-card">
@@ -29,26 +34,37 @@ export default function AllInvestorsCard({ rows }: { rows: RosterRowVM[] }) {
       </div>
       <div className="roster-list">
         {rows.map((r) => (
-          <div key={r.id} className="roster-row">
-            <div className="roster-ident">
-              <div className="roster-avatar">{r.initials}</div>
-              <div className="roster-name-col">
-                <div className="roster-name">{r.name}</div>
-                <div className="roster-email">{r.email}</div>
+          <Fragment key={r.id}>
+            <div className="roster-row">
+              <div className="roster-ident">
+                <div className="roster-avatar">{r.initials}</div>
+                <div className="roster-name-col">
+                  <div className="roster-name">{r.name}</div>
+                  <div className="roster-email">{r.email}</div>
+                </div>
               </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div className="roster-amount">{r.amount}</div>
+                <div className="roster-terms">{r.terms}</div>
+              </div>
+              <div className="roster-status-col">
+                <span className={`status-chip ${r.active ? "active" : "invited"}`}>
+                  {r.statusLabel}
+                </span>
+                <span className="roster-docs-label">{r.docsLabel}</span>
+              </div>
+              <RosterActions
+                investorId={r.id}
+                investorName={r.name}
+                onEdit={() => setEditingId((v) => (v === r.id ? null : r.id))}
+              />
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <div className="roster-amount">{r.amount}</div>
-              <div className="roster-terms">{r.terms}</div>
-            </div>
-            <div className="roster-status-col">
-              <span className={`status-chip ${r.active ? "active" : "invited"}`}>
-                {r.statusLabel}
-              </span>
-              <span className="roster-docs-label">{r.docsLabel}</span>
-            </div>
-            <RosterActions investorId={r.id} investorName={r.name} />
-          </div>
+            {editingId === r.id && (
+              <div style={{ padding: "14px 0" }}>
+                <EditInvestorForm row={r} onClose={() => setEditingId(null)} />
+              </div>
+            )}
+          </Fragment>
         ))}
         {rows.length === 0 && (
           <div style={{ padding: "18px 0", fontSize: 13, color: "var(--muted)" }}>
