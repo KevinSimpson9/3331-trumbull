@@ -60,3 +60,7 @@ npm run dev
 - **Signed PDF generation** — signatures are recorded in the database with a full audit trail, but flattened PDF copies aren't generated/emailed yet.
 - **Email notifications** beyond the Supabase invite/reset emails (e.g. "new message" pings) — add a Resend/Postmark integration in the server actions when wanted.
 - If invite emails need custom branding or higher volume, configure custom SMTP in Supabase → Authentication → Emails.
+
+## Troubleshooting
+
+- **Vercel build fails with "No Next.js version detected"** even though Root Directory is `portal`: check that no repo-root `.vercelignore` excludes `portal/` — Vercel strips ignored files from the upload *before* applying the Root Directory, which deletes the app out from under the build. (This bit us once; the root `vercel.json` now handles keeping `/portal` paths off the marketing site instead.)
