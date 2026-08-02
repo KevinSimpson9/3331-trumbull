@@ -59,6 +59,9 @@ export default async function AdminPage({
     active: i.status === "active",
     statusLabel: i.status === "active" ? "● Active" : "Invited",
     docsLabel: `${signedCount(i.id)} of ${DOC_COUNT} docs signed`,
+    principalRaw: Number(i.principal),
+    rateRaw: Number(i.rate),
+    termRaw: i.term_months,
   }));
 
   const threads: ThreadVM[] = investors.map((i) => {

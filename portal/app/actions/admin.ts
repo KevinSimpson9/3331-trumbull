@@ -49,20 +49,18 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   if (inviteError) {
     // Email couldn't be sent (commonly Supabase's hourly email rate limit).
     // Fall back to minting the invite link directly so the admin can deliver
-    // it themselves — the investor is still created.
+    // it themselves — the investor is still created. The link targets our own
+    // /auth/confirm with the token hash, avoiding Supabase's redirect hop.
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: "invite",
       email,
-      options: {
-        redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
-        data: { legal_name: legalName },
-      },
+      options: { data: { legal_name: legalName } },
     });
-    if (linkError || !linkData?.properties?.action_link) {
+    if (linkError || !linkData?.properties?.hashed_token) {
       return { error: `Invite failed: ${inviteError.message}` };
     }
     authUserId = linkData.user?.id ?? null;
-    inviteLink = linkData.properties.action_link;
+    inviteLink = `${siteUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=invite&next=/auth/set-password`;
   } else {
     authUserId = invited.user?.id ?? null;
   }
@@ -126,31 +124,63 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
 
+  // Links target our own /auth/confirm with the token hash — no dependence on
+  // Supabase's redirect allow-list, so they always land inside the portal.
   // 'invite' only works before the user accepts; fall back to a magic link
   // for anyone who already has an account.
   const { data: inviteData } = await admin.auth.admin.generateLink({
     type: "invite",
     email: investor.email,
-    options: {
-      redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
-      data: { legal_name: investor.legal_name },
-    },
+    options: { data: { legal_name: investor.legal_name } },
   });
-  let link = inviteData?.properties?.action_link ?? null;
-
-  if (!link) {
-    const { data: magicData, error } = await admin.auth.admin.generateLink({
-      type: "magiclink",
-      email: investor.email,
-      options: { redirectTo: `${siteUrl}/auth/confirm?next=/room?sign=loi` },
-    });
-    if (error || !magicData?.properties?.action_link) {
-      return { error: "Couldn't create an invite link — try again." };
-    }
-    link = magicData.properties.action_link;
+  if (inviteData?.properties?.hashed_token) {
+    return {
+      ok: true,
+      inviteLink: `${siteUrl}/auth/confirm?token_hash=${inviteData.properties.hashed_token}&type=invite&next=/auth/set-password`,
+    };
   }
 
-  return { ok: true, inviteLink: link };
+  const { data: magicData, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email: investor.email,
+  });
+  if (error || !magicData?.properties?.hashed_token) {
+    return { error: "Couldn't create an invite link — try again." };
+  }
+  return {
+    ok: true,
+    inviteLink: `${siteUrl}/auth/confirm?token_hash=${magicData.properties.hashed_token}&type=magiclink&next=${encodeURIComponent("/room?sign=loi")}`,
+  };
+}
+
+/** Admin-only edit of an investor's terms (name, principal, rate, term).
+ *  Changes flow into all still-unsigned documents; executed PDFs are
+ *  immutable records of what was signed. */
+export async function updateInvestorAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+
+  const investorId = String(formData.get("investorId") || "");
+  const legalName = String(formData.get("legalName") || "").trim();
+  const principal = Number(formData.get("principal"));
+  const rate = Number(formData.get("rate"));
+  const term = Number(formData.get("term"));
+
+  if (!investorId) return { error: "Missing investor." };
+  if (!legalName) return { error: "Legal name is required." };
+  if (!principal || principal <= 0) return { error: "Principal must be a positive amount." };
+  if (!rate || rate <= 0) return { error: "Rate must be a positive percentage." };
+  if (!term || term <= 0) return { error: "Term must be a positive number of months." };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("investors")
+    .update({ legal_name: legalName, principal, rate, term_months: term })
+    .eq("id", investorId);
+  if (error) return { error: `Update failed: ${error.message}` };
+
+  revalidateAdmin();
+  revalidatePath(`/admin/investor/${investorId}`);
+  return { ok: true, message: "Investor updated ✓" };
 }
 
 export async function removeInvestorAction(investorId: string): Promise<FormState> {
