@@ -55,10 +55,13 @@ cp .env.example .env.local   # fill in your Supabase values
 npm run dev
 ```
 
+## Signed PDFs
+
+Signing a document generates an executed PDF (letterhead, full document text, the adopted cursive signature, timestamp, and an audit block with IP/device) and stores it in the private `signed-documents` storage bucket under the investor's folder — the bucket is created automatically on first use. Both the investor and the admin get a "Download copy →" link next to each signed document; if a stored PDF is ever missing, the download route regenerates it from the signature record.
+
 ## Not yet wired (deliberate v1 scope)
 
-- **Signed PDF generation** — signatures are recorded in the database with a full audit trail, but flattened PDF copies aren't generated/emailed yet.
-- **Email notifications** beyond the Supabase invite/reset emails (e.g. "new message" pings) — add a Resend/Postmark integration in the server actions when wanted.
+- **Email notifications** beyond the Supabase invite/reset emails (e.g. "new message" pings, emailing signed PDFs to both parties) — add a Resend/Postmark integration in the server actions when wanted.
 - If invite emails need custom branding or higher volume, configure custom SMTP in Supabase → Authentication → Emails.
 
 ## Troubleshooting

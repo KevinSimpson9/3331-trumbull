@@ -20,6 +20,9 @@ interface Props {
   legalName: string;
   todayLabel: string;
   viewingAs?: boolean;
+  /** Query string for the signed-copy download link ("" for the investor,
+   *  "?investor=<id>" when the admin is viewing a room). */
+  downloadQuery?: string;
 }
 
 function AdoptButton() {
@@ -111,7 +114,13 @@ function SignModal({
   );
 }
 
-export default function SignDocsSection({ docs, legalName, todayLabel: today, viewingAs }: Props) {
+export default function SignDocsSection({
+  docs,
+  legalName,
+  todayLabel: today,
+  viewingAs,
+  downloadQuery = "",
+}: Props) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const openDoc = docs.find((d) => d.key === openKey) ?? null;
 
@@ -128,7 +137,12 @@ export default function SignDocsSection({ docs, legalName, todayLabel: today, vi
               <div className="doc-row-desc">{d.desc}</div>
             </div>
             {d.signedAt ? (
-              <span className="signed-chip">✓ Signed {d.signedAt}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <span className="signed-chip">✓ Signed {d.signedAt}</span>
+                <a className="signed-download" href={`/api/signed/${d.key}${downloadQuery}`}>
+                  Download copy →
+                </a>
+              </span>
             ) : viewingAs ? (
               <span className="awaiting-chip">Awaiting signature</span>
             ) : (

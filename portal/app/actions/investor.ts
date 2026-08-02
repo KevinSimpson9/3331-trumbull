@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { docDefs } from "@/lib/docs";
+import { generateSignedPdf, signedPdfPath, SIGNED_DOCS_BUCKET } from "@/lib/pdf";
 import type { DocKey, Investor } from "@/lib/types";
 import type { FormState } from "./auth";
 
@@ -68,9 +69,35 @@ export async function signDocument(_prev: FormState, formData: FormData): Promis
       : { error: "Signing failed — try again." };
   }
 
+  const admin = createAdminClient();
   if (investor.status !== "active") {
-    const admin = createAdminClient();
     await admin.from("investors").update({ status: "active" }).eq("id", investor.id);
+  }
+
+  // Generate the executed PDF and store it in the investor's private folder.
+  // Failures here never block the signature itself — the signature row is the
+  // legal record, and the download route regenerates missing PDFs on demand.
+  try {
+    const doc = docDefs(investor).find((d) => d.key === docKey)!;
+    const pdfBytes = await generateSignedPdf({
+      investor,
+      doc,
+      signerName,
+      signedAtISO: new Date().toISOString(),
+      ip: hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+      userAgent: hdrs.get("user-agent"),
+    });
+    await admin.storage
+      .createBucket(SIGNED_DOCS_BUCKET, { public: false })
+      .catch(() => {}); // already exists
+    await admin.storage
+      .from(SIGNED_DOCS_BUCKET)
+      .upload(signedPdfPath(investor.id, docKey), Buffer.from(pdfBytes), {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+  } catch (e) {
+    console.error("signed-pdf generation failed", e);
   }
 
   revalidatePath("/room");

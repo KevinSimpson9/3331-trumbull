@@ -445,6 +445,11 @@ button {
   padding: 6px 14px;
   font-weight: 600;
 }
+.signed-download {
+  font-size: 12px;
+  color: var(--gold);
+  white-space: nowrap;
+}
 .awaiting-chip {
   font-size: 12px;
   color: var(--muted);
