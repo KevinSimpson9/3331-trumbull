@@ -1,5 +1,5 @@
 export type InvestorStatus = "invited" | "active";
-export type DocKey = "note" | "guarantee" | "accreditation";
+export type DocKey = "loi" | "note" | "guarantee" | "accreditation";
 export type Sender = "admin" | "investor";
 
 export interface Investor {

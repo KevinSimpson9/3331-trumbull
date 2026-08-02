@@ -10,9 +10,50 @@ export interface SignableDoc {
 }
 
 /** The three per-investor signable documents, terms interpolated per the design. */
-export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" | "term_months">): SignableDoc[] {
+export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" | "term_months"> & { email?: string }): SignableDoc[] {
   const amt = fmtMoney(inv.principal);
   return [
+    {
+      key: "loi",
+      badge: "SIGN",
+      title: "Non-Binding Letter of Intent",
+      desc: `Commitment letter · proposed terms for your ${amt} note`,
+      body:
+        `NON-BINDING LETTER OF INTENT\nSECURED PROMISSORY NOTE · 3331 TRUMBULL TOWNHOME DEVELOPMENT\n\n` +
+        `Prospective Investor: ${inv.legal_name}${inv.email ? ` (${inv.email})` : ""}\n\n` +
+        `This letter sets forth the mutual intent of the undersigned prospective investor (the "Investor") and ` +
+        `3331 Trumbull LLC (the "Issuer"), sponsored by AK Capital Investments LLC and Bondy Construction & Design, ` +
+        `regarding a proposed investment in a secured promissory note funding the construction of a 25-unit for-sale ` +
+        `townhome development at 3331 Trumbull St, Detroit, MI 48208 (the "Project"). The proposed terms below are for discussion purposes only.\n\n` +
+        `PROPOSED TERMS\n` +
+        `Issuer / Borrower: 3331 Trumbull LLC (the "Issuer")\n` +
+        `Sponsor: AK Capital Investments LLC × Bondy Construction & Design\n` +
+        `Instrument: Secured promissory note (the "Note")\n` +
+        `Investment Amount: ${amt}\n` +
+        `Total Offering: Up to $700,000 across a limited group of accredited investors\n` +
+        `Interest Rate: ${inv.rate}% per annum, fixed\n` +
+        `Payments: Interest-only, paid quarterly in cash\n` +
+        `Term: 18–24 months from funding\n` +
+        `Repayment: Principal repaid in full at maturity from unit sale proceeds\n` +
+        `Security: Second position debt, plus a personal guarantee from the sponsor\n` +
+        `Use of Proceeds: Construction of a 25-unit for-sale townhome development in North Corktown, Detroit\n\n` +
+        `TERMS OF THIS LETTER\n\n` +
+        `1. Non-Binding Effect. Except for the paragraphs titled "Confidentiality" and "Expiration," this letter is a ` +
+        `non-binding expression of interest only. It does not create any legal obligation on either party to proceed with ` +
+        `the proposed investment. Any binding obligation will arise only upon execution and delivery of definitive ` +
+        `documentation, including the Note, mortgage, guarantee, and related agreements (the "Definitive Documents"), ` +
+        `in form and substance satisfactory to each party.\n\n` +
+        `2. No Offer of Securities. This letter does not constitute an offer to sell or a solicitation of an offer to buy any ` +
+        `security. Any offering will be made only to accredited investors through the Definitive Documents and accompanying offering materials.\n\n` +
+        `3. Due Diligence. The Investor will have the opportunity to review the offering package, including the note terms, ` +
+        `comp book, construction document set, and for-sale proforma, and to consult independent legal, tax, and financial ` +
+        `advisors before executing any Definitive Documents.\n\n` +
+        `4. Confidentiality. Each party agrees to keep the terms of this letter and any non-public information exchanged in ` +
+        `connection with the proposed investment confidential, except as required by law or disclosed to professional advisors ` +
+        `on a confidential basis. This paragraph is binding.\n\n` +
+        `5. Governing Law. This letter shall be interpreted under the laws of the State of Michigan, without regard to conflict-of-law principles.\n\n` +
+        `By adopting an electronic signature below, the Investor confirms that this letter reflects the Investor's current intent.`,
+    },
     {
       key: "note",
       badge: "SIGN",
@@ -49,7 +90,7 @@ export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" 
   ];
 }
 
-export const DOC_COUNT = 3;
+export const DOC_COUNT = 4;
 
 /** Fallback shared-library items shown until rows exist in project_documents. */
 export const DEFAULT_PROJECT_DOCS = [

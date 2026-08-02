@@ -32,7 +32,7 @@ create table if not exists public.investors (
 create table if not exists public.signatures (
   id           uuid primary key default gen_random_uuid(),
   investor_id  uuid not null references public.investors (id) on delete cascade,
-  doc_key      text not null check (doc_key in ('note', 'guarantee', 'accreditation')),
+  doc_key      text not null check (doc_key in ('loi', 'note', 'guarantee', 'accreditation')),
   signer_name  text not null,
   signed_at    timestamptz not null default now(),
   user_agent   text,
