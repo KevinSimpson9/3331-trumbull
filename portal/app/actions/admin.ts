@@ -110,6 +110,49 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   return { ok: true, message: "Investor created — invite sent ✓" };
 }
 
+/** Mint a fresh sign-in link for an investor so the admin can deliver it by
+ *  any channel (text, email) — works whether or not they've accepted the
+ *  original invite, and regardless of email rate limits. */
+export async function getInviteLinkAction(investorId: string): Promise<FormState> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const { data: investor } = await admin
+    .from("investors")
+    .select("email, legal_name")
+    .eq("id", investorId)
+    .maybeSingle();
+  if (!investor) return { error: "Investor not found" };
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+
+  // 'invite' only works before the user accepts; fall back to a magic link
+  // for anyone who already has an account.
+  const { data: inviteData } = await admin.auth.admin.generateLink({
+    type: "invite",
+    email: investor.email,
+    options: {
+      redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
+      data: { legal_name: investor.legal_name },
+    },
+  });
+  let link = inviteData?.properties?.action_link ?? null;
+
+  if (!link) {
+    const { data: magicData, error } = await admin.auth.admin.generateLink({
+      type: "magiclink",
+      email: investor.email,
+      options: { redirectTo: `${siteUrl}/auth/confirm?next=/room?sign=loi` },
+    });
+    if (error || !magicData?.properties?.action_link) {
+      return { error: "Couldn't create an invite link — try again." };
+    }
+    link = magicData.properties.action_link;
+  }
+
+  return { ok: true, inviteLink: link };
+}
+
 export async function removeInvestorAction(investorId: string): Promise<FormState> {
   await requireAdmin();
   const admin = createAdminClient();

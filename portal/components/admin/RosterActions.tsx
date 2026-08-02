@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
-import { removeInvestorAction } from "@/app/actions/admin";
+import { getInviteLinkAction, removeInvestorAction } from "@/app/actions/admin";
 import { useToast } from "@/components/Toast";
 
 interface Props {
@@ -22,6 +22,28 @@ export default function RosterActions({ investorId, investorName }: Props) {
       <Link href={`/admin/investor/${investorId}`} className="roster-btn" style={{ textDecoration: "none", display: "inline-block" }}>
         View their portal →
       </Link>
+      <button
+        type="button"
+        className="roster-btn"
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            const res = await getInviteLinkAction(investorId);
+            if (res.inviteLink) {
+              try {
+                await navigator.clipboard.writeText(res.inviteLink);
+                toast("Invite link copied — send it to them ✓");
+              } catch {
+                window.prompt(`Sign-in link for ${investorName} — copy it:`, res.inviteLink);
+              }
+            } else {
+              toast(res.error || "Couldn't create link");
+            }
+          })
+        }
+      >
+        Copy invite link
+      </button>
       <button
         type="button"
         title="Remove"
