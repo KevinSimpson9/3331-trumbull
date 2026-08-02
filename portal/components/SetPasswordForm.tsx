@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { setPasswordAction, type FormState } from "@/app/actions/auth";
+import PasswordInput from "@/components/PasswordInput";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -21,28 +22,22 @@ export default function SetPasswordForm() {
         <label className="label" htmlFor="password">
           NEW PASSWORD
         </label>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           placeholder="At least 8 characters"
-          className="input"
           autoComplete="new-password"
-          required
         />
       </div>
       <div className="field">
         <label className="label" htmlFor="confirm">
           CONFIRM PASSWORD
         </label>
-        <input
+        <PasswordInput
           id="confirm"
           name="confirm"
-          type="password"
           placeholder="Repeat password"
-          className="input"
           autoComplete="new-password"
-          required
         />
       </div>
       {state.error && <div className="error-text">{state.error}</div>}

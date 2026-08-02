@@ -101,6 +101,30 @@ button {
   padding: 11px 13px;
   font-size: 14px;
 }
+.input-wrap {
+  position: relative;
+}
+.input-with-toggle {
+  padding-right: 48px;
+}
+.input-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  padding: 6px;
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.input-toggle:hover {
+  color: var(--gold);
+}
 .btn-gold {
   background: var(--gold);
   color: var(--on-gold);

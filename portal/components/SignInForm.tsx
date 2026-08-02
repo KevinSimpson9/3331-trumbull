@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useFormState, useFormStatus } from "react-dom";
 import { signInAction, type FormState } from "@/app/actions/auth";
+import PasswordInput from "@/components/PasswordInput";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -36,15 +37,7 @@ export default function SignInForm() {
         <label className="label" htmlFor="password">
           PASSWORD
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          placeholder="Password"
-          className="input"
-          autoComplete="current-password"
-          required
-        />
+        <PasswordInput id="password" name="password" />
       </div>
       {state.error && <div className="error-text">{state.error}</div>}
       <SubmitButton />
