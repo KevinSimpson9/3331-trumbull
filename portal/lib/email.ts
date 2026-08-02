@@ -1,3 +1,19 @@
+/** Whether the portal can send its own email (Resend configured). */
+export function canSendEmail(): boolean {
+  return Boolean(process.env.RESEND_API_KEY);
+}
+
+/** Invite email body carrying the self-contained set-password link. */
+export function inviteEmailText(name: string, inviteLink: string): string {
+  return (
+    `${name},\n\n` +
+    `You've been invited to the 3331 Trumbull investor portal.\n\n` +
+    `Set your password and enter your room here:\n${inviteLink}\n\n` +
+    `Once you're in, your documents are ready to review and sign.\n\n` +
+    `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`
+  );
+}
+
 /**
  * Optional transactional email via Resend (https://resend.com).
  * If RESEND_API_KEY is not set, sends are skipped silently — the portal's

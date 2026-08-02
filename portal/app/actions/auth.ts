@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
@@ -52,14 +53,33 @@ export async function signOutAction() {
 export async function setPasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const password = String(formData.get("password") || "");
   const confirm = String(formData.get("confirm") || "");
+  const tokenHash = String(formData.get("token_hash") || "");
+  const otpType = String(formData.get("otp_type") || "");
 
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
   if (password !== confirm) return { error: "Passwords don't match." };
 
   const supabase = createClient();
-  const {
+  let {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // First submit from an emailed invite/reset link: redeem the one-time token
+  // now — only after the password fields validate, so a typo can't waste it.
+  // Once verified there's a session, so any retry goes through the session path.
+  if (!user && tokenHash && otpType) {
+    const { data, error } = await supabase.auth.verifyOtp({
+      type: otpType as EmailOtpType,
+      token_hash: tokenHash,
+    });
+    if (error) {
+      return {
+        error:
+          "This link has expired or was already used. Use “Forgot password?” on the sign-in page to get a fresh one, or contact kevin@akcapital.fund.",
+      };
+    }
+    user = data.user;
+  }
   if (!user) redirect("/");
 
   const { error } = await supabase.auth.updateUser({ password });

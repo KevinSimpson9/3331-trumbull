@@ -41,8 +41,9 @@ export default function AddInvestorForm({ onClose }: { onClose: () => void }) {
         />
         <div className="form-helper">
           Tap the link above to select it, copy, and text or email it to them. It opens their
-          set-password screen; after that they land in their room with the commitment letter ready
-          to sign. (To stop hitting the email limit, configure custom SMTP — see the README.)
+          set-password screen — the link stays valid until they actually submit a password, so it
+          works on the first try even if their email provider pre-scans it. After that they land in
+          their room with the commitment letter ready to sign.
         </div>
         <div className="form-actions">
           <button type="button" className="btn-gold btn-gold-sm" onClick={onClose}>

@@ -12,11 +12,19 @@ function SubmitButton() {
   );
 }
 
-export default function SetPasswordForm() {
+export default function SetPasswordForm({
+  tokenHash,
+  otpType,
+}: {
+  tokenHash?: string;
+  otpType?: string;
+}) {
   const [state, formAction] = useFormState<FormState, FormData>(setPasswordAction, {});
 
   return (
     <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {tokenHash && <input type="hidden" name="token_hash" value={tokenHash} />}
+      {otpType && <input type="hidden" name="otp_type" value={otpType} />}
       <div className="field">
         <label className="label" htmlFor="password">
           NEW PASSWORD

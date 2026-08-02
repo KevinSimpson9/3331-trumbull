@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
+import { sendEmail, inviteEmailText } from "@/lib/email";
 import { firstName } from "@/lib/format";
 import type { FormState } from "./auth";
 
@@ -38,31 +39,38 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
 
   const admin = createAdminClient();
 
-  // Portal invite email with a set-password link.
+  // Mint the set-password link ourselves: it carries the one-time token
+  // straight to our own set-password screen, where it's redeemed only when
+  // the investor submits their password — immune to email link scanners and
+  // to the Supabase redirect/PKCE hop that stranded invitees on the error
+  // page. The link always comes back to the admin as a backup they can text.
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   let authUserId: string | null = null;
   let inviteLink: string | undefined;
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
-    data: { legal_name: legalName },
+  let emailSent = false;
+  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: { data: { legal_name: legalName } },
   });
-  if (inviteError) {
-    // Email couldn't be sent (commonly Supabase's hourly email rate limit).
-    // Fall back to minting the invite link directly so the admin can deliver
-    // it themselves — the investor is still created. The link targets our own
-    // /auth/confirm with the token hash, avoiding Supabase's redirect hop.
-    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-      type: "invite",
-      email,
-      options: { data: { legal_name: legalName } },
-    });
-    if (linkError || !linkData?.properties?.hashed_token) {
-      return { error: `Invite failed: ${inviteError.message}` };
-    }
+  if (!linkError && linkData?.properties?.hashed_token) {
     authUserId = linkData.user?.id ?? null;
     inviteLink = `${siteUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=invite&next=/auth/set-password`;
+    emailSent = await sendEmail({
+      to: email,
+      subject: "Your 3331 Trumbull investor portal invitation",
+      text: inviteEmailText(firstName(legalName), inviteLink),
+    });
   } else {
+    // Couldn't mint a link (e.g. an auth user already exists for this email) —
+    // fall back to Supabase's own invite email.
+    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
+      data: { legal_name: legalName },
+    });
+    if (inviteError) return { error: `Invite failed: ${inviteError.message}` };
     authUserId = invited.user?.id ?? null;
+    emailSent = true;
   }
 
   const { error: insertError } = await admin.from("investors").insert({
@@ -100,8 +108,9 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   if (inviteLink) {
     return {
       ok: true,
-      message:
-        "Investor created — but the invite email couldn't be sent (email rate limit). Send them this link yourself:",
+      message: emailSent
+        ? "Invite email sent ✓ — you can also copy this same link and text it to them:"
+        : "Investor created — the invite email couldn't be sent, so send them this link yourself:",
       inviteLink,
     };
   }
@@ -125,9 +134,11 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
 
   // Links target our own /auth/confirm with the token hash — no dependence on
-  // Supabase's redirect allow-list, so they always land inside the portal.
-  // 'invite' only works before the user accepts; fall back to a magic link
-  // for anyone who already has an account.
+  // Supabase's redirect allow-list, and the token isn't redeemed until the
+  // investor submits their password, so the link survives email scanners and
+  // always works on the first real click. 'invite' only works before the user
+  // accepts; for anyone who already has an account, a recovery link lands them
+  // on the same set-password screen.
   const { data: inviteData } = await admin.auth.admin.generateLink({
     type: "invite",
     email: investor.email,
@@ -140,16 +151,16 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
     };
   }
 
-  const { data: magicData, error } = await admin.auth.admin.generateLink({
-    type: "magiclink",
+  const { data: recoveryData, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
     email: investor.email,
   });
-  if (error || !magicData?.properties?.hashed_token) {
+  if (error || !recoveryData?.properties?.hashed_token) {
     return { error: "Couldn't create an invite link — try again." };
   }
   return {
     ok: true,
-    inviteLink: `${siteUrl}/auth/confirm?token_hash=${magicData.properties.hashed_token}&type=magiclink&next=${encodeURIComponent("/room?sign=loi")}`,
+    inviteLink: `${siteUrl}/auth/confirm?token_hash=${recoveryData.properties.hashed_token}&type=recovery&next=/auth/set-password`,
   };
 }
 

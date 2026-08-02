@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, canSendEmail } from "@/lib/email";
 import { firstName, fmtMoney } from "@/lib/format";
 import type { FormState } from "./auth";
 
@@ -41,16 +41,36 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
-    data: { legal_name: legalName },
-  });
-  if (inviteError) {
-    return {
-      error: /rate limit/i.test(inviteError.message)
-        ? "Our invite emails are briefly rate-limited — please try again in about an hour, or email kevin@akcapital.fund and we'll set you up directly."
-        : `Could not send your invite: ${inviteError.message}`,
-    };
+  let authUserId: string | null = null;
+  let inviteLink: string | undefined;
+
+  if (canSendEmail()) {
+    // Mint the set-password link ourselves and email it in the confirmation
+    // below. The token is redeemed only when they submit their password, so
+    // the link survives email scanners and works on the first real click.
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: { data: { legal_name: legalName } },
+    });
+    if (linkError || !linkData?.properties?.hashed_token) {
+      return { error: "Something went wrong creating your account — email kevin@akcapital.fund." };
+    }
+    authUserId = linkData.user?.id ?? null;
+    inviteLink = `${siteUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=invite&next=/auth/set-password`;
+  } else {
+    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
+      data: { legal_name: legalName },
+    });
+    if (inviteError) {
+      return {
+        error: /rate limit/i.test(inviteError.message)
+          ? "Our invite emails are briefly rate-limited — please try again in about an hour, or email kevin@akcapital.fund and we'll set you up directly."
+          : `Could not send your invite: ${inviteError.message}`,
+      };
+    }
+    authUserId = invited.user?.id ?? null;
   }
 
   const { data: created, error: insertError } = await admin
@@ -60,7 +80,7 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
       email,
       principal: amount,
       status: "invited",
-      auth_user_id: invited.user?.id ?? null,
+      auth_user_id: authUserId,
     })
     .select("id")
     .single();
@@ -101,7 +121,9 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
         `${firstName(legalName)},\n\n` +
         `Thanks for subscribing to the 3331 Trumbull investor portal. We've recorded your ` +
         `indicative commitment of ${fmtMoney(amount)}.\n\n` +
-        `A separate email invites you to set your password. Once you're in, your ` +
+        (inviteLink
+          ? `Set your password and enter your room here:\n${inviteLink}\n\nOnce you're in, your `
+          : `A separate email invites you to set your password. Once you're in, your `) +
         `Non-Binding Letter of Intent is ready to review and sign right in the portal.\n\n` +
         `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
     }),

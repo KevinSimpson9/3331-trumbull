@@ -27,9 +27,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // /auth/set-password is intentionally not gated here: invitees arrive with a
+  // one-time token instead of a session, and the page/action enforce their own
+  // session-or-token requirement.
   const path = request.nextUrl.pathname;
-  const isProtected =
-    path.startsWith("/room") || path.startsWith("/admin") || path.startsWith("/auth/set-password");
+  const isProtected = path.startsWith("/room") || path.startsWith("/admin");
 
   if (!user && isProtected) {
     return NextResponse.redirect(new URL("/", request.url));

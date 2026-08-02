@@ -17,6 +17,13 @@ Access control is enforced in the database with Postgres row-level security: an 
 2. In **SQL Editor**, paste and run `supabase/schema.sql` from this folder. This creates the tables, security policies, the private `project-documents` storage bucket, and seeds the shared document list.
 3. In **Authentication → Users**, click **Add user** and create the admin account `kevin@akcapital.fund` with a password (check "Auto confirm user").
 4. In **Authentication → URL Configuration**, set the Site URL to the portal's public URL (e.g. `https://portal.trumbullnorth.com`) and add `https://portal.trumbullnorth.com/auth/confirm` to the redirect allow list.
+5. In **Authentication → Email Templates**, point the links straight at the portal's confirm route with a token hash — **required** for links to work when Supabase sends the email (the default `{{ .ConfirmationURL }}` bounces through Supabase's verify redirect, which breaks in the recipient's browser and gets consumed by email link scanners):
+   - **Invite user** template — replace the link with:
+     `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/auth/set-password`
+   - **Reset password** template — replace the link with:
+     `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/auth/set-password`
+
+   These links carry the one-time token to the set-password screen and only redeem it when the person submits their new password — so the link works on the first try even if a mail scanner pre-opens it, and a password typo never invalidates it.
 
 ### 2. Deploy on Vercel
 
@@ -46,7 +53,8 @@ The sign-in screen links to **/subscribe**: an interested investor enters their 
 
 ## Day-to-day use
 
-- Add an investor from the admin roster → they receive a Supabase invite email → the link lands on the portal's set-password screen → they sign in and see their room.
+- Add an investor from the admin roster → the portal mints a set-password link and emails it (via Resend when `RESEND_API_KEY` is set, otherwise via Supabase's invite email) → the link lands on the portal's set-password screen and stays valid until they actually submit a password → they sign in and see their room. The link is also shown to you as a backup, ready to copy and text.
+- If someone's link has gone stale or they never got the email, use **Copy invite link** on their roster row — it mints a fresh set-password link that works whether or not they've ever signed in.
 - Signing a document records the typed legal name, timestamp, user agent, and IP in the `signatures` table and flips the investor to Active.
 - The gold dot on a thread means the last message is from the investor and unread; opening the thread clears it.
 
