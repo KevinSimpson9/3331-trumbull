@@ -47,6 +47,7 @@ The sign-in screen links to **/subscribe**: an interested investor enters their 
 ## Day-to-day use
 
 - Add an investor from the admin roster → they receive a Supabase invite email → the link lands on the portal's set-password screen → they sign in and see their room.
+- The "Sign your documents" section leads with a **Start signing →** button that walks the investor through every unsigned document in sequence (with a "Document N of 4" progress label), advancing to the next one after each signature. Individual "Review & sign" buttons on each row still work for one-off signing, and the button becomes "Continue signing →" if they stop partway.
 - Signing a document records the typed legal name, timestamp, user agent, and IP in the `signatures` table and flips the investor to Active.
 - The gold dot on a thread means the last message is from the investor and unread; opening the thread clears it.
 
