@@ -70,10 +70,10 @@ export default function MessagesCard({
   const router = useRouter();
   const openThread = threads.find((t) => t.investorId === openThreadId) ?? null;
 
-  // Opening a thread clears its unread state.
+  // Opening a thread clears its unread state (best-effort; never surfaces).
   useEffect(() => {
     if (openThread?.unread) {
-      markThreadRead(openThread.investorId);
+      markThreadRead(openThread.investorId).catch(() => {});
     }
   }, [openThread?.investorId, openThread?.unread]);
 
