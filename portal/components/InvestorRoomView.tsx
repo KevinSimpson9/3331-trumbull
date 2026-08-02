@@ -12,6 +12,8 @@ interface Props {
   projectDocs: ProjectDocument[];
   sendAction: (formData: FormData) => Promise<FormState>;
   viewingAs?: boolean;
+  /** Doc key to auto-open for signature on load (e.g. "loi" after set-password). */
+  autoOpenKey?: string;
 }
 
 function SectionHead({ title, ordinal }: { title: string; ordinal: string }) {
@@ -30,6 +32,7 @@ export default function InvestorRoomView({
   projectDocs,
   sendAction,
   viewingAs,
+  autoOpenKey,
 }: Props) {
   const signedByKey = new Map(signatures.map((s) => [s.doc_key, s]));
   const docs = docDefs(investor).map((d) => {
@@ -85,6 +88,7 @@ export default function InvestorRoomView({
           todayLabel={todayLabel()}
           viewingAs={viewingAs}
           downloadQuery={viewingAs ? `?investor=${investor.id}` : ""}
+          autoOpenKey={autoOpenKey}
         />
       </div>
 

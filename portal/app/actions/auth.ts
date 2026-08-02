@@ -72,7 +72,8 @@ export async function setPasswordAction(_prev: FormState, formData: FormData): P
       .is("auth_user_id", null);
   }
 
-  redirect(user.email && user.email.toLowerCase() === ADMIN_EMAIL ? "/admin" : "/room");
+  // New investors land directly in the LOI signing flow.
+  redirect(user.email && user.email.toLowerCase() === ADMIN_EMAIL ? "/admin" : "/room?sign=loi");
 }
 
 export async function requestPasswordResetAction(

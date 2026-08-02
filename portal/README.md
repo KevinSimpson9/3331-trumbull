@@ -40,6 +40,10 @@ In Supabase → **Storage → project-documents**, upload the shared files with 
 
 The "Project Website" card links to trumbullnorth.com. Files are private; the app serves them through short-lived signed URLs to signed-in users only.
 
+## Subscribe funnel (self-service)
+
+The sign-in screen links to **/subscribe**: an interested investor enters their legal name, email, indicative commitment, and investment method. That creates their investor record, emails them the set-password invite, seeds their message thread (so the commitment shows with an unread dot in the back office), and — once they set a password — drops them straight into the room with the Letter of Intent modal open for signature. Set `RESEND_API_KEY` to also send an alert email to the admin and a confirmation email to the subscriber.
+
 ## Day-to-day use
 
 - Add an investor from the admin roster → they receive a Supabase invite email → the link lands on the portal's set-password screen → they sign in and see their room.
