@@ -41,16 +41,32 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const redirectTo = `${siteUrl}/auth/confirm?next=/auth/set-password`;
+  let authUserId: string | null = null;
+  let inviteLink: string | null = null;
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
+    redirectTo,
     data: { legal_name: legalName },
   });
   if (inviteError) {
-    return {
-      error: /rate limit/i.test(inviteError.message)
-        ? "Our invite emails are briefly rate-limited — please try again in about an hour, or email kevin@akcapital.fund and we'll set you up directly."
-        : `Could not send your invite: ${inviteError.message}`,
-    };
+    // Supabase couldn't send the invite email (its built-in mailer allows only
+    // a few sends per hour). Mint the invite link directly instead — no email
+    // involved — and deliver it ourselves below.
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: { redirectTo, data: { legal_name: legalName } },
+    });
+    if (linkError || !linkData?.properties?.action_link) {
+      return {
+        error:
+          "Something went wrong setting up your account — email kevin@akcapital.fund and we'll set you up directly.",
+      };
+    }
+    authUserId = linkData.user?.id ?? null;
+    inviteLink = linkData.properties.action_link;
+  } else {
+    authUserId = invited.user?.id ?? null;
   }
 
   const { data: created, error: insertError } = await admin
@@ -60,7 +76,7 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
       email,
       principal: amount,
       status: "invited",
-      auth_user_id: invited.user?.id ?? null,
+      auth_user_id: authUserId,
     })
     .select("id")
     .single();
@@ -83,8 +99,11 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
     },
   ]);
 
-  // Email notifications (no-ops until RESEND_API_KEY is configured).
-  await Promise.all([
+  // Email notifications (no-ops until RESEND_API_KEY is configured). When
+  // Supabase couldn't send the invite itself, the Resend email to the investor
+  // carries the set-password link, and the admin copy includes it too so Kevin
+  // can deliver it by hand if needed.
+  const [, investorEmailSent] = await Promise.all([
     sendEmail({
       to: ADMIN_EMAIL,
       subject: `New portal subscription — ${legalName} (${fmtMoney(amount)})`,
@@ -92,20 +111,41 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
         `New subscription on the 3331 Trumbull investor portal:\n\n` +
         `Name: ${legalName}\nEmail: ${email}\nConsidering: ${fmtMoney(amount)}\n` +
         `Method: ${method || "—"}\n\n` +
+        (inviteLink
+          ? `Supabase's invite email was rate-limited, so their set-password link was ` +
+            `emailed via Resend instead. If it didn't arrive, send it yourself:\n${inviteLink}\n\n`
+          : "") +
         `Their room is live and the LOI is queued for signature.\nAdmin: ${siteUrl}/admin`,
     }),
     sendEmail({
       to: email,
-      subject: "3331 Trumbull — your subscription was received",
+      subject: inviteLink
+        ? "3331 Trumbull — set your portal password"
+        : "3331 Trumbull — your subscription was received",
       text:
         `${firstName(legalName)},\n\n` +
         `Thanks for subscribing to the 3331 Trumbull investor portal. We've recorded your ` +
         `indicative commitment of ${fmtMoney(amount)}.\n\n` +
-        `A separate email invites you to set your password. Once you're in, your ` +
-        `Non-Binding Letter of Intent is ready to review and sign right in the portal.\n\n` +
+        (inviteLink
+          ? `Set your password here to get into your room:\n${inviteLink}\n\n`
+          : `A separate email invites you to set your password. `) +
+        `Once you're in, your Non-Binding Letter of Intent is ready to review and sign ` +
+        `right in the portal.\n\n` +
         `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
     }),
   ]);
 
+  // If Supabase's email was rate-limited AND Resend isn't configured, nobody
+  // emailed the link — the subscription still went through, so say so instead
+  // of dead-ending them. Kevin sees the commitment in the back office and can
+  // send the link from the roster's "Copy invite link".
+  if (inviteLink && !investorEmailSent) {
+    return {
+      ok: true,
+      message:
+        "You're subscribed — your room is being set up. We'll email your sign-in link shortly; " +
+        "if you don't hear from us within the hour, email kevin@akcapital.fund.",
+    };
+  }
   return { ok: true, message: "Check your email — your invite is on its way." };
 }
