@@ -49,7 +49,11 @@ export default function MessageThread({
         className={composerClassName}
         action={async (formData) => {
           formRef.current?.reset();
-          await sendAction(formData);
+          try {
+            await sendAction(formData);
+          } catch {
+            // transient send failure — the message list simply doesn't update
+          }
         }}
       >
         <input name="body" className="input" placeholder={placeholder} autoComplete="off" />

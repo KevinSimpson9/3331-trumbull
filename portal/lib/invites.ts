@@ -13,9 +13,15 @@ export interface InviteDelivery {
   error?: string;
 }
 
-function setPasswordRedirect(): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  return `${siteUrl}/auth/confirm?next=/auth/set-password`;
+function siteUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL || "";
+}
+
+/** Self-contained link to our own /auth/confirm route with the token hash —
+ *  no dependence on Supabase's redirect allow-list, so it always lands
+ *  inside the portal. */
+function confirmLink(hashedToken: string, type: "invite" | "recovery", next: string): string {
+  return `${siteUrl()}/auth/confirm?token_hash=${hashedToken}&type=${type}&next=${encodeURIComponent(next)}`;
 }
 
 /**
@@ -31,16 +37,15 @@ function setPasswordRedirect(): string {
  */
 export async function deliverPortalInvite(email: string, legalName: string): Promise<InviteDelivery> {
   const admin = createAdminClient();
-  const redirectTo = setPasswordRedirect();
 
   if (emailConfigured()) {
     const { data, error } = await admin.auth.admin.generateLink({
       type: "invite",
       email,
-      options: { redirectTo, data: { legal_name: legalName } },
+      options: { data: { legal_name: legalName } },
     });
-    const link = data?.properties?.action_link ?? null;
-    if (!error && link) {
+    if (!error && data?.properties?.hashed_token) {
+      const link = confirmLink(data.properties.hashed_token, "invite", "/auth/set-password");
       const delivered = await sendEmail({
         to: email,
         subject: "3331 Trumbull investor portal — set your password",
@@ -58,7 +63,7 @@ export async function deliverPortalInvite(email: string, legalName: string): Pro
   }
 
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo,
+    redirectTo: `${siteUrl()}/auth/confirm?next=/auth/set-password`,
     data: { legal_name: legalName },
   });
   if (!inviteError) {
@@ -70,14 +75,14 @@ export async function deliverPortalInvite(email: string, legalName: string): Pro
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: "invite",
     email,
-    options: { redirectTo, data: { legal_name: legalName } },
+    options: { data: { legal_name: legalName } },
   });
-  if (linkError || !linkData?.properties?.action_link) {
+  if (linkError || !linkData?.properties?.hashed_token) {
     return { authUserId: null, inviteLink: null, delivered: false, error: inviteError.message };
   }
   return {
     authUserId: linkData.user?.id ?? null,
-    inviteLink: linkData.properties.action_link,
+    inviteLink: confirmLink(linkData.properties.hashed_token, "invite", "/auth/set-password"),
     delivered: false,
   };
 }
@@ -89,17 +94,15 @@ export async function deliverPortalInvite(email: string, legalName: string): Pro
  */
 export async function deliverPasswordReset(email: string): Promise<void> {
   const admin = createAdminClient();
-  const redirectTo = setPasswordRedirect();
 
   if (emailConfigured()) {
     const { data, error } = await admin.auth.admin.generateLink({
       type: "recovery",
       email,
-      options: { redirectTo },
     });
     if (error) return; // no such account — nothing to send
-    const link = data?.properties?.action_link ?? null;
-    if (link) {
+    if (data?.properties?.hashed_token) {
+      const link = confirmLink(data.properties.hashed_token, "recovery", "/auth/set-password");
       const delivered = await sendEmail({
         to: email,
         subject: "3331 Trumbull investor portal — reset your password",
@@ -112,5 +115,7 @@ export async function deliverPasswordReset(email: string): Promise<void> {
     }
   }
 
-  await admin.auth.resetPasswordForEmail(email, { redirectTo });
+  await admin.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl()}/auth/confirm?next=/auth/set-password`,
+  });
 }

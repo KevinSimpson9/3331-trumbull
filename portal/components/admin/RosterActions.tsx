@@ -8,14 +8,18 @@ import { useToast } from "@/components/Toast";
 interface Props {
   investorId: string;
   investorName: string;
+  onEdit: () => void;
 }
 
-export default function RosterActions({ investorId, investorName }: Props) {
+export default function RosterActions({ investorId, investorName, onEdit }: Props) {
   const [pending, startTransition] = useTransition();
   const toast = useToast();
 
   return (
     <div className="roster-actions">
+      <button type="button" className="roster-btn" onClick={onEdit}>
+        Edit
+      </button>
       <Link href={`/admin?thread=${investorId}#messages`} scroll={false} className="roster-btn" style={{ textDecoration: "none", display: "inline-block" }}>
         Message
       </Link>

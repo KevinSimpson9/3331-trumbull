@@ -60,10 +60,13 @@ export default function InvestorRoomView({
   return (
     <div className="page-col">
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <div className="welcome-title">Welcome, {firstName(investor.legal_name)}.</div>
-          <div className="privacy-note">
-            Your private room — only you and Kevin can see what&apos;s here.
+        <div className="room-hero">
+          <div className="room-hero-content">
+            <div className="room-hero-eyebrow">3331 TRUMBULL · DETROIT</div>
+            <div className="welcome-title">Welcome, {firstName(investor.legal_name)}.</div>
+            <div className="privacy-note">
+              Your private room — only you and Kevin can see what&apos;s here.
+            </div>
           </div>
         </div>
         <div className="stat-grid">

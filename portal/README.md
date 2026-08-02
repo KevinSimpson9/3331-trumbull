@@ -68,6 +68,17 @@ Signing a document generates an executed PDF (letterhead, full document text, th
 - **Email notifications** beyond the Supabase invite/reset emails (e.g. "new message" pings, emailing signed PDFs to both parties) — add a Resend/Postmark integration in the server actions when wanted.
 - If invite emails need custom branding or higher volume, configure custom SMTP in Supabase → Authentication → Emails.
 
+## Recommended: point Supabase's auth emails at the portal's confirm route
+
+Supabase's default email templates route clicks through Supabase's own redirect machinery (the source of the "localhost" link problem). For bulletproof links, replace the link in two templates under **Supabase → Authentication → Emails**:
+
+- **Invite user** template — set the link's href to:
+  `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/auth/set-password`
+- **Reset password** template — set the link's href to:
+  `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/auth/set-password`
+
+The admin "Copy invite link" button and the rate-limit fallback link already use this route directly.
+
 ## Troubleshooting
 
 - **"Invite failed: email rate limit exceeded" / invites stop arriving** — Supabase's built-in email service only sends a few emails per hour. With `RESEND_API_KEY` set, the portal never touches it — invites and password resets are minted with `generateLink` and sent through Resend (`lib/invites.ts`), so the rate limit disappears. Without Resend, the admin add-investor flow falls back to showing a manual invite link you can text/email yourself, and the public /subscribe flow still records the subscription (with the link available from the roster's "Copy invite link") instead of erroring. The permanent fix is custom SMTP via Resend: verify your domain in Resend (Domains → add → create the DNS records at your registrar), then set `RESEND_API_KEY` and `EMAIL_FROM` (e.g. `3331 Trumbull Portal <portal@trumbullnorth.com>`) in Vercel. Note Resend's default `onboarding@resend.dev` sender only delivers to your own Resend account email — a verified domain is required to email real investors. Optionally also configure custom SMTP in Supabase → **Project Settings → Authentication → SMTP Settings** (host `smtp.resend.com`, port `465`, username `resend`, password = your Resend API key) so the Supabase-mailer fallback path is unlimited too.
