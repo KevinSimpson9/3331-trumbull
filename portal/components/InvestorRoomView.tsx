@@ -84,6 +84,7 @@ export default function InvestorRoomView({
           legalName={investor.legal_name}
           todayLabel={todayLabel()}
           viewingAs={viewingAs}
+          downloadQuery={viewingAs ? `?investor=${investor.id}` : ""}
         />
       </div>
 
