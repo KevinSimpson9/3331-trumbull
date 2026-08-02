@@ -12,4 +12,6 @@ export function createAdminClient() {
   );
 }
 
-export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "kevin@akcapital.fund").toLowerCase();
+export const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "kevin@akcapital.fund")
+  .trim()
+  .toLowerCase();
