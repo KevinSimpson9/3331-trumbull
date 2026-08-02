@@ -40,12 +40,31 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
 
   // Portal invite email with a set-password link.
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  let authUserId: string | null = null;
+  let inviteLink: string | undefined;
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
     data: { legal_name: legalName },
   });
   if (inviteError) {
-    return { error: `Invite failed: ${inviteError.message}` };
+    // Email couldn't be sent (commonly Supabase's hourly email rate limit).
+    // Fall back to minting the invite link directly so the admin can deliver
+    // it themselves — the investor is still created.
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: {
+        redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
+        data: { legal_name: legalName },
+      },
+    });
+    if (linkError || !linkData?.properties?.action_link) {
+      return { error: `Invite failed: ${inviteError.message}` };
+    }
+    authUserId = linkData.user?.id ?? null;
+    inviteLink = linkData.properties.action_link;
+  } else {
+    authUserId = invited.user?.id ?? null;
   }
 
   const { error: insertError } = await admin.from("investors").insert({
@@ -55,7 +74,7 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
     rate,
     term_months: term,
     status: "invited",
-    auth_user_id: invited.user?.id ?? null,
+    auth_user_id: authUserId,
   });
   if (insertError) {
     return {
@@ -80,6 +99,14 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   }
 
   revalidateAdmin();
+  if (inviteLink) {
+    return {
+      ok: true,
+      message:
+        "Investor created — but the invite email couldn't be sent (email rate limit). Send them this link yourself:",
+      inviteLink,
+    };
+  }
   return { ok: true, message: "Investor created — invite sent ✓" };
 }
 
