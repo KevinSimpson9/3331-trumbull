@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminUser } from "@/lib/auth";
 import { docDefs } from "@/lib/docs";
 import { generateSignedPdf, signedPdfPath, SIGNED_DOCS_BUCKET } from "@/lib/pdf";
 import type { Investor, Signature } from "@/lib/types";
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: { docKey: 
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/", request.url));
 
-  const isAdmin = (user.email || "").toLowerCase() === ADMIN_EMAIL;
+  const isAdmin = await isAdminUser(supabase);
   const admin = createAdminClient();
 
   let investor: Investor | null = null;
