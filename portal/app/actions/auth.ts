@@ -9,6 +9,9 @@ export interface FormState {
   error?: string;
   ok?: boolean;
   message?: string;
+  /** Manual invite link, set when the invite email couldn't be sent
+   *  (e.g. Supabase email rate limit) so the admin can deliver it directly. */
+  inviteLink?: string;
 }
 
 export async function signInAction(_prev: FormState, formData: FormData): Promise<FormState> {

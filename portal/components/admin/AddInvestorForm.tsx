@@ -21,12 +21,37 @@ export default function AddInvestorForm({ onClose }: { onClose: () => void }) {
   const lastHandled = useRef<FormState>();
 
   useEffect(() => {
-    if (state !== lastHandled.current && state.ok) {
+    if (state !== lastHandled.current && state.ok && !state.inviteLink) {
       toast(state.message || "Investor created — invite sent ✓");
       onClose();
     }
     lastHandled.current = state;
   }, [state, toast, onClose]);
+
+  if (state.ok && state.inviteLink) {
+    return (
+      <div className="dashed-panel">
+        <div className="dashed-panel-title">Investor created ✓ — send their invite link</div>
+        <div className="form-helper">{state.message}</div>
+        <input
+          className="input input-sm"
+          readOnly
+          value={state.inviteLink}
+          onFocus={(e) => e.target.select()}
+        />
+        <div className="form-helper">
+          Tap the link above to select it, copy, and text or email it to them. It opens their
+          set-password screen; after that they land in their room with the commitment letter ready
+          to sign. (To stop hitting the email limit, configure custom SMTP — see the README.)
+        </div>
+        <div className="form-actions">
+          <button type="button" className="btn-gold btn-gold-sm" onClick={onClose}>
+            Done
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="dashed-panel">

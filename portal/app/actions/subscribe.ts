@@ -46,7 +46,11 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
     data: { legal_name: legalName },
   });
   if (inviteError) {
-    return { error: `Could not send your invite: ${inviteError.message}` };
+    return {
+      error: /rate limit/i.test(inviteError.message)
+        ? "Our invite emails are briefly rate-limited — please try again in about an hour, or email kevin@akcapital.fund and we'll set you up directly."
+        : `Could not send your invite: ${inviteError.message}`,
+    };
   }
 
   const { data: created, error: insertError } = await admin
