@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deliverPasswordReset } from "@/lib/invites";
 import { isAdminUser } from "@/lib/auth";
 
 export interface FormState {
@@ -88,11 +89,8 @@ export async function requestPasswordResetAction(
   const email = String(formData.get("email") || "").trim().toLowerCase();
   if (!email) return { error: "Enter your email address." };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const supabase = createClient();
-  await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
-  });
+  // Resend-first so resets aren't subject to Supabase's mailer rate limit.
+  await deliverPasswordReset(email);
 
   // Always report success — don't reveal which emails exist.
   return { ok: true, message: "If that email is on the roster, a reset link is on its way." };
