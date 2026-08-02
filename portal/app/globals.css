@@ -144,11 +144,16 @@ button {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: radial-gradient(1200px 700px at 50% -10%, #16414f 0%, #0d242e 60%);
+  background:
+    linear-gradient(180deg, rgba(11, 31, 39, 0.72) 0%, rgba(13, 36, 46, 0.82) 60%, rgba(11, 31, 39, 0.9) 100%),
+    url("/images/hero-street-dusk.jpg") center 40% / cover no-repeat,
+    radial-gradient(1200px 700px at 50% -10%, #16414f 0%, #0d242e 60%);
 }
 .login-card {
   width: min(420px, 100%);
-  background: var(--card);
+  background: rgba(17, 46, 57, 0.92);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: clamp(28px, 6vw, 44px);
@@ -303,6 +308,46 @@ button {
 .page-col-admin {
   max-width: 1180px;
   gap: clamp(32px, 5vw, 44px);
+}
+
+/* ----- room hero -------------------------------------------------------- */
+.room-hero {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  min-height: clamp(220px, 32vw, 320px);
+  display: flex;
+  align-items: flex-end;
+  background: url("/images/hero-aerial.jpg") center 32% / cover no-repeat, var(--card);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+.room-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 31, 39, 0.1) 0%,
+    rgba(11, 31, 39, 0.45) 55%,
+    rgba(11, 31, 39, 0.88) 100%
+  );
+}
+.room-hero-content {
+  position: relative;
+  padding: clamp(20px, 4vw, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.room-hero-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  color: var(--gold);
+  font-weight: 600;
+}
+.room-hero .privacy-note {
+  color: #c9d9df;
 }
 
 /* ----- welcome / titles ------------------------------------------------ */
