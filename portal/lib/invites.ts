@@ -58,6 +58,9 @@ export async function deliverPortalInvite(email: string, legalName: string): Pro
       });
       return { authUserId: data.user?.id ?? null, inviteLink: link, delivered };
     }
+    if (error) {
+      console.error(`[invite] generateLink for ${email} failed: ${error.message}`);
+    }
     // generateLink failed (e.g. the auth account already exists) — fall
     // through so Supabase's invite path can report the real error.
   }
@@ -69,6 +72,7 @@ export async function deliverPortalInvite(email: string, legalName: string): Pro
   if (!inviteError) {
     return { authUserId: invited.user?.id ?? null, inviteLink: null, delivered: true };
   }
+  console.error(`[invite] Supabase invite email to ${email} failed: ${inviteError.message}`);
 
   // Supabase's mailer refused (commonly its hourly rate limit). Mint the link
   // anyway so the account still exists and the caller can deliver it.

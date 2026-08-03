@@ -14,7 +14,12 @@ export async function sendEmail(opts: {
   text: string;
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
+  if (!apiKey) {
+    console.warn(
+      `[email] RESEND_API_KEY is not set — skipping send to ${opts.to} (“${opts.subject}”)`
+    );
+    return false;
+  }
 
   const from = process.env.EMAIL_FROM || "3331 Trumbull Portal <onboarding@resend.dev>";
   try {
@@ -26,8 +31,15 @@ export async function sendEmail(opts: {
       },
       body: JSON.stringify({ from, to: [opts.to], subject: opts.subject, text: opts.text }),
     });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(
+        `[email] Resend rejected send to ${opts.to} (“${opts.subject}”): HTTP ${res.status} ${body}`
+      );
+    }
     return res.ok;
-  } catch {
+  } catch (err) {
+    console.error(`[email] Resend request failed for ${opts.to} (“${opts.subject}”):`, err);
     return false;
   }
 }
