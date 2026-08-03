@@ -2,7 +2,7 @@
 
 import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
-import { deliverPortalInvite } from "@/lib/invites";
+import { deliverPortalInvite, siteUrl } from "@/lib/invites";
 import { firstName, fmtMoney } from "@/lib/format";
 import type { FormState } from "./auth";
 
@@ -41,7 +41,7 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
     return { error: "That email already has a portal account — sign in above, or use Forgot password." };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const base = siteUrl();
   const invite = await deliverPortalInvite(email, legalName);
   if (!invite.authUserId) {
     return {
@@ -96,7 +96,7 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
           ? `Their invite email couldn't be sent — send them this set-password link ` +
             `yourself:\n${invite.inviteLink}\n\n`
           : "") +
-        `Their room is live and the LOI is queued for signature.\nAdmin: ${siteUrl}/admin`,
+        `Their room is live and the LOI is queued for signature.\nAdmin: ${base}/admin`,
     }),
     sendEmail({
       to: email,

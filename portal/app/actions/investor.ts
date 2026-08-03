@@ -3,8 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { docDefs } from "@/lib/docs";
+import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
+import { sendEmail } from "@/lib/email";
+import { siteUrl } from "@/lib/invites";
+import { firstName, fmtMoney } from "@/lib/format";
+import { docDefs, DOC_COUNT } from "@/lib/docs";
 import { withEffectiveSchedule } from "@/lib/schedule";
 import { generateSignedPdf, signedPdfPath, SIGNED_DOCS_BUCKET } from "@/lib/pdf";
 import type { DocKey, Investor } from "@/lib/types";
@@ -100,6 +103,44 @@ export async function signDocument(_prev: FormState, formData: FormData): Promis
       });
   } catch (e) {
     console.error("signed-pdf generation failed", e);
+  }
+
+  // When this signature completes the set, email both parties. Best-effort —
+  // the signature is already recorded, so a mail failure never surfaces here.
+  try {
+    const { count } = await admin
+      .from("signatures")
+      .select("*", { count: "exact", head: true })
+      .eq("investor_id", investor.id);
+    if ((count ?? 0) >= DOC_COUNT) {
+      const docTitles = docDefs(investor)
+        .map((d) => `  • ${d.title}`)
+        .join("\n");
+      await Promise.all([
+        sendEmail({
+          to: investor.email,
+          subject: "3331 Trumbull — all documents signed ✓",
+          text:
+            `${firstName(investor.legal_name)},\n\n` +
+            `That's everything — all ${DOC_COUNT} of your documents for the 3331 Trumbull ` +
+            `investment are now signed:\n\n${docTitles}\n\n` +
+            `Executed copies are saved in your portal folder and available to download ` +
+            `anytime: ${siteUrl()}/room\n\n` +
+            `I'll be in touch with next steps on funding. Welcome aboard.\n\n` +
+            `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
+        }),
+        sendEmail({
+          to: ADMIN_EMAIL,
+          subject: `${investor.legal_name} signed all documents — ${fmtMoney(investor.principal)}`,
+          text:
+            `${investor.legal_name} (${investor.email}) has signed all ${DOC_COUNT} documents ` +
+            `for their ${fmtMoney(investor.principal)} position:\n\n${docTitles}\n\n` +
+            `Executed PDFs are in their folder. Their room: ${siteUrl()}/admin\n`,
+        }),
+      ]);
+    }
+  } catch (e) {
+    console.error("all-signed notification failed", e);
   }
 
   revalidatePath("/room");
