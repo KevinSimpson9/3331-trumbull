@@ -1,0 +1,64 @@
+name: Email smoke test
+
+# Manually-triggered end-to-end test of the portal's email delivery: drives
+# the live /subscribe form with a kevin+emailtest@ address so both the invite
+# email and the admin alert land in Kevin's inbox. Runs from a GitHub-hosted
+# runner because it needs open internet access to the deployed portal.
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: "Email to subscribe with (use a +tag of your own address)"
+        required: false
+        default: "kevin+emailtest@akcapital.fund"
+
+jobs:
+  subscribe:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.49.1-jammy
+    steps:
+      - name: Drive the live /subscribe flow
+        env:
+          TEST_EMAIL: ${{ inputs.email }}
+        run: |
+          mkdir -p /tmp/smoke && cd /tmp/smoke
+          npm init -y > /dev/null 2>&1
+          npm install playwright@1.49.1 > /dev/null 2>&1
+          cat > test.mjs <<'EOF'
+          import { chromium } from "playwright";
+
+          const email = process.env.TEST_EMAIL || "kevin+emailtest@akcapital.fund";
+          const browser = await chromium.launch();
+          const page = await browser.newPage();
+          try {
+            await page.goto("https://investorportal.trumbullnorth.com/subscribe", {
+              waitUntil: "networkidle",
+              timeout: 45000,
+            });
+            await page.fill("#legalName", "Email Smoke Test");
+            await page.fill("#email", email);
+            await page.fill("#amount", "1000");
+            await page.click('button[type="submit"]');
+            // Outcome is either the success screen or an inline error.
+            await Promise.race([
+              page.waitForSelector("text=subscribed", { timeout: 30000 }),
+              page.waitForSelector(".error-text", { timeout: 30000 }),
+            ]).catch(() => {});
+            await page.waitForTimeout(3000);
+            const body = await page.locator("body").innerText();
+            console.log("=== PAGE TEXT AFTER SUBMIT ===");
+            console.log(body);
+            if (body.includes("Check your email")) {
+              console.log("RESULT: DELIVERED — invite email went out via Resend.");
+            } else if (body.includes("sign-in link shortly")) {
+              console.log("RESULT: NOT DELIVERED — fallback screen shown; email send failed.");
+              process.exitCode = 1;
+            } else {
+              console.log("RESULT: UNEXPECTED — see page text above.");
+              process.exitCode = 1;
+            }
+          } finally {
+            await browser.close();
+          }
+          EOF
+          node test.mjs
