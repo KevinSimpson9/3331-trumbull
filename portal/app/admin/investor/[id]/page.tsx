@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
 import { DEFAULT_PROJECT_DOCS } from "@/lib/docs";
+import { withEffectiveSchedule } from "@/lib/schedule";
 import type { Investor, Message, ProjectDocument, Signature } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import InvestorRoomView from "@/components/InvestorRoomView";
@@ -18,12 +19,13 @@ export default async function ViewAsInvestorPage({ params }: { params: { id: str
   if (!user) redirect("/");
   if (!(await isAdminUser(supabase))) redirect("/room");
 
-  const { data: investor } = await supabase
+  const { data: investorRow } = await supabase
     .from("investors")
     .select("*")
     .eq("id", params.id)
     .maybeSingle<Investor>();
-  if (!investor) redirect("/admin");
+  if (!investorRow) redirect("/admin");
+  const investor = await withEffectiveSchedule(investorRow);
 
   const [{ data: signatures }, { data: messages }, { data: projectDocs }] = await Promise.all([
     supabase.from("signatures").select("*").eq("investor_id", investor.id),

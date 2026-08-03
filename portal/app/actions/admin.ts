@@ -7,12 +7,30 @@ import { deliverPortalInvite } from "@/lib/invites";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
+import { SIGNED_DOCS_BUCKET } from "@/lib/pdf";
 import type { PaymentSchedule } from "@/lib/types";
 import type { FormState } from "./auth";
 
 function parsePaymentSchedule(formData: FormData): PaymentSchedule {
   const raw = String(formData.get("paymentSchedule") || "") as PaymentSchedule;
   return PAYMENT_SCHEDULE_KEYS.includes(raw) ? raw : "quarterly";
+}
+
+/** Dual-write: the schedule also lives in auth metadata so it persists on
+ *  databases where the payment_schedule column migration was never run. */
+async function saveScheduleMetadata(
+  admin: ReturnType<typeof createAdminClient>,
+  authUserId: string | null,
+  paymentSchedule: PaymentSchedule
+) {
+  if (!authUserId) return;
+  try {
+    await admin.auth.admin.updateUserById(authUserId, {
+      app_metadata: { payment_schedule: paymentSchedule },
+    });
+  } catch {
+    // metadata write is best-effort; the row value (or its default) still applies
+  }
 }
 
 async function requireAdmin() {
@@ -69,8 +87,11 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
     .insert({ ...baseRow, payment_schedule: paymentSchedule });
   if (insertError && /payment_schedule/i.test(insertError.message)) {
     // The payment_schedule migration hasn't been run yet — create the
-    // investor anyway; they get the quarterly default once it lands.
+    // investor anyway; the metadata copy below still records the choice.
     ({ error: insertError } = await admin.from("investors").insert(baseRow));
+  }
+  if (!insertError) {
+    await saveScheduleMetadata(admin, invite.authUserId, paymentSchedule);
   }
   if (insertError) {
     return {
@@ -182,9 +203,36 @@ export async function updateInvestorAction(_prev: FormState, formData: FormData)
   }
   if (error) return { error: `Update failed: ${error.message}` };
 
+  const { data: invRow } = await admin
+    .from("investors")
+    .select("auth_user_id")
+    .eq("id", investorId)
+    .maybeSingle();
+  await saveScheduleMetadata(admin, invRow?.auth_user_id ?? null, paymentSchedule);
+
   revalidateAdmin();
   revalidatePath(`/admin/investor/${investorId}`);
   return { ok: true, message: "Investor updated ✓" };
+}
+
+/** Clears an investor's signatures and executed PDFs so their documents
+ *  return to "Review & sign" — used after document wording changes. */
+export async function resetInvestorDocsAction(investorId: string): Promise<FormState> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const { error } = await admin.from("signatures").delete().eq("investor_id", investorId);
+  if (error) return { error: "Reset failed — try again." };
+
+  // Storage deletes go through the API (direct SQL on storage tables is
+  // blocked by Supabase); missing files are silently skipped.
+  await admin.storage
+    .from(SIGNED_DOCS_BUCKET)
+    .remove(["loi", "note", "guarantee", "accreditation"].map((k) => `${investorId}/${k}.pdf`));
+
+  revalidateAdmin();
+  revalidatePath(`/admin/investor/${investorId}`);
+  return { ok: true, message: "Signed docs cleared — ready to re-sign ✓" };
 }
 
 export async function removeInvestorAction(investorId: string): Promise<FormState> {

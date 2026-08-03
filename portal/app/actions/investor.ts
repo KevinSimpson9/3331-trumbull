@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { docDefs } from "@/lib/docs";
+import { withEffectiveSchedule } from "@/lib/schedule";
 import { generateSignedPdf, signedPdfPath, SIGNED_DOCS_BUCKET } from "@/lib/pdf";
 import type { DocKey, Investor } from "@/lib/types";
 import type { FormState } from "./auth";
@@ -48,8 +49,9 @@ export async function signDocument(_prev: FormState, formData: FormData): Promis
   if (!signerName) return { error: "Type your full legal name to sign." };
   if (!consent) return { error: "Please check the e-signature consent box." };
 
-  const investor = await currentInvestor();
-  if (!investor) return { error: "Not signed in." };
+  const investorRow = await currentInvestor();
+  if (!investorRow) return { error: "Not signed in." };
+  const investor = await withEffectiveSchedule(investorRow);
 
   const validKeys = docDefs(investor).map((d) => d.key);
   if (!validKeys.includes(docKey)) return { error: "Unknown document." };
