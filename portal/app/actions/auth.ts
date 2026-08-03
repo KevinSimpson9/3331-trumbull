@@ -44,7 +44,9 @@ export async function signInAction(_prev: FormState, formData: FormData): Promis
     return { error: "No investor account found for that email. Contact kevin@akcapital.fund." };
   }
 
-  redirect("/room");
+  // Land in the sequential signing flow — the room auto-opens the first
+  // unsigned document and chains through the rest; no-op once all are signed.
+  redirect("/room?sign=loi");
 }
 
 const OTP_TYPES: EmailOtpType[] = ["invite", "magiclink", "recovery", "signup", "email_change", "email"];

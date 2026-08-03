@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { signDocument } from "@/app/actions/investor";
 import type { FormState } from "@/app/actions/auth";
@@ -23,47 +23,56 @@ interface Props {
   /** Query string for the signed-copy download link ("" for the investor,
    *  "?investor=<id>" when the admin is viewing a room). */
   downloadQuery?: string;
-  /** Doc key whose signing modal opens automatically when still unsigned. */
+  /** Doc key whose signing modal opens automatically when still unsigned.
+   *  Falls back to the first unsigned document so the flow resumes wherever
+   *  the investor left off. */
   autoOpenKey?: string;
 }
 
-function AdoptButton() {
+function AdoptButton({ hasNext }: { hasNext: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button type="submit" className="btn-gold" disabled={pending}>
-      {pending ? "Signing…" : "Adopt signature & sign"}
+      {pending ? "Signing…" : hasNext ? "Adopt signature & continue →" : "Adopt signature & sign"}
     </button>
   );
 }
 
 function SignModal({
   doc,
-  legalName,
+  stepLabel,
+  hasNext,
+  initialName,
   todayLabel: today,
   onClose,
+  onSigned,
 }: {
   doc: SignDocVM;
-  legalName: string;
+  /** e.g. "DOCUMENT 2 OF 3" */
+  stepLabel: string;
+  hasNext: boolean;
+  initialName: string;
   todayLabel: string;
   onClose: () => void;
+  onSigned: (signerName: string) => void;
 }) {
-  const toast = useToast();
-  const [sigName, setSigName] = useState(legalName);
+  const [sigName, setSigName] = useState(initialName);
   const [state, formAction] = useFormState<FormState, FormData>(signDocument, {});
+  const doneRef = useRef(false);
 
   useEffect(() => {
-    if (state.ok) {
-      toast(state.message || "Document signed ✓ Saved to your folder");
-      onClose();
+    if (state.ok && !doneRef.current) {
+      doneRef.current = true;
+      onSigned(sigName);
     }
-  }, [state, toast, onClose]);
+  }, [state, onSigned, sigName]);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <div className="modal-eyebrow">E-SIGNATURE</div>
+            <div className="modal-eyebrow">E-SIGNATURE · {stepLabel}</div>
             <div className="modal-title">{doc.title}</div>
           </div>
           <button type="button" className="modal-close" onClick={onClose}>
@@ -108,7 +117,7 @@ function SignModal({
             <button type="button" className="btn-ghost" onClick={onClose}>
               Cancel
             </button>
-            <AdoptButton />
+            <AdoptButton hasNext={hasNext} />
           </div>
         </form>
       </div>
@@ -124,12 +133,38 @@ export default function SignDocsSection({
   downloadQuery = "",
   autoOpenKey,
 }: Props) {
-  const [openKey, setOpenKey] = useState<string | null>(() =>
-    !viewingAs && autoOpenKey && docs.some((d) => d.key === autoOpenKey && !d.signedAt)
-      ? autoOpenKey
-      : null
-  );
+  const toast = useToast();
+  // Docs signed during this visit — bridges the gap until the server refresh
+  // delivers updated `signedAt` props, so the chain never reopens a signed doc.
+  const [justSigned, setJustSigned] = useState<Set<string>>(() => new Set());
+  const [signerName, setSignerName] = useState(legalName);
+  const isSigned = (d: SignDocVM) => Boolean(d.signedAt) || justSigned.has(d.key);
+
+  const [openKey, setOpenKey] = useState<string | null>(() => {
+    if (viewingAs || !autoOpenKey) return null;
+    const requested = docs.find((d) => d.key === autoOpenKey && !d.signedAt);
+    if (requested) return requested.key;
+    const firstUnsigned = docs.find((d) => !d.signedAt);
+    return firstUnsigned?.key ?? null;
+  });
   const openDoc = docs.find((d) => d.key === openKey) ?? null;
+  const openIdx = openDoc ? docs.findIndex((d) => d.key === openDoc.key) : -1;
+  const nextUnsignedAfter = (key: string, signed: Set<string>) =>
+    docs.find((d) => d.key !== key && !d.signedAt && !signed.has(d.key)) ?? null;
+
+  const handleSigned = (key: string, name: string) => {
+    setSignerName(name);
+    const signed = new Set(justSigned).add(key);
+    setJustSigned(signed);
+    const next = nextUnsignedAfter(key, signed);
+    if (next) {
+      toast("Signed ✓ — one more step, next document is ready");
+      setOpenKey(next.key);
+    } else {
+      toast(`All ${docs.length} documents signed ✓ Executed copies are in your folder`);
+      setOpenKey(null);
+    }
+  };
 
   return (
     <>
@@ -150,6 +185,8 @@ export default function SignDocsSection({
                   Download copy →
                 </a>
               </span>
+            ) : justSigned.has(d.key) ? (
+              <span className="signed-chip">✓ Signed just now</span>
             ) : viewingAs ? (
               <span className="awaiting-chip">Awaiting signature</span>
             ) : (
@@ -160,12 +197,16 @@ export default function SignDocsSection({
           </div>
         ))}
       </div>
-      {openDoc && !viewingAs && (
+      {openDoc && !viewingAs && !isSigned(openDoc) && (
         <SignModal
+          key={openDoc.key}
           doc={openDoc}
-          legalName={legalName}
+          stepLabel={`DOCUMENT ${openIdx + 1} OF ${docs.length}`}
+          hasNext={Boolean(nextUnsignedAfter(openDoc.key, justSigned))}
+          initialName={signerName}
           todayLabel={today}
           onClose={() => setOpenKey(null)}
+          onSigned={(name) => handleSigned(openDoc.key, name)}
         />
       )}
     </>
