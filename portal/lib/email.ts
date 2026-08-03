@@ -1,13 +1,27 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
+/** The Resend key with the paste hazards removed — surrounding whitespace,
+ *  newlines, and quotes routinely sneak in via copy/paste and make Resend
+ *  reject the credential as invalid. */
+function resendApiKey(): string {
+  return (process.env.RESEND_API_KEY || "").trim().replace(/^["']|["']$/g, "");
+}
+
 /** True when Resend is configured and sendEmail() can actually deliver. */
 export function emailConfigured(): boolean {
-  return Boolean(process.env.RESEND_API_KEY);
+  return Boolean(resendApiKey());
+}
+
+/** First characters of the configured key, for comparing against the token
+ *  column in Resend's dashboard. Never exposes the full secret. */
+export function apiKeyFingerprint(): string | null {
+  const key = resendApiKey();
+  return key ? `${key.slice(0, 10)}…` : null;
 }
 
 /** The From address used for portal emails. */
 export function emailFrom(): string {
-  return process.env.EMAIL_FROM || "3331 Trumbull Portal <onboarding@resend.dev>";
+  return (process.env.EMAIL_FROM || "").trim() || "3331 Trumbull Portal <onboarding@resend.dev>";
 }
 
 /** True while still on Resend's sandbox sender, which only delivers to the
@@ -97,7 +111,7 @@ async function attemptSend(opts: {
   subject: string;
   text: string;
 }): Promise<SendEmailResult> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = resendApiKey();
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY is not configured in Vercel" };
 
   try {

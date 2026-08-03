@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { deliverPortalInvite, siteUrl } from "@/lib/invites";
-import { sendEmail, emailConfigured, emailFrom, usingSandboxSender } from "@/lib/email";
+import { sendEmail, emailConfigured, emailFrom, usingSandboxSender, apiKeyFingerprint } from "@/lib/email";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
@@ -323,7 +323,12 @@ export async function sendTestEmailAction(_prev: FormState, _formData: FormData)
       `Sender: ${emailFrom()}\n`,
   });
   if (!result.ok) {
-    return { error: `Resend refused the send: ${result.error}` };
+    const fingerprint = apiKeyFingerprint();
+    const hint =
+      fingerprint && /api key/i.test(result.error ?? "")
+        ? ` — this deployment's key starts "${fingerprint}". Compare it with the Token column at resend.com/api-keys; if it doesn't match, the value in Vercel is a different/old key: re-paste it and redeploy.`
+        : "";
+    return { error: `Resend refused the send: ${result.error}${hint}` };
   }
   if (usingSandboxSender()) {
     return {
