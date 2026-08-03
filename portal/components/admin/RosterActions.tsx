@@ -54,10 +54,14 @@ export default function RosterActions({ investorId, investorName, onEdit }: Prop
         className="roster-btn roster-remove"
         disabled={pending}
         onClick={() => {
-          if (confirm(`Remove ${investorName} from the roster?`)) {
+          if (
+            confirm(
+              `Remove ${investorName} from the roster? This also deletes their login and any signed documents — it can't be undone.`
+            )
+          ) {
             startTransition(async () => {
               const res = await removeInvestorAction(investorId);
-              if (res.error) toast(res.error);
+              toast(res.error || res.message || "Investor removed ✓");
             });
           }
         }}

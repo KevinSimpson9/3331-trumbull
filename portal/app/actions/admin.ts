@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { deliverPortalInvite } from "@/lib/invites";
+import { SIGNED_DOCS_BUCKET } from "@/lib/pdf";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import type { FormState } from "./auth";
@@ -165,6 +166,9 @@ export async function updateInvestorAction(_prev: FormState, formData: FormData)
   return { ok: true, message: "Investor updated ✓" };
 }
 
+/** Remove an investor entirely — works whether or not they've signed.
+ *  Deletes their executed PDFs, signatures, messages, roster row, and login.
+ *  Signed testers come off cleanly; the executed PDFs are gone for good. */
 export async function removeInvestorAction(investorId: string): Promise<FormState> {
   await requireAdmin();
   const admin = createAdminClient();
@@ -174,14 +178,40 @@ export async function removeInvestorAction(investorId: string): Promise<FormStat
     .select("auth_user_id")
     .eq("id", investorId)
     .maybeSingle();
+  if (!investor) return { error: "Investor not found — refresh the page." };
 
-  await admin.from("investors").delete().eq("id", investorId);
-  if (investor?.auth_user_id) {
-    await admin.auth.admin.deleteUser(investor.auth_user_id);
+  // Executed PDFs live under the investor's folder in the private bucket;
+  // clear them so nothing lingers after the roster row is gone.
+  const { data: files } = await admin.storage.from(SIGNED_DOCS_BUCKET).list(investorId);
+  if (files?.length) {
+    await admin.storage
+      .from(SIGNED_DOCS_BUCKET)
+      .remove(files.map((f) => `${investorId}/${f.name}`));
+  }
+
+  // Delete dependents explicitly rather than relying on FK cascades, so
+  // removal succeeds even on a database where those cascades are missing.
+  await admin.from("signatures").delete().eq("investor_id", investorId);
+  await admin.from("messages").delete().eq("investor_id", investorId);
+
+  const { error: deleteError } = await admin.from("investors").delete().eq("id", investorId);
+  if (deleteError) {
+    return { error: `Couldn't remove investor: ${deleteError.message}` };
   }
 
   revalidateAdmin();
-  return { ok: true, message: "Investor removed" };
+
+  if (investor.auth_user_id) {
+    const { error: authError } = await admin.auth.admin.deleteUser(investor.auth_user_id);
+    if (authError) {
+      return {
+        ok: true,
+        message: `Investor removed — but their login couldn't be deleted (${authError.message}).`,
+      };
+    }
+  }
+
+  return { ok: true, message: "Investor removed ✓" };
 }
 
 export async function adminSendMessage(investorId: string, formData: FormData): Promise<FormState> {
