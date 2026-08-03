@@ -15,6 +15,7 @@ export interface RosterRowVM {
   active: boolean;
   statusLabel: string;
   docsLabel: string;
+  toCountersign: number;
   principalRaw: number;
   rateRaw: number;
   termRaw: number;
@@ -52,6 +53,11 @@ export default function AllInvestorsCard({ rows }: { rows: RosterRowVM[] }) {
                   {r.statusLabel}
                 </span>
                 <span className="roster-docs-label">{r.docsLabel}</span>
+                {r.toCountersign > 0 && (
+                  <a className="countersign-link" href={`/admin/investor/${r.id}?countersign=1`}>
+                    Countersign {r.toCountersign} →
+                  </a>
+                )}
               </div>
               <RosterActions
                 investorId={r.id}

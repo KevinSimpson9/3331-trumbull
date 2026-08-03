@@ -30,6 +30,9 @@ interface Props {
   downloadQuery?: string;
   /** Doc key whose signing modal opens automatically when still unsigned. */
   autoOpenKey?: string;
+  /** Admin view: start the guided countersign flow on load when documents
+   *  are awaiting countersignature (e.g. arriving via ?countersign=1). */
+  autoCountersign?: boolean;
 }
 
 const COUNTERSIGNER_DEFAULT = "Kevin Simpson";
@@ -166,14 +169,18 @@ export default function SignDocsSection({
   investorId,
   downloadQuery = "",
   autoOpenKey,
+  autoCountersign,
 }: Props) {
   const toast = useToast();
   // Keys signed/countersigned this session, so the UI updates before the
   // server revalidation lands.
   const [localSigned, setLocalSigned] = useState<ReadonlySet<string>>(new Set());
   const [localCountersigned, setLocalCountersigned] = useState<ReadonlySet<string>>(new Set());
-  const initialOpen =
-    !viewingAs && autoOpenKey && docs.some((d) => d.key === autoOpenKey && !d.signedAt)
+  const initialOpen = viewingAs
+    ? autoCountersign
+      ? (docs.find((d) => d.signedAt && !d.countersignedAt)?.key ?? null)
+      : null
+    : autoOpenKey && docs.some((d) => d.key === autoOpenKey && !d.signedAt)
       ? autoOpenKey
       : null;
   const [openKey, setOpenKey] = useState<string | null>(initialOpen);

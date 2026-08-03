@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
 import { DOC_COUNT } from "@/lib/docs";
-import { fmtDate, fmtMoney, initials } from "@/lib/format";
+import { firstName, fmtDate, fmtMoney, initials } from "@/lib/format";
 import type { Investor, Message, Signature } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import AllInvestorsCard, { type RosterRowVM } from "@/components/admin/AllInvestorsCard";
@@ -60,9 +60,8 @@ export default async function AdminPage({
     terms: `${i.rate}% · ${i.term_months} mo · Interest`,
     active: i.status === "active",
     statusLabel: i.status === "active" ? "● Active" : "Invited",
-    docsLabel:
-      `${signedCount(i.id)} of ${DOC_COUNT} docs signed` +
-      (toCountersign(i.id) ? ` · ${toCountersign(i.id)} to countersign` : ""),
+    docsLabel: `${signedCount(i.id)} of ${DOC_COUNT} docs signed`,
+    toCountersign: toCountersign(i.id),
     principalRaw: Number(i.principal),
     rateRaw: Number(i.rate),
     termRaw: i.term_months,
@@ -111,6 +110,36 @@ export default async function AdminPage({
             </div>
           ))}
         </div>
+        {(() => {
+          const pending = investors
+            .map((i) => ({ id: i.id, name: i.legal_name, count: toCountersign(i.id) }))
+            .filter((p) => p.count > 0);
+          const total = pending.reduce((a, p) => a + p.count, 0);
+          if (!pending.length) return null;
+          return (
+            <div className="sign-cta">
+              <div className="sign-cta-main">
+                <div className="sign-cta-title">Documents awaiting your countersignature</div>
+                <div className="sign-cta-desc">
+                  {total} signed {total === 1 ? "document needs" : "documents need"} your
+                  countersignature to be fully executed.
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {pending.map((p) => (
+                  <a
+                    key={p.id}
+                    className="btn-gold"
+                    style={{ textDecoration: "none" }}
+                    href={`/admin/investor/${p.id}?countersign=1`}
+                  >
+                    Countersign {firstName(p.name)} ({p.count}) →
+                  </a>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         <AllInvestorsCard rows={rows} />
         <MessagesCard threads={threads} openThreadId={openThreadId} />
       </div>

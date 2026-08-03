@@ -14,6 +14,8 @@ interface Props {
   viewingAs?: boolean;
   /** Doc key to auto-open for signature on load (e.g. "loi" after set-password). */
   autoOpenKey?: string;
+  /** Admin view: start the guided countersign flow on load. */
+  autoCountersign?: boolean;
 }
 
 function SectionHead({ title, ordinal }: { title: string; ordinal: string }) {
@@ -33,6 +35,7 @@ export default function InvestorRoomView({
   sendAction,
   viewingAs,
   autoOpenKey,
+  autoCountersign,
 }: Props) {
   const signedByKey = new Map(signatures.map((s) => [s.doc_key, s]));
   const docs = docDefs(investor).map((d) => {
@@ -98,6 +101,7 @@ export default function InvestorRoomView({
           investorId={investor.id}
           downloadQuery={viewingAs ? `?investor=${investor.id}` : ""}
           autoOpenKey={autoOpenKey}
+          autoCountersign={autoCountersign}
         />
       </div>
 

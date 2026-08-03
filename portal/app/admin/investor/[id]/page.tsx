@@ -10,7 +10,13 @@ import { adminSendMessage } from "@/app/actions/admin";
 export const dynamic = "force-dynamic";
 
 /** Admin impersonation: read-mostly view of one investor's room, clearly bannered. */
-export default async function ViewAsInvestorPage({ params }: { params: { id: string } }) {
+export default async function ViewAsInvestorPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { countersign?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
@@ -48,6 +54,7 @@ export default async function ViewAsInvestorPage({ params }: { params: { id: str
         projectDocs={docs}
         sendAction={adminSendMessage.bind(null, investor.id)}
         viewingAs
+        autoCountersign={Boolean(searchParams.countersign)}
       />
     </div>
   );
