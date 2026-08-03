@@ -11,6 +11,12 @@ on:
         description: "Email to subscribe with (use a +tag of your own address)"
         required: false
         default: "kevin+emailtest@akcapital.fund"
+  # Also runs when this file itself changes on a branch push, so the test is
+  # runnable from a feature branch (manual dispatch requires the workflow to
+  # exist on the default branch first).
+  push:
+    paths:
+      - ".github/workflows/email-smoke-test.yml"
 
 jobs:
   subscribe:
