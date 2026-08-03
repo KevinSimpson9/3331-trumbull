@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { deliverPortalInvite, siteUrl } from "@/lib/invites";
+import { sendEmail, emailConfigured, emailFrom, usingSandboxSender } from "@/lib/email";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
@@ -116,12 +117,15 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   }
 
   revalidateAdmin();
-  if (!invite.delivered && invite.inviteLink) {
+  // The link is always surfaced — the portal never depends on email delivery
+  // for onboarding. When the email did go out, the link is a backup channel.
+  if (invite.inviteLink) {
     return {
       ok: true,
-      message:
-        `Investor created — but the invite email couldn't be sent` +
-        `${invite.deliveryError ? ` (${invite.deliveryError})` : ""}. Send them this link yourself:`,
+      message: invite.delivered
+        ? "Investor created — invite emailed ✓ You can also text or email them this same link yourself:"
+        : `Investor created — but the invite email couldn't be sent` +
+          `${invite.deliveryError ? ` (${invite.deliveryError})` : ""}. Send them this link yourself:`,
       inviteLink: invite.inviteLink,
     };
   }
@@ -146,8 +150,9 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
 
   // Links target our own /auth/confirm with the token hash — no dependence on
   // Supabase's redirect allow-list, so they always land inside the portal.
-  // 'invite' only works before the user accepts; fall back to a magic link
-  // for anyone who already has an account.
+  // 'invite' only works before the user accepts; fall back to a recovery
+  // (set-password) link for anyone who already has an account, which also
+  // covers "I forgot my password" without needing email delivery at all.
   const { data: inviteData } = await admin.auth.admin.generateLink({
     type: "invite",
     email: investor.email,
@@ -160,16 +165,16 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
     };
   }
 
-  const { data: magicData, error } = await admin.auth.admin.generateLink({
-    type: "magiclink",
+  const { data: recoveryData, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
     email: investor.email,
   });
-  if (error || !magicData?.properties?.hashed_token) {
+  if (error || !recoveryData?.properties?.hashed_token) {
     return { error: "Couldn't create an invite link — try again." };
   }
   return {
     ok: true,
-    inviteLink: `${base}/auth/confirm?token_hash=${magicData.properties.hashed_token}&type=magiclink&next=${encodeURIComponent("/room?sign=loi")}`,
+    inviteLink: `${base}/auth/confirm?token_hash=${recoveryData.properties.hashed_token}&type=recovery&next=/auth/set-password`,
   };
 }
 
@@ -290,6 +295,50 @@ export async function broadcastAction(_prev: FormState, formData: FormData): Pro
 
   revalidateAdmin();
   return { ok: true, message: `Sent to ${rows.length} investors ✓` };
+}
+
+/** One-click diagnosis for the notification-email pipeline: sends a real
+ *  email to the admin through the exact same code path the welcome and
+ *  all-docs-signed emails use, and reports Resend's actual verdict. */
+export async function sendTestEmailAction(_prev: FormState, _formData: FormData): Promise<FormState> {
+  await requireAdmin();
+
+  if (!emailConfigured()) {
+    return {
+      error:
+        "RESEND_API_KEY is not set in Vercel, so no notification emails can be sent " +
+        "(welcome, all-documents-signed, subscription alerts). Create a free API key at " +
+        "resend.com, add it as RESEND_API_KEY in Vercel → Settings → Environment Variables, " +
+        "and redeploy.",
+    };
+  }
+
+  const result = await sendEmail({
+    to: ADMIN_EMAIL,
+    subject: "3331 Trumbull portal — test email ✓",
+    text:
+      `This is a test email from the 3331 Trumbull investor portal.\n\n` +
+      `Delivery through Resend works. Notification emails (welcome, all-documents-signed, ` +
+      `subscription alerts) use this exact same path.\n\n` +
+      `Sender: ${emailFrom()}\n`,
+  });
+  if (!result.ok) {
+    return { error: `Resend refused the send: ${result.error}` };
+  }
+  if (usingSandboxSender()) {
+    return {
+      ok: true,
+      message:
+        `Test email sent to ${ADMIN_EMAIL} — but you're still on Resend's sandbox sender ` +
+        `(onboarding@resend.dev), which only delivers to your own Resend account email. ` +
+        `Investors will receive nothing until you verify a domain in Resend and set ` +
+        `EMAIL_FROM in Vercel.`,
+    };
+  }
+  return {
+    ok: true,
+    message: `Test email sent to ${ADMIN_EMAIL} from ${emailFrom()} — check your inbox (and spam folder).`,
+  };
 }
 
 export async function markThreadRead(investorId: string): Promise<void> {

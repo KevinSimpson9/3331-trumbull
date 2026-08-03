@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
+import { emailConfigured, emailFrom, usingSandboxSender, getEmailLog } from "@/lib/email";
 import { DOC_COUNT, PAYMENT_SCHEDULES } from "@/lib/docs";
 import { effectiveSchedule } from "@/lib/schedule";
 import { SIGNED_DOCS_BUCKET } from "@/lib/pdf";
@@ -10,6 +11,7 @@ import type { Investor, Message, Signature } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import AllInvestorsCard, { type RosterRowVM } from "@/components/admin/AllInvestorsCard";
 import MessagesCard, { type ThreadVM } from "@/components/admin/MessagesCard";
+import EmailHealthCard from "@/components/admin/EmailHealthCard";
 import type { BubbleVM } from "@/components/MessageThread";
 
 export const dynamic = "force-dynamic";
@@ -47,9 +49,10 @@ export default async function AdminPage({
     // cleanup is best-effort; the rows are also invisible to the app either way
   }
 
-  const [{ data: signaturesData }, { data: messagesData }] = await Promise.all([
+  const [{ data: signaturesData }, { data: messagesData }, emailLog] = await Promise.all([
     supabase.from("signatures").select("*"),
     supabase.from("messages").select("*").order("sent_at", { ascending: true }),
+    getEmailLog(),
   ]);
 
   const signatures = (signaturesData as Signature[]) ?? [];
@@ -137,6 +140,15 @@ export default async function AdminPage({
         </div>
         <AllInvestorsCard rows={rows} />
         <MessagesCard threads={threads} openThreadId={openThreadId} />
+        <EmailHealthCard
+          health={{
+            configured: emailConfigured(),
+            from: emailFrom(),
+            sandbox: emailConfigured() && usingSandboxSender(),
+            adminEmail: ADMIN_EMAIL,
+          }}
+          log={emailLog}
+        />
       </div>
     </div>
   );
