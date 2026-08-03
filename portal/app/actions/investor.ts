@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { docDefs } from "@/lib/docs";
 import { generateSignedPdf, signedPdfPath, SIGNED_DOCS_BUCKET } from "@/lib/pdf";
-import type { AccreditationStatus, DocKey, Investor } from "@/lib/types";
+import type { DocKey, Investor } from "@/lib/types";
 import type { FormState } from "./auth";
 
 async function currentInvestor(): Promise<Investor | null> {
@@ -44,16 +44,9 @@ export async function signDocument(_prev: FormState, formData: FormData): Promis
   const docKey = String(formData.get("docKey") || "") as DocKey;
   const signerName = String(formData.get("signerName") || "").trim();
   const consent = formData.get("consent") === "on";
-  const accreditationRaw = String(formData.get("accreditationStatus") || "");
-  const accreditation: AccreditationStatus | null =
-    accreditationRaw === "accredited" || accreditationRaw === "non_accredited"
-      ? accreditationRaw
-      : null;
 
   if (!signerName) return { error: "Type your full legal name to sign." };
   if (!consent) return { error: "Please check the e-signature consent box." };
-  if (docKey === "accreditation" && !accreditation)
-    return { error: "Select accredited or non-accredited — both are acceptable." };
 
   const investor = await currentInvestor();
   if (!investor) return { error: "Not signed in." };
@@ -69,7 +62,6 @@ export async function signDocument(_prev: FormState, formData: FormData): Promis
     signer_name: signerName,
     user_agent: hdrs.get("user-agent"),
     ip: hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
-    accreditation_status: docKey === "accreditation" ? accreditation : null,
   });
   if (error) {
     return error.code === "23505"
@@ -86,9 +78,7 @@ export async function signDocument(_prev: FormState, formData: FormData): Promis
   // Failures here never block the signature itself — the signature row is the
   // legal record, and the download route regenerates missing PDFs on demand.
   try {
-    const doc = docDefs(investor, {
-      accreditation: docKey === "accreditation" ? accreditation : null,
-    }).find((d) => d.key === docKey)!;
+    const doc = docDefs(investor).find((d) => d.key === docKey)!;
     const pdfBytes = await generateSignedPdf({
       investor,
       doc,

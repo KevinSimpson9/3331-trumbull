@@ -76,25 +76,6 @@ function SignModal({
             <div className="paper-title">{doc.title}</div>
             <div className="paper-body">{doc.body}</div>
           </div>
-          {doc.key === "accreditation" && (
-            <div className="field">
-              <label className="label">SELECT YOUR INVESTOR STATUS — BOTH ARE ACCEPTABLE</label>
-              <label className="consent-row">
-                <input type="radio" name="accreditationStatus" value="accredited" />
-                <span>
-                  Accredited investor — I meet at least one of the SEC Rule 501 income,
-                  net-worth, or professional-certification standards.
-                </span>
-              </label>
-              <label className="consent-row">
-                <input type="radio" name="accreditationStatus" value="non_accredited" />
-                <span>
-                  Non-accredited investor — I do not currently meet an SEC Rule 501 standard,
-                  and I can evaluate the merits and risks of this investment.
-                </span>
-              </label>
-            </div>
-          )}
           <div className="field">
             <label className="label">TYPE YOUR FULL LEGAL NAME TO SIGN</label>
             <input

@@ -1,6 +1,5 @@
 export type InvestorStatus = "invited" | "active";
-export type DocKey = "loi" | "note" | "guarantee" | "accreditation";
-export type AccreditationStatus = "accredited" | "non_accredited";
+export type DocKey = "loi" | "note" | "guarantee";
 export type PaymentSchedule = "monthly" | "quarterly" | "annual" | "maturity";
 export type Sender = "admin" | "investor";
 
@@ -23,7 +22,6 @@ export interface Signature {
   doc_key: DocKey;
   signer_name: string;
   signed_at: string;
-  accreditation_status?: AccreditationStatus | null;
 }
 
 export interface Message {

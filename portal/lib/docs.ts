@@ -1,5 +1,5 @@
 import { fmtMoney } from "./format";
-import type { AccreditationStatus, DocKey, Investor, PaymentSchedule } from "./types";
+import type { DocKey, Investor, PaymentSchedule } from "./types";
 
 /** Payout options selectable per investor in the admin forms. `label` is the
  *  dropdown text, `short` the roster chip, `docText` the wording that flows
@@ -37,19 +37,14 @@ export interface SignableDoc {
   body: string;
 }
 
-/** The per-investor signable documents, terms interpolated per the design.
- *  `opts.accreditation` fills in the investor-status selection on the
- *  accreditation form once the investor has chosen (both are acceptable). */
+/** The per-investor signable documents, terms interpolated per the design. */
 export function docDefs(
   inv: Pick<Investor, "legal_name" | "principal" | "rate" | "term_months"> & {
     email?: string;
     payment_schedule?: PaymentSchedule | null;
-  },
-  opts?: { accreditation?: AccreditationStatus | null }
+  }
 ): SignableDoc[] {
   const amt = fmtMoney(inv.principal);
-  const accreditation = opts?.accreditation ?? null;
-  const mark = (k: AccreditationStatus) => (accreditation === k ? "[X]" : "[ ]");
   // Rows created before the payment_schedule column existed fall back to quarterly.
   const sched = PAYMENT_SCHEDULES[inv.payment_schedule ?? "quarterly"] ?? PAYMENT_SCHEDULES.quarterly;
   return [
@@ -70,7 +65,7 @@ export function docDefs(
         `Sponsor: AK Capital Investments LLC × Bondy Construction & Design\n` +
         `Instrument: Secured promissory note (the "Note")\n` +
         `Investment Amount: ${amt}\n` +
-        `Total Offering: Up to $700,000 across a limited group of accredited investors\n` +
+        `Total Offering: Up to $700,000 across a limited group of investors\n` +
         `Interest Rate: ${inv.rate}% per annum, fixed\n` +
         `Payments: ${sched.docText}\n` +
         `Term: 18–24 months from funding\n` +
@@ -84,7 +79,7 @@ export function docDefs(
         `documentation, including the Note, mortgage, guarantee, and related agreements (the "Definitive Documents"), ` +
         `in form and substance satisfactory to each party.\n\n` +
         `2. No Offer of Securities. This letter does not constitute an offer to sell or a solicitation of an offer to buy any ` +
-        `security. Any offering will be made only to accredited investors through the Definitive Documents and accompanying offering materials.\n\n` +
+        `security. Any offering will be made only through the Definitive Documents and accompanying offering materials.\n\n` +
         `3. Due Diligence. The Investor will have the opportunity to review the offering package, including the note terms, ` +
         `comp book, construction document set, and for-sale proforma, and to consult independent legal, tax, and financial ` +
         `advisors before executing any Definitive Documents.\n\n` +
@@ -120,23 +115,10 @@ export function docDefs(
         `Lukas Bondy of Bondy Construction & Design personally and unconditionally guarantees repayment of the promissory note issued by 3331 Trumbull LLC and held by ${inv.legal_name}.\n\n` +
         `By signing, you acknowledge receipt of the guarantee instrument and that it remains in force for the life of the note.`,
     },
-    {
-      key: "accreditation",
-      badge: "SIGN",
-      title: "Accredited Investor Verification",
-      desc: "Self-certification of investor status (Reg D 506(b)) · accredited or non-accredited",
-      body:
-        `INVESTOR STATUS SELF-CERTIFICATION\n\n` +
-        `I, ${inv.legal_name}, certify my investor status in connection with the offering of secured promissory notes by 3331 Trumbull LLC. Both accredited and non-accredited investors may participate in this offering under SEC Rule 506(b) of Regulation D.\n\n` +
-        `${mark("accredited")} ACCREDITED INVESTOR — I qualify as an accredited investor under SEC Rule 501 of Regulation D by meeting at least one of the income, net-worth, or professional-certification standards.\n\n` +
-        `${mark("non_accredited")} NON-ACCREDITED INVESTOR — I do not currently qualify as an accredited investor under SEC Rule 501 of Regulation D, and I have, alone or together with my advisors, sufficient knowledge and experience in financial and business matters to evaluate the merits and risks of this investment.\n\n` +
-        (accreditation ? "" : `Select your status below before signing — either selection is acceptable.\n\n`) +
-        `I confirm the information I have provided is accurate and complete.`,
-    },
   ];
 }
 
-export const DOC_COUNT = 4;
+export const DOC_COUNT = 3;
 
 /** Fallback shared-library items shown until rows exist in project_documents. */
 export const DEFAULT_PROJECT_DOCS = [

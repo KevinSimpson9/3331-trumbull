@@ -83,8 +83,7 @@ export default function SubscribeForm() {
       <SubmitButton />
       <div style={{ fontSize: 12, color: "var(--faint)", lineHeight: 1.55 }}>
         Subscribing creates your private portal room and emails you a sign-in link. Your
-        indicative commitment is non-binding until definitive documents are executed. For
-        accredited investors.
+        indicative commitment is non-binding until definitive documents are executed.
       </div>
     </form>
   );

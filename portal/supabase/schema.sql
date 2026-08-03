@@ -35,13 +35,11 @@ create table if not exists public.investors (
 create table if not exists public.signatures (
   id           uuid primary key default gen_random_uuid(),
   investor_id  uuid not null references public.investors (id) on delete cascade,
-  doc_key      text not null check (doc_key in ('loi', 'note', 'guarantee', 'accreditation')),
+  doc_key      text not null check (doc_key in ('loi', 'note', 'guarantee')),
   signer_name  text not null,
   signed_at    timestamptz not null default now(),
   user_agent   text,
   ip           text,
-  -- accredited / non-accredited selection on the accreditation form (506(b): both acceptable)
-  accreditation_status text check (accreditation_status in ('accredited', 'non_accredited')),
   unique (investor_id, doc_key)
 );
 
