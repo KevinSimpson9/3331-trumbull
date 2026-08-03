@@ -104,7 +104,7 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
   ]);
 
   // Email notifications (no-ops until RESEND_API_KEY is configured).
-  await Promise.all([
+  const [, subscriberEmail] = await Promise.all([
     sendEmail({
       to: ADMIN_EMAIL,
       subject: `New portal subscription — ${legalName} (${fmtMoney(amount)})`,
@@ -128,6 +128,22 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
         `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
     }),
   ]);
+
+  // If the Resend email carrying their set-password link didn't go out,
+  // fall back to Supabase's invite email so they still get a way in
+  // (re-inviting the just-created unconfirmed user re-sends the invite).
+  if (inviteLink && !subscriberEmail.ok) {
+    const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
+      data: { legal_name: legalName },
+    });
+    if (inviteError) {
+      return {
+        error:
+          "Your account was created but the invite email couldn't be sent — email kevin@akcapital.fund and we'll get you set up.",
+      };
+    }
+  }
 
   return { ok: true, message: "Check your email — your invite is on its way." };
 }

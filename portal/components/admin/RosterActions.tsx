@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
-import { getInviteLinkAction, removeInvestorAction } from "@/app/actions/admin";
+import { emailInviteAction, getInviteLinkAction, removeInvestorAction } from "@/app/actions/admin";
 import { useToast } from "@/components/Toast";
 
 interface Props {
@@ -26,6 +26,19 @@ export default function RosterActions({ investorId, investorName, onEdit }: Prop
       <Link href={`/admin/investor/${investorId}`} className="roster-btn" style={{ textDecoration: "none", display: "inline-block" }}>
         View their portal →
       </Link>
+      <button
+        type="button"
+        className="roster-btn"
+        disabled={pending}
+        onClick={() =>
+          startTransition(async () => {
+            const res = await emailInviteAction(investorId);
+            toast(res.ok ? res.message || "Invite email sent ✓" : res.error || "Email failed");
+          })
+        }
+      >
+        Email invite
+      </button>
       <button
         type="button"
         className="roster-btn"

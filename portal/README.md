@@ -58,6 +58,15 @@ The sign-in screen links to **/subscribe**: an interested investor enters their 
 - Signing a document records the typed legal name, timestamp, user agent, and IP in the `signatures` table and flips the investor to Active.
 - The gold dot on a thread means the last message is from the investor and unread; opening the thread clears it.
 
+## If invite emails aren't arriving
+
+Work down this list — it covers every delivery path:
+
+1. **Set `RESEND_API_KEY` in Vercel** (Project → Settings → Environment Variables, then redeploy). With it, the portal sends every invite itself — no Supabase email limits.
+2. **`EMAIL_FROM` must use a domain verified in Resend** (Resend → Domains). The default `onboarding@resend.dev` sender can only deliver to your own Resend account email — sends to investors fail silently in older builds; the admin screen now shows the exact Resend error when a send fails.
+3. **Without Resend, Supabase's built-in mailer is heavily rate-limited** (a few emails per hour) and meant only for testing — configure custom SMTP in Supabase (Authentication → Emails → SMTP settings) for production, and make sure the email templates are updated per step 5 above or the links in those emails won't work.
+4. **Every failure still gives you a working link.** Adding an investor always shows a copyable set-password link, and each roster row has **Email invite** (re-sends the email and confirms success or shows the error) and **Copy invite link** (mint a fresh link to text them directly).
+
 ## Local development
 
 ```bash
