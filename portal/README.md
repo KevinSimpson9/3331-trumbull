@@ -49,6 +49,7 @@ The sign-in screen links to **/subscribe**: an interested investor enters their 
 - Add an investor from the admin roster → they receive a Supabase invite email → the link lands on the portal's set-password screen → they sign in and see their room.
 - The "Sign your documents" section leads with a **Start signing →** button that walks the investor through every unsigned document in sequence (with a "Document N of 4" progress label), advancing to the next one after each signature. Individual "Review & sign" buttons on each row still work for one-off signing, and the button becomes "Continue signing →" if they stop partway.
 - Signing a document records the typed legal name, timestamp, user agent, and IP in the `signatures` table and flips the investor to Active.
+- **Countersigning is the admin's job**: once an investor signs, their room in the back office ("View their portal →") shows a "Countersign as AK Capital Investments" banner and a **Countersign →** button on each signed document. Countersigning walks Kevin through the same adopt-a-signature flow (the investor's signature is shown on the document), records the countersigner name/timestamp/IP/device on the signature row, and regenerates the executed PDF with both signature blocks. The roster shows "· N to countersign" next to any investor with signed docs awaiting countersignature; investors see "Countersignature pending" until it's done.
 - The gold dot on a thread means the last message is from the investor and unread; opening the thread clears it.
 
 ## Local development
@@ -62,7 +63,9 @@ npm run dev
 
 ## Signed PDFs
 
-Signing a document generates an executed PDF (letterhead, full document text, the adopted cursive signature, timestamp, and an audit block with IP/device) and stores it in the private `signed-documents` storage bucket under the investor's folder — the bucket is created automatically on first use. Both the investor and the admin get a "Download copy →" link next to each signed document; if a stored PDF is ever missing, the download route regenerates it from the signature record.
+Signing a document generates an executed PDF (letterhead, full document text, the adopted cursive signature, timestamp, and an audit block with IP/device) and stores it in the private `signed-documents` storage bucket under the investor's folder — the bucket is created automatically on first use. When Kevin countersigns, the PDF is regenerated with a second "COUNTERSIGNED — SPONSOR" signature block and the countersigner's audit details. Both the investor and the admin get a "Download copy →" link next to each signed document; if a stored PDF is ever missing, the download route regenerates it from the signature record.
+
+> **Upgrading an existing database:** countersigning added four columns to `signatures`. Re-running `supabase/schema.sql` in the SQL editor is safe and adds them (`alter table … add column if not exists`).
 
 ## Not yet wired (deliberate v1 scope)
 

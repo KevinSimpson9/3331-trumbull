@@ -551,6 +551,20 @@ button {
   font-size: 13.5px;
   font-weight: 600;
 }
+.paper-signed-block {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(44, 59, 65, 0.25);
+}
+.paper-signed-block .sig-script {
+  color: var(--paper-text);
+}
+.paper-signed-meta {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: #6b8089;
+  margin-top: 2px;
+}
 
 /* ----- project document link cards ------------------------------------- */
 .link-card-grid {

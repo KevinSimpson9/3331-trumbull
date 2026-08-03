@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { signDocument } from "@/app/actions/investor";
+import { countersignDocument } from "@/app/actions/admin";
 import type { FormState } from "@/app/actions/auth";
 import { useToast } from "@/components/Toast";
 
@@ -13,6 +14,8 @@ export interface SignDocVM {
   desc: string;
   body: string;
   signedAt: string | null; // formatted date label when signed
+  signerName: string | null;
+  countersignedAt: string | null; // formatted date label when countersigned
 }
 
 interface Props {
@@ -20,12 +23,16 @@ interface Props {
   legalName: string;
   todayLabel: string;
   viewingAs?: boolean;
+  /** Needed for the admin countersign action. */
+  investorId: string;
   /** Query string for the signed-copy download link ("" for the investor,
    *  "?investor=<id>" when the admin is viewing a room). */
   downloadQuery?: string;
   /** Doc key whose signing modal opens automatically when still unsigned. */
   autoOpenKey?: string;
 }
+
+const COUNTERSIGNER_DEFAULT = "Kevin Simpson";
 
 function AdoptButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -38,24 +45,31 @@ function AdoptButton({ label }: { label: string }) {
 
 function SignModal({
   doc,
+  mode,
+  investorId,
   stepLabel,
   submitLabel,
-  legalName,
+  defaultName,
   todayLabel: today,
   onSigned,
   onClose,
 }: {
   doc: SignDocVM;
+  mode: "sign" | "countersign";
+  investorId: string;
   /** Eyebrow text, e.g. "E-SIGNATURE · DOCUMENT 2 OF 4". */
   stepLabel: string;
   submitLabel: string;
-  legalName: string;
+  defaultName: string;
   todayLabel: string;
   onSigned: (message?: string) => void;
   onClose: () => void;
 }) {
-  const [sigName, setSigName] = useState(legalName);
-  const [state, formAction] = useFormState<FormState, FormData>(signDocument, {});
+  const [sigName, setSigName] = useState(defaultName);
+  const [state, formAction] = useFormState<FormState, FormData>(
+    mode === "countersign" ? countersignDocument : signDocument,
+    {}
+  );
 
   useEffect(() => {
     if (state.ok) onSigned(state.message);
@@ -75,12 +89,27 @@ function SignModal({
         </div>
         <form action={formAction} className="modal-body">
           <input type="hidden" name="docKey" value={doc.key} />
+          {mode === "countersign" && <input type="hidden" name="investorId" value={investorId} />}
           <div className="paper">
             <div className="paper-title">{doc.title}</div>
             <div className="paper-body">{doc.body}</div>
+            {mode === "countersign" && doc.signerName && (
+              <div className="paper-signed-block">
+                <div className="sig-script" style={{ fontSize: 26 }}>
+                  {doc.signerName}
+                </div>
+                <div className="paper-signed-meta">
+                  Signed by {doc.signerName} · {doc.signedAt}
+                </div>
+              </div>
+            )}
           </div>
           <div className="field">
-            <label className="label">TYPE YOUR FULL LEGAL NAME TO SIGN</label>
+            <label className="label">
+              {mode === "countersign"
+                ? "TYPE YOUR FULL LEGAL NAME TO COUNTERSIGN"
+                : "TYPE YOUR FULL LEGAL NAME TO SIGN"}
+            </label>
             <input
               name="signerName"
               className="input"
@@ -93,7 +122,7 @@ function SignModal({
           <div className="sig-box">
             <div className="sig-script">{sigName || " "}</div>
             <div className="sig-box-meta">
-              SIGNATURE PREVIEW
+              {mode === "countersign" ? "COUNTERSIGNATURE PREVIEW" : "SIGNATURE PREVIEW"}
               <br />
               {today}
             </div>
@@ -101,9 +130,19 @@ function SignModal({
           <label className="consent-row">
             <input type="checkbox" name="consent" />
             <span>
-              I agree that my electronic signature is the legal equivalent of my handwritten
-              signature, and I consent to do business electronically with AK Capital Investments
-              LLC (E-SIGN Act).
+              {mode === "countersign" ? (
+                <>
+                  I am authorized to execute this document on behalf of AK Capital Investments
+                  LLC, and I agree that my electronic signature is the legal equivalent of my
+                  handwritten signature (E-SIGN Act).
+                </>
+              ) : (
+                <>
+                  I agree that my electronic signature is the legal equivalent of my handwritten
+                  signature, and I consent to do business electronically with AK Capital
+                  Investments LLC (E-SIGN Act).
+                </>
+              )}
             </span>
           </label>
           {state.error && <div className="error-text">{state.error}</div>}
@@ -124,12 +163,15 @@ export default function SignDocsSection({
   legalName,
   todayLabel: today,
   viewingAs,
+  investorId,
   downloadQuery = "",
   autoOpenKey,
 }: Props) {
   const toast = useToast();
-  // Keys signed this session, so the UI updates before the server revalidation lands.
+  // Keys signed/countersigned this session, so the UI updates before the
+  // server revalidation lands.
   const [localSigned, setLocalSigned] = useState<ReadonlySet<string>>(new Set());
+  const [localCountersigned, setLocalCountersigned] = useState<ReadonlySet<string>>(new Set());
   const initialOpen =
     !viewingAs && autoOpenKey && docs.some((d) => d.key === autoOpenKey && !d.signedAt)
       ? autoOpenKey
@@ -139,8 +181,15 @@ export default function SignDocsSection({
   const [guided, setGuided] = useState<boolean>(Boolean(initialOpen));
 
   const isSigned = (d: SignDocVM) => Boolean(d.signedAt) || localSigned.has(d.key);
-  const remaining = docs.filter((d) => !isSigned(d));
+  const isCountersigned = (d: SignDocVM) =>
+    Boolean(d.countersignedAt) || localCountersigned.has(d.key);
+  // What "remaining" means depends on who is looking: the investor works
+  // through unsigned docs; the admin works through signed-but-uncountersigned.
+  const remaining = viewingAs
+    ? docs.filter((d) => isSigned(d) && !isCountersigned(d))
+    : docs.filter((d) => !isSigned(d));
   const openDoc = docs.find((d) => d.key === openKey) ?? null;
+  const mode: "sign" | "countersign" = viewingAs ? "countersign" : "sign";
 
   const startGuided = () => {
     if (!remaining.length) return;
@@ -148,7 +197,26 @@ export default function SignDocsSection({
     setOpenKey(remaining[0].key);
   };
 
+  const closeModal = () => {
+    setOpenKey(null);
+    setGuided(false);
+  };
+
   const handleSigned = (key: string, message?: string) => {
+    if (mode === "countersign") {
+      setLocalCountersigned((prev) => new Set(prev).add(key));
+      const next = guided
+        ? docs.find((d) => d.key !== key && isSigned(d) && !isCountersigned(d))
+        : undefined;
+      if (next) {
+        toast(message || "Countersigned ✓");
+        setOpenKey(next.key);
+        return;
+      }
+      toast(guided ? "All signed documents countersigned ✓" : message || "Countersigned ✓");
+      closeModal();
+      return;
+    }
     setLocalSigned((prev) => new Set(prev).add(key));
     const next = guided ? docs.find((d) => d.key !== key && !isSigned(d)) : undefined;
     if (next) {
@@ -161,9 +229,11 @@ export default function SignDocsSection({
         ? `All ${docs.length} subscription documents signed ✓`
         : message || "Document signed ✓ Saved to your folder"
     );
-    setOpenKey(null);
-    setGuided(false);
+    closeModal();
   };
+
+  const signedCount = docs.filter(isSigned).length;
+  const countersignedCount = docs.filter(isCountersigned).length;
 
   return (
     <>
@@ -187,12 +257,36 @@ export default function SignDocsSection({
           </div>
         ) : (
           <div className="sign-cta sign-cta-done">
-            ✓ All {docs.length} subscription documents signed — download your copies below.
+            ✓ All {docs.length} subscription documents signed —{" "}
+            {countersignedCount === docs.length
+              ? "fully executed; download your copies below."
+              : "Kevin countersigns next, then your executed copies are final. Download below."}
           </div>
         ))}
+      {viewingAs &&
+        (remaining.length ? (
+          <div className="sign-cta">
+            <div className="sign-cta-main">
+              <div className="sign-cta-title">Countersign as AK Capital Investments</div>
+              <div className="sign-cta-desc">
+                {remaining.length} signed {remaining.length === 1 ? "document" : "documents"}{" "}
+                awaiting your countersignature — we&apos;ll walk you through each one.
+              </div>
+            </div>
+            <button type="button" className="btn-gold" onClick={startGuided}>
+              Countersign →
+            </button>
+          </div>
+        ) : signedCount === docs.length ? (
+          <div className="sign-cta sign-cta-done">
+            ✓ All {docs.length} documents signed and countersigned — fully executed.
+          </div>
+        ) : null)}
       <div className="doc-rows">
         {docs.map((d) => {
           const signedLabel = d.signedAt ?? (localSigned.has(d.key) ? today : null);
+          const countersignedLabel =
+            d.countersignedAt ?? (localCountersigned.has(d.key) ? today : null);
           return (
             <div key={d.key} className="doc-row">
               <div className="doc-glyph">
@@ -205,6 +299,22 @@ export default function SignDocsSection({
               {signedLabel ? (
                 <span style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <span className="signed-chip">✓ Signed {signedLabel}</span>
+                  {countersignedLabel ? (
+                    <span className="signed-chip">✓ Countersigned {countersignedLabel}</span>
+                  ) : viewingAs ? (
+                    <button
+                      type="button"
+                      className="sign-pill"
+                      onClick={() => {
+                        setGuided(false);
+                        setOpenKey(d.key);
+                      }}
+                    >
+                      Countersign →
+                    </button>
+                  ) : (
+                    <span className="awaiting-chip">Countersignature pending</span>
+                  )}
                   <a className="signed-download" href={`/api/signed/${d.key}${downloadQuery}`}>
                     Download copy →
                   </a>
@@ -227,27 +337,34 @@ export default function SignDocsSection({
           );
         })}
       </div>
-      {openDoc && !viewingAs && (
+      {openDoc && (
         <SignModal
-          key={openDoc.key}
+          key={`${mode}-${openDoc.key}`}
           doc={openDoc}
+          mode={mode}
+          investorId={investorId}
           stepLabel={
             guided
-              ? `E-SIGNATURE · DOCUMENT ${docs.indexOf(openDoc) + 1} OF ${docs.length}`
-              : "E-SIGNATURE"
+              ? `${mode === "countersign" ? "COUNTERSIGNATURE" : "E-SIGNATURE"} · DOCUMENT ${
+                  docs.indexOf(openDoc) + 1
+                } OF ${docs.length}`
+              : mode === "countersign"
+                ? "COUNTERSIGNATURE"
+                : "E-SIGNATURE"
           }
           submitLabel={
             guided && remaining.some((d) => d.key !== openDoc.key)
-              ? "Adopt signature & continue"
-              : "Adopt signature & sign"
+              ? mode === "countersign"
+                ? "Adopt signature & countersign next"
+                : "Adopt signature & continue"
+              : mode === "countersign"
+                ? "Adopt signature & countersign"
+                : "Adopt signature & sign"
           }
-          legalName={legalName}
+          defaultName={mode === "countersign" ? COUNTERSIGNER_DEFAULT : legalName}
           todayLabel={today}
           onSigned={(message) => handleSigned(openDoc.key, message)}
-          onClose={() => {
-            setOpenKey(null);
-            setGuided(false);
-          }}
+          onClose={closeModal}
         />
       )}
     </>

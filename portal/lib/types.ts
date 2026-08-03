@@ -20,6 +20,12 @@ export interface Signature {
   doc_key: DocKey;
   signer_name: string;
   signed_at: string;
+  user_agent: string | null;
+  ip: string | null;
+  countersigner_name: string | null;
+  countersigned_at: string | null;
+  countersign_ip: string | null;
+  countersign_user_agent: string | null;
 }
 
 export interface Message {

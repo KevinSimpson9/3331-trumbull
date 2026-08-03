@@ -10,6 +10,13 @@ const INK = rgb(0.17, 0.23, 0.25); // #2c3b41 — matches the portal's paper tex
 const GOLD = rgb(0.85, 0.64, 0.25); // #d9a441
 const MUTED = rgb(0.42, 0.53, 0.57);
 
+interface CountersignInfo {
+  name: string;
+  signedAtISO: string;
+  ip: string | null;
+  userAgent: string | null;
+}
+
 interface SignInfo {
   investor: Investor;
   doc: SignableDoc;
@@ -17,6 +24,8 @@ interface SignInfo {
   signedAtISO: string;
   ip: string | null;
   userAgent: string | null;
+  /** Admin countersignature — rendered as a second signature block when present. */
+  countersign?: CountersignInfo | null;
 }
 
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
@@ -99,40 +108,62 @@ export async function generateSignedPdf(info: SignInfo): Promise<Uint8Array> {
   }
   y -= 18;
 
-  // ---- signature block ------------------------------------------------
-  ensureRoom(150);
-  page.drawText("ADOPTED ELECTRONIC SIGNATURE", {
-    x: MARGIN,
-    y,
-    size: 8.5,
-    font: helvBold,
-    color: MUTED,
-  });
-  y -= 42;
-  page.drawText(info.signerName, { x: MARGIN, y, size: 30, font: script, color: INK });
-  y -= 10;
-  page.drawLine({
-    start: { x: MARGIN, y },
-    end: { x: MARGIN + 260, y },
-    thickness: 0.8,
-    color: INK,
-  });
-  y -= 16;
-  page.drawText(info.signerName, { x: MARGIN, y, size: 10.5, font: helvBold, color: INK });
-  y -= 14;
+  const fmtStamp = (iso: string) =>
+    new Date(iso).toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+      timeZone: "America/Detroit",
+    });
 
+  const drawSignatureBlock = (
+    heading: string,
+    name: string,
+    roleLine: string | null,
+    stampLine: string
+  ) => {
+    ensureRoom(150 + (roleLine ? 14 : 0));
+    page.drawText(heading, { x: MARGIN, y, size: 8.5, font: helvBold, color: MUTED });
+    y -= 42;
+    page.drawText(name, { x: MARGIN, y, size: 30, font: script, color: INK });
+    y -= 10;
+    page.drawLine({
+      start: { x: MARGIN, y },
+      end: { x: MARGIN + 260, y },
+      thickness: 0.8,
+      color: INK,
+    });
+    y -= 16;
+    page.drawText(name, { x: MARGIN, y, size: 10.5, font: helvBold, color: INK });
+    y -= 14;
+    if (roleLine) {
+      page.drawText(roleLine, { x: MARGIN, y, size: 9.5, font: helv, color: MUTED });
+      y -= 14;
+    }
+    page.drawText(stampLine, { x: MARGIN, y, size: 9.5, font: helv, color: INK });
+    y -= 26;
+  };
+
+  // ---- signature blocks -----------------------------------------------
   const signedAt = new Date(info.signedAtISO);
-  const stamp = signedAt.toLocaleString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
-    timeZone: "America/Detroit",
-  });
-  page.drawText(`Signed ${stamp}`, { x: MARGIN, y, size: 9.5, font: helv, color: INK });
-  y -= 26;
+  drawSignatureBlock(
+    "ADOPTED ELECTRONIC SIGNATURE — INVESTOR",
+    info.signerName,
+    null,
+    `Signed ${fmtStamp(info.signedAtISO)}`
+  );
+
+  if (info.countersign) {
+    drawSignatureBlock(
+      "COUNTERSIGNED — SPONSOR",
+      info.countersign.name,
+      "AK Capital Investments LLC",
+      `Countersigned ${fmtStamp(info.countersign.signedAtISO)}`
+    );
+  }
 
   // ---- audit block ----------------------------------------------------
   const audit = [
@@ -141,8 +172,17 @@ export async function generateSignedPdf(info: SignInfo): Promise<Uint8Array> {
     `Recorded at: ${info.signedAtISO}`,
     info.ip ? `IP address: ${info.ip}` : null,
     info.userAgent ? `Device: ${info.userAgent.slice(0, 110)}` : null,
-    "Executed electronically via the 3331 Trumbull Investor Portal. The signer consented to conduct business",
-    "electronically (E-SIGN Act) and adopted the signature above as the legal equivalent of a handwritten signature.",
+    ...(info.countersign
+      ? [
+          `Countersigned by: ${info.countersign.name} (AK Capital Investments LLC) · Recorded at: ${info.countersign.signedAtISO}`,
+          info.countersign.ip ? `Countersigner IP address: ${info.countersign.ip}` : null,
+          info.countersign.userAgent
+            ? `Countersigner device: ${info.countersign.userAgent.slice(0, 110)}`
+            : null,
+        ]
+      : []),
+    "Executed electronically via the 3331 Trumbull Investor Portal. Each signer consented to conduct business",
+    "electronically (E-SIGN Act) and adopted their signature above as the legal equivalent of a handwritten signature.",
   ].filter(Boolean) as string[];
 
   ensureRoom(16 + audit.length * 12);

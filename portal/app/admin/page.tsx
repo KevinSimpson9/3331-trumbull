@@ -35,6 +35,8 @@ export default async function AdminPage({
   const messages = (messagesData as Message[]) ?? [];
 
   const signedCount = (id: string) => signatures.filter((s) => s.investor_id === id).length;
+  const toCountersign = (id: string) =>
+    signatures.filter((s) => s.investor_id === id && !s.countersigned_at).length;
 
   const stats = [
     { label: "INVESTORS", value: String(investors.length) },
@@ -58,7 +60,9 @@ export default async function AdminPage({
     terms: `${i.rate}% · ${i.term_months} mo · Interest`,
     active: i.status === "active",
     statusLabel: i.status === "active" ? "● Active" : "Invited",
-    docsLabel: `${signedCount(i.id)} of ${DOC_COUNT} docs signed`,
+    docsLabel:
+      `${signedCount(i.id)} of ${DOC_COUNT} docs signed` +
+      (toCountersign(i.id) ? ` · ${toCountersign(i.id)} to countersign` : ""),
     principalRaw: Number(i.principal),
     rateRaw: Number(i.rate),
     termRaw: i.term_months,

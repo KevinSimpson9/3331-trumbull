@@ -70,8 +70,17 @@ export async function GET(request: NextRequest, { params }: { params: { docKey: 
         doc,
         signerName: signature.signer_name,
         signedAtISO: signature.signed_at,
-        ip: (signature as Signature & { ip?: string | null }).ip ?? null,
-        userAgent: (signature as Signature & { user_agent?: string | null }).user_agent ?? null,
+        ip: signature.ip ?? null,
+        userAgent: signature.user_agent ?? null,
+        countersign:
+          signature.countersigned_at && signature.countersigner_name
+            ? {
+                name: signature.countersigner_name,
+                signedAtISO: signature.countersigned_at,
+                ip: signature.countersign_ip ?? null,
+                userAgent: signature.countersign_user_agent ?? null,
+              }
+            : null,
       });
       await admin.storage.createBucket(SIGNED_DOCS_BUCKET, { public: false }).catch(() => {});
       await admin.storage.from(SIGNED_DOCS_BUCKET).upload(path, Buffer.from(pdfBytes), {

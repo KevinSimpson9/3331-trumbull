@@ -1,10 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
+import { docDefs } from "@/lib/docs";
+import { generateSignedPdf, signedPdfPath, SIGNED_DOCS_BUCKET } from "@/lib/pdf";
+import type { DocKey, Investor, Signature } from "@/lib/types";
 import type { FormState } from "./auth";
 
 async function requireAdmin() {
@@ -237,6 +241,84 @@ export async function broadcastAction(_prev: FormState, formData: FormData): Pro
 
   revalidateAdmin();
   return { ok: true, message: `Sent to ${rows.length} investors ✓` };
+}
+
+export async function countersignDocument(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+
+  const investorId = String(formData.get("investorId") || "");
+  const docKey = String(formData.get("docKey") || "") as DocKey;
+  const signerName = String(formData.get("signerName") || "").trim();
+  const consent = formData.get("consent") === "on";
+
+  if (!signerName) return { error: "Type your full legal name to countersign." };
+  if (!consent) return { error: "Please check the e-signature consent box." };
+
+  const admin = createAdminClient();
+  const { data: investor } = await admin
+    .from("investors")
+    .select("*")
+    .eq("id", investorId)
+    .maybeSingle<Investor>();
+  if (!investor) return { error: "Investor not found." };
+
+  const { data: signature } = await admin
+    .from("signatures")
+    .select("*")
+    .eq("investor_id", investorId)
+    .eq("doc_key", docKey)
+    .maybeSingle<Signature>();
+  if (!signature) return { error: "The investor hasn't signed this document yet." };
+  if (signature.countersigned_at) return { error: "This document is already countersigned." };
+
+  const hdrs = headers();
+  const countersignedAt = new Date().toISOString();
+  const countersign = {
+    countersigner_name: signerName,
+    countersigned_at: countersignedAt,
+    countersign_ip: hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+    countersign_user_agent: hdrs.get("user-agent"),
+  };
+  const { error } = await admin
+    .from("signatures")
+    .update(countersign)
+    .eq("investor_id", investorId)
+    .eq("doc_key", docKey);
+  if (error) return { error: "Countersigning failed — try again." };
+
+  // Regenerate the executed PDF with both signatures. As with signing, PDF
+  // failures never undo the countersignature — the row is the legal record
+  // and the download route regenerates missing/stale PDFs on demand.
+  try {
+    const doc = docDefs(investor).find((d) => d.key === docKey)!;
+    const pdfBytes = await generateSignedPdf({
+      investor,
+      doc,
+      signerName: signature.signer_name,
+      signedAtISO: signature.signed_at,
+      ip: signature.ip ?? null,
+      userAgent: signature.user_agent ?? null,
+      countersign: {
+        name: signerName,
+        signedAtISO: countersignedAt,
+        ip: countersign.countersign_ip,
+        userAgent: countersign.countersign_user_agent,
+      },
+    });
+    await admin.storage.createBucket(SIGNED_DOCS_BUCKET, { public: false }).catch(() => {});
+    await admin.storage
+      .from(SIGNED_DOCS_BUCKET)
+      .upload(signedPdfPath(investor.id, docKey), Buffer.from(pdfBytes), {
+        contentType: "application/pdf",
+        upsert: true,
+      });
+  } catch (e) {
+    console.error("countersigned-pdf generation failed", e);
+  }
+
+  revalidateAdmin();
+  revalidatePath(`/admin/investor/${investorId}`);
+  return { ok: true, message: "Countersigned ✓ Executed copy updated" };
 }
 
 export async function markThreadRead(investorId: string): Promise<void> {

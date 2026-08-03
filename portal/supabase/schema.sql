@@ -37,8 +37,21 @@ create table if not exists public.signatures (
   signed_at    timestamptz not null default now(),
   user_agent   text,
   ip           text,
+  -- Admin countersignature (recorded server-side after an admin check; null
+  -- until Kevin countersigns from the back office).
+  countersigner_name      text,
+  countersigned_at        timestamptz,
+  countersign_ip          text,
+  countersign_user_agent  text,
   unique (investor_id, doc_key)
 );
+
+-- Upgrade path for databases created before countersigning existed
+-- (safe to re-run; no-ops when the columns are already present).
+alter table public.signatures add column if not exists countersigner_name     text;
+alter table public.signatures add column if not exists countersigned_at       timestamptz;
+alter table public.signatures add column if not exists countersign_ip         text;
+alter table public.signatures add column if not exists countersign_user_agent text;
 
 create table if not exists public.messages (
   id           uuid primary key default gen_random_uuid(),

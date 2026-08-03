@@ -37,7 +37,12 @@ export default function InvestorRoomView({
   const signedByKey = new Map(signatures.map((s) => [s.doc_key, s]));
   const docs = docDefs(investor).map((d) => {
     const sig = signedByKey.get(d.key);
-    return { ...d, signedAt: sig ? fmtDate(sig.signed_at) : null };
+    return {
+      ...d,
+      signedAt: sig ? fmtDate(sig.signed_at) : null,
+      signerName: sig?.signer_name ?? null,
+      countersignedAt: sig?.countersigned_at ? fmtDate(sig.countersigned_at) : null,
+    };
   });
   const signedCount = docs.filter((d) => d.signedAt).length;
 
@@ -90,6 +95,7 @@ export default function InvestorRoomView({
           legalName={investor.legal_name}
           todayLabel={todayLabel()}
           viewingAs={viewingAs}
+          investorId={investor.id}
           downloadQuery={viewingAs ? `?investor=${investor.id}` : ""}
           autoOpenKey={autoOpenKey}
         />
