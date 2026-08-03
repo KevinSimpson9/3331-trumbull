@@ -3,6 +3,17 @@ export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
 }
 
+/** The From address used for portal emails. */
+export function emailFrom(): string {
+  return process.env.EMAIL_FROM || "3331 Trumbull Portal <onboarding@resend.dev>";
+}
+
+/** True while still on Resend's sandbox sender, which only delivers to the
+ *  Resend account owner's own email — real investors receive nothing. */
+export function usingSandboxSender(): boolean {
+  return emailFrom().includes("onboarding@resend.dev");
+}
+
 export interface SendEmailResult {
   ok: boolean;
   /** Human-readable failure reason (Resend error message, network error, or
@@ -25,7 +36,7 @@ export async function sendEmail(opts: {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY is not configured" };
 
-  const from = process.env.EMAIL_FROM || "3331 Trumbull Portal <onboarding@resend.dev>";
+  const from = emailFrom();
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",

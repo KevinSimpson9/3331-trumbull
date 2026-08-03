@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { deliverPortalInvite, siteUrl } from "@/lib/invites";
+import { sendEmail, emailConfigured, emailFrom, usingSandboxSender } from "@/lib/email";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
@@ -290,6 +291,50 @@ export async function broadcastAction(_prev: FormState, formData: FormData): Pro
 
   revalidateAdmin();
   return { ok: true, message: `Sent to ${rows.length} investors ✓` };
+}
+
+/** One-click diagnosis for the notification-email pipeline: sends a real
+ *  email to the admin through the exact same code path the welcome and
+ *  all-docs-signed emails use, and reports Resend's actual verdict. */
+export async function sendTestEmailAction(_prev: FormState, _formData: FormData): Promise<FormState> {
+  await requireAdmin();
+
+  if (!emailConfigured()) {
+    return {
+      error:
+        "RESEND_API_KEY is not set in Vercel, so no notification emails can be sent " +
+        "(welcome, all-documents-signed, subscription alerts). Create a free API key at " +
+        "resend.com, add it as RESEND_API_KEY in Vercel → Settings → Environment Variables, " +
+        "and redeploy.",
+    };
+  }
+
+  const result = await sendEmail({
+    to: ADMIN_EMAIL,
+    subject: "3331 Trumbull portal — test email ✓",
+    text:
+      `This is a test email from the 3331 Trumbull investor portal.\n\n` +
+      `Delivery through Resend works. Notification emails (welcome, all-documents-signed, ` +
+      `subscription alerts) use this exact same path.\n\n` +
+      `Sender: ${emailFrom()}\n`,
+  });
+  if (!result.ok) {
+    return { error: `Resend refused the send: ${result.error}` };
+  }
+  if (usingSandboxSender()) {
+    return {
+      ok: true,
+      message:
+        `Test email sent to ${ADMIN_EMAIL} — but you're still on Resend's sandbox sender ` +
+        `(onboarding@resend.dev), which only delivers to your own Resend account email. ` +
+        `Investors will receive nothing until you verify a domain in Resend and set ` +
+        `EMAIL_FROM in Vercel.`,
+    };
+  }
+  return {
+    ok: true,
+    message: `Test email sent to ${ADMIN_EMAIL} from ${emailFrom()} — check your inbox (and spam folder).`,
+  };
 }
 
 export async function markThreadRead(investorId: string): Promise<void> {

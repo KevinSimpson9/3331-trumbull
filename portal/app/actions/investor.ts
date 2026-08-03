@@ -113,6 +113,14 @@ export async function signDocument(_prev: FormState, formData: FormData): Promis
       .select("*", { count: "exact", head: true })
       .eq("investor_id", investor.id);
     if ((count ?? 0) >= DOC_COUNT) {
+      // In-portal record first — shows in the back-office thread with the
+      // unread dot, so the admin is notified even if email delivery is down.
+      await admin.from("messages").insert({
+        investor_id: investor.id,
+        sender: "investor",
+        body: `✓ Signed all ${DOC_COUNT} documents — executed copies are saved in the folder.`,
+      });
+
       const docTitles = docDefs(investor)
         .map((d) => `  • ${d.title}`)
         .join("\n");
