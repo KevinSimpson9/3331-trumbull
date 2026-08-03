@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
-import { DEFAULT_PROJECT_DOCS } from "@/lib/docs";
+import { DEFAULT_PROJECT_DOCS, docDefs } from "@/lib/docs";
 import { withEffectiveSchedule } from "@/lib/schedule";
 import type { Investor, Message, ProjectDocument, Signature } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
@@ -43,6 +43,20 @@ export default async function RoomPage({
   const docs: ProjectDocument[] =
     projectDocs && projectDocs.length ? projectDocs : (DEFAULT_PROJECT_DOCS as ProjectDocument[]);
 
+  // Whenever signing is due, open the signing flow automatically at the first
+  // unsigned document — from there the modal advances through the rest in
+  // order. An explicit ?sign= key (invite/set-password links) takes priority
+  // as the starting point, unless that document is already signed.
+  const signedKeys = new Set((signatures ?? []).map((s) => (s as Signature).doc_key));
+  const unsignedKeys = docDefs(investor)
+    .map((d) => d.key)
+    .filter((k) => !signedKeys.has(k));
+  const requested = searchParams.sign;
+  const autoOpenKey =
+    requested && unsignedKeys.includes(requested as (typeof unsignedKeys)[number])
+      ? requested
+      : unsignedKeys[0];
+
   return (
     <div style={{ minHeight: "100vh" }}>
       <PortalHeader signedInAs={investor.legal_name} />
@@ -52,7 +66,7 @@ export default async function RoomPage({
         messages={(messages as Message[]) ?? []}
         projectDocs={docs}
         sendAction={sendInvestorMessage}
-        autoOpenKey={searchParams.sign}
+        autoOpenKey={autoOpenKey}
       />
     </div>
   );

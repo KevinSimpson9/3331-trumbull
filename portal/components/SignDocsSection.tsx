@@ -38,14 +38,18 @@ function AdoptButton() {
 
 function SignModal({
   doc,
+  progressLabel,
   legalName,
   todayLabel: today,
   onClose,
+  onSigned,
 }: {
   doc: SignDocVM;
+  progressLabel: string;
   legalName: string;
   todayLabel: string;
   onClose: () => void;
+  onSigned: (key: string) => void;
 }) {
   const toast = useToast();
   const [sigName, setSigName] = useState(legalName);
@@ -54,16 +58,16 @@ function SignModal({
   useEffect(() => {
     if (state.ok) {
       toast(state.message || "Document signed ✓ Saved to your folder");
-      onClose();
+      onSigned(doc.key);
     }
-  }, [state, toast, onClose]);
+  }, [state, toast, onSigned, doc.key]);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <div className="modal-eyebrow">E-SIGNATURE</div>
+            <div className="modal-eyebrow">E-SIGNATURE · {progressLabel}</div>
             <div className="modal-title">{doc.title}</div>
           </div>
           <button type="button" className="modal-close" onClick={onClose}>
@@ -124,12 +128,24 @@ export default function SignDocsSection({
   downloadQuery = "",
   autoOpenKey,
 }: Props) {
+  // Keys signed during this visit — the server props catch up after
+  // revalidation, but the sequential flow advances off this immediately.
+  const [justSigned, setJustSigned] = useState<string[]>([]);
+  const isSigned = (d: SignDocVM) => Boolean(d.signedAt) || justSigned.includes(d.key);
   const [openKey, setOpenKey] = useState<string | null>(() =>
     !viewingAs && autoOpenKey && docs.some((d) => d.key === autoOpenKey && !d.signedAt)
       ? autoOpenKey
       : null
   );
   const openDoc = docs.find((d) => d.key === openKey) ?? null;
+
+  // After each signature, move straight to the next unsigned document so the
+  // investor is walked through the full set one after another.
+  const handleSigned = (key: string) => {
+    setJustSigned((prev) => [...prev, key]);
+    const next = docs.find((d) => d.key !== key && !isSigned(d));
+    setOpenKey(next ? next.key : null);
+  };
 
   return (
     <>
@@ -162,10 +178,13 @@ export default function SignDocsSection({
       </div>
       {openDoc && !viewingAs && (
         <SignModal
+          key={openDoc.key}
           doc={openDoc}
+          progressLabel={`DOCUMENT ${docs.findIndex((d) => d.key === openDoc.key) + 1} OF ${docs.length}`}
           legalName={legalName}
           todayLabel={today}
           onClose={() => setOpenKey(null)}
+          onSigned={handleSigned}
         />
       )}
     </>
