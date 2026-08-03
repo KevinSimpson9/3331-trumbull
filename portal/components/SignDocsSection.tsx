@@ -99,8 +99,8 @@ function SignModal({
             <input type="checkbox" name="consent" />
             <span>
               I agree that my electronic signature is the legal equivalent of my handwritten
-              signature, and I consent to do business electronically with AK Capital Investments
-              LLC (E-SIGN Act).
+              signature, and I consent to do business electronically with 3331 Trumbull LLC and
+              its sponsor, AK Capital Investments LLC (E-SIGN Act).
             </span>
           </label>
           {state.error && <div className="error-text">{state.error}</div>}

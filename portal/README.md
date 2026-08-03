@@ -4,7 +4,7 @@ Private investor portal for the 3331 Trumbull $350K capital raise (AK Capital In
 
 ## What it does
 
-- **Investor side** — each investor signs in and sees only their own room: position stats (principal / rate / term / docs signed), three in-portal e-sign documents (Promissory Note, Personal Guarantee Acknowledgment, Accredited Investor Verification), the shared project document library, and a private 1:1 message thread with Kevin.
+- **Investor side** — each investor signs in and sees only their own room: position stats (principal / rate / term / docs signed), three in-portal e-sign documents (Non-Binding Letter of Intent, Promissory Note — borrower: 3331 Trumbull LLC, and Personal Guarantee Acknowledgment — guarantor: Lukas Bondy of Bondy Construction & Design), the shared project document library, and a private 1:1 message thread with Kevin.
 - **Admin back office** (`kevin@akcapital.fund`) — investor roster with signing progress, add investor (sends a portal invite email with a set-password link), remove investor, per-investor message threads with unread indicators, "message everyone" broadcast, and a bannered "View their portal →" impersonation view.
 
 Access control is enforced in the database with Postgres row-level security: an investor's session can only ever read their own investor row, their own signatures, and their own message thread. The roster, other investors, and aggregate figures are admin-only.

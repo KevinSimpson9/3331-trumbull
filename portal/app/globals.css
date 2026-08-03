@@ -101,6 +101,10 @@ button {
   padding: 11px 13px;
   font-size: 14px;
 }
+select.input {
+  font-family: inherit;
+  cursor: pointer;
+}
 .btn-gold {
   background: var(--gold);
   color: var(--on-gold);

@@ -1,5 +1,33 @@
 import { fmtMoney } from "./format";
-import type { DocKey, Investor } from "./types";
+import type { DocKey, Investor, PaymentSchedule } from "./types";
+
+/** Payout options selectable per investor in the admin forms. `label` is the
+ *  dropdown text, `short` the roster chip, `docText` the wording that flows
+ *  into the LOI and promissory note. */
+export const PAYMENT_SCHEDULES: Record<PaymentSchedule, { label: string; short: string; docText: string }> = {
+  monthly: {
+    label: "Interest paid monthly",
+    short: "Monthly",
+    docText: "Interest-only, paid monthly in cash",
+  },
+  quarterly: {
+    label: "Interest paid quarterly",
+    short: "Quarterly",
+    docText: "Interest-only, paid quarterly in cash",
+  },
+  annual: {
+    label: "Interest paid annually",
+    short: "Annual",
+    docText: "Interest-only, paid annually in cash",
+  },
+  maturity: {
+    label: "Interest paid at maturity",
+    short: "At maturity",
+    docText: "Interest accrues and is paid in full, together with principal, at maturity",
+  },
+};
+
+export const PAYMENT_SCHEDULE_KEYS = Object.keys(PAYMENT_SCHEDULES) as PaymentSchedule[];
 
 export interface SignableDoc {
   key: DocKey;
@@ -9,9 +37,16 @@ export interface SignableDoc {
   body: string;
 }
 
-/** The three per-investor signable documents, terms interpolated per the design. */
-export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" | "term_months"> & { email?: string }): SignableDoc[] {
+/** The per-investor signable documents, terms interpolated per the design. */
+export function docDefs(
+  inv: Pick<Investor, "legal_name" | "principal" | "rate" | "term_months"> & {
+    email?: string;
+    payment_schedule?: PaymentSchedule | null;
+  }
+): SignableDoc[] {
   const amt = fmtMoney(inv.principal);
+  // Rows created before the payment_schedule column existed fall back to quarterly.
+  const sched = PAYMENT_SCHEDULES[inv.payment_schedule ?? "quarterly"] ?? PAYMENT_SCHEDULES.quarterly;
   return [
     {
       key: "loi",
@@ -30,12 +65,12 @@ export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" 
         `Sponsor: AK Capital Investments LLC × Bondy Construction & Design\n` +
         `Instrument: Secured promissory note (the "Note")\n` +
         `Investment Amount: ${amt}\n` +
-        `Total Offering: Up to $700,000 across a limited group of accredited investors\n` +
+        `Total Offering: Up to $700,000 across a limited group of investors\n` +
         `Interest Rate: ${inv.rate}% per annum, fixed\n` +
-        `Payments: Interest-only, paid quarterly in cash\n` +
+        `Payments: ${sched.docText}\n` +
         `Term: 18–24 months from funding\n` +
         `Repayment: Principal repaid in full at maturity from unit sale proceeds\n` +
-        `Security: Second position debt, plus a personal guarantee from the sponsor\n` +
+        `Security: Second position debt, plus a personal guarantee from Lukas Bondy of Bondy Construction & Design\n` +
         `Use of Proceeds: Construction of a 25-unit for-sale townhome development in North Corktown, Detroit\n\n` +
         `TERMS OF THIS LETTER\n\n` +
         `1. Non-Binding Effect. Except for the paragraphs titled "Confidentiality" and "Expiration," this letter is a ` +
@@ -44,7 +79,7 @@ export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" 
         `documentation, including the Note, mortgage, guarantee, and related agreements (the "Definitive Documents"), ` +
         `in form and substance satisfactory to each party.\n\n` +
         `2. No Offer of Securities. This letter does not constitute an offer to sell or a solicitation of an offer to buy any ` +
-        `security. Any offering will be made only to accredited investors through the Definitive Documents and accompanying offering materials.\n\n` +
+        `security. Any offering will be made only through the Definitive Documents and accompanying offering materials.\n\n` +
         `3. Due Diligence. The Investor will have the opportunity to review the offering package, including the note terms, ` +
         `comp book, construction document set, and for-sale proforma, and to consult independent legal, tax, and financial ` +
         `advisors before executing any Definitive Documents.\n\n` +
@@ -61,10 +96,11 @@ export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" 
       desc: `${amt} principal · ${inv.rate}% per annum · ${inv.term_months}-month term`,
       body:
         `PROMISSORY NOTE — 3331 Trumbull, Detroit, MI\n\n` +
-        `Borrower: AK Capital Investments LLC\nLender: ${inv.legal_name}\nPrincipal: ${amt}\n` +
+        `Borrower: 3331 Trumbull LLC (the "Borrower")\nLender: ${inv.legal_name} (the "Lender")\nPrincipal: ${amt}\n` +
         `Rate: ${inv.rate}% per annum\nTerm: ${inv.term_months} months from funding\n` +
-        `Security: Second-position debt on 3331 Trumbull plus personal guarantee of the principals.\n\n` +
-        `For value received, Borrower promises to pay Lender the principal sum with interest as set forth above. ` +
+        `Payments: ${sched.docText}\n` +
+        `Security: Second-position debt on 3331 Trumbull plus a personal guarantee from Lukas Bondy of Bondy Construction & Design.\n\n` +
+        `For value received, 3331 Trumbull LLC promises to pay Lender the principal sum with interest as set forth above. ` +
         `Prepayment permitted without penalty. Events of default, notice, and cure periods per the full agreement in your document folder.\n\n` +
         `This on-screen summary is provided for e-signature convenience; the countersigned original will be returned to your folder.`,
     },
@@ -75,22 +111,14 @@ export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" 
       desc: "Acknowledge the personal guarantee backing your note",
       body:
         `PERSONAL GUARANTEE — ACKNOWLEDGMENT\n\n` +
-        `The principals of AK Capital Investments LLC personally and unconditionally guarantee repayment of the note held by ${inv.legal_name}.\n\n` +
+        `Guarantor: Lukas Bondy, Bondy Construction & Design\n\n` +
+        `Lukas Bondy of Bondy Construction & Design personally and unconditionally guarantees repayment of the promissory note issued by 3331 Trumbull LLC and held by ${inv.legal_name}.\n\n` +
         `By signing, you acknowledge receipt of the guarantee instrument and that it remains in force for the life of the note.`,
-    },
-    {
-      key: "accreditation",
-      badge: "SIGN",
-      title: "Accredited Investor Verification",
-      desc: "Self-certification of accredited status (Reg D 506(b))",
-      body:
-        `ACCREDITED INVESTOR SELF-CERTIFICATION\n\n` +
-        `I, ${inv.legal_name}, certify that I qualify as an accredited investor under SEC Rule 501 of Regulation D by meeting at least one of the income, net-worth, or professional-certification standards, and that the information I have provided is accurate.`,
     },
   ];
 }
 
-export const DOC_COUNT = 4;
+export const DOC_COUNT = 3;
 
 /** Fallback shared-library items shown until rows exist in project_documents. */
 export const DEFAULT_PROJECT_DOCS = [

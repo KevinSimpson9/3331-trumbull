@@ -1,5 +1,6 @@
 export type InvestorStatus = "invited" | "active";
-export type DocKey = "loi" | "note" | "guarantee" | "accreditation";
+export type DocKey = "loi" | "note" | "guarantee";
+export type PaymentSchedule = "monthly" | "quarterly" | "annual" | "maturity";
 export type Sender = "admin" | "investor";
 
 export interface Investor {
@@ -10,6 +11,7 @@ export interface Investor {
   principal: number;
   rate: number;
   term_months: number;
+  payment_schedule: PaymentSchedule;
   status: InvestorStatus;
   created_at: string;
 }

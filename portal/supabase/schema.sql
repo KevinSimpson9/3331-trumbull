@@ -25,6 +25,9 @@ create table if not exists public.investors (
   principal     numeric not null check (principal > 0),
   rate          numeric not null default 20,
   term_months   integer not null default 20,
+  -- how interest is paid out (flows into the LOI / note wording)
+  payment_schedule text not null default 'quarterly'
+    check (payment_schedule in ('monthly', 'quarterly', 'annual', 'maturity')),
   status        text not null default 'invited' check (status in ('invited', 'active')),
   created_at    timestamptz not null default now()
 );
@@ -32,7 +35,7 @@ create table if not exists public.investors (
 create table if not exists public.signatures (
   id           uuid primary key default gen_random_uuid(),
   investor_id  uuid not null references public.investors (id) on delete cascade,
-  doc_key      text not null check (doc_key in ('loi', 'note', 'guarantee', 'accreditation')),
+  doc_key      text not null check (doc_key in ('loi', 'note', 'guarantee')),
   signer_name  text not null,
   signed_at    timestamptz not null default now(),
   user_agent   text,

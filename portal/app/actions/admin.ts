@@ -6,7 +6,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { deliverPortalInvite } from "@/lib/invites";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
+import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
+import type { PaymentSchedule } from "@/lib/types";
 import type { FormState } from "./auth";
+
+function parsePaymentSchedule(formData: FormData): PaymentSchedule {
+  const raw = String(formData.get("paymentSchedule") || "") as PaymentSchedule;
+  return PAYMENT_SCHEDULE_KEYS.includes(raw) ? raw : "quarterly";
+}
 
 async function requireAdmin() {
   const supabase = createClient();
@@ -32,6 +39,7 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   const principal = Number(formData.get("principal"));
   const rate = Number(formData.get("rate")) || 20;
   const term = Number(formData.get("term")) || 20;
+  const paymentSchedule = parsePaymentSchedule(formData);
 
   if (!legalName || !email || !principal) {
     return { error: "Name, email, and principal are required" };
@@ -47,7 +55,7 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
     return { error: `Invite failed: ${invite.error ?? "could not create the account"}` };
   }
 
-  const { error: insertError } = await admin.from("investors").insert({
+  const baseRow = {
     legal_name: legalName,
     email,
     principal,
@@ -55,7 +63,15 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
     term_months: term,
     status: "invited",
     auth_user_id: invite.authUserId,
-  });
+  };
+  let { error: insertError } = await admin
+    .from("investors")
+    .insert({ ...baseRow, payment_schedule: paymentSchedule });
+  if (insertError && /payment_schedule/i.test(insertError.message)) {
+    // The payment_schedule migration hasn't been run yet — create the
+    // investor anyway; they get the quarterly default once it lands.
+    ({ error: insertError } = await admin.from("investors").insert(baseRow));
+  }
   if (insertError) {
     return {
       error:
@@ -146,6 +162,7 @@ export async function updateInvestorAction(_prev: FormState, formData: FormData)
   const principal = Number(formData.get("principal"));
   const rate = Number(formData.get("rate"));
   const term = Number(formData.get("term"));
+  const paymentSchedule = parsePaymentSchedule(formData);
 
   if (!investorId) return { error: "Missing investor." };
   if (!legalName) return { error: "Legal name is required." };
@@ -154,10 +171,15 @@ export async function updateInvestorAction(_prev: FormState, formData: FormData)
   if (!term || term <= 0) return { error: "Term must be a positive number of months." };
 
   const admin = createAdminClient();
-  const { error } = await admin
+  const baseUpdate = { legal_name: legalName, principal, rate, term_months: term };
+  let { error } = await admin
     .from("investors")
-    .update({ legal_name: legalName, principal, rate, term_months: term })
+    .update({ ...baseUpdate, payment_schedule: paymentSchedule })
     .eq("id", investorId);
+  if (error && /payment_schedule/i.test(error.message)) {
+    // Migration not yet run — save the rest of the edit.
+    ({ error } = await admin.from("investors").update(baseUpdate).eq("id", investorId));
+  }
   if (error) return { error: `Update failed: ${error.message}` };
 
   revalidateAdmin();
