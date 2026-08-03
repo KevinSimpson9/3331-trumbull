@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deliverPortalInvite } from "@/lib/invites";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import type { FormState } from "./auth";
@@ -38,31 +39,12 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
 
   const admin = createAdminClient();
 
-  // Portal invite email with a set-password link.
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  let authUserId: string | null = null;
-  let inviteLink: string | undefined;
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
-    data: { legal_name: legalName },
-  });
-  if (inviteError) {
-    // Email couldn't be sent (commonly Supabase's hourly email rate limit).
-    // Fall back to minting the invite link directly so the admin can deliver
-    // it themselves — the investor is still created. The link targets our own
-    // /auth/confirm with the token hash, avoiding Supabase's redirect hop.
-    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-      type: "invite",
-      email,
-      options: { data: { legal_name: legalName } },
-    });
-    if (linkError || !linkData?.properties?.hashed_token) {
-      return { error: `Invite failed: ${inviteError.message}` };
-    }
-    authUserId = linkData.user?.id ?? null;
-    inviteLink = `${siteUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=invite&next=/auth/set-password`;
-  } else {
-    authUserId = invited.user?.id ?? null;
+  // Portal invite with a set-password link — Resend-first, Supabase mailer as
+  // backup, manual link as last resort (see lib/invites.ts). Links target our
+  // own /auth/confirm with the token hash, avoiding Supabase's redirect hop.
+  const invite = await deliverPortalInvite(email, legalName);
+  if (!invite.authUserId) {
+    return { error: `Invite failed: ${invite.error ?? "could not create the account"}` };
   }
 
   const { error: insertError } = await admin.from("investors").insert({
@@ -72,7 +54,7 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
     rate,
     term_months: term,
     status: "invited",
-    auth_user_id: authUserId,
+    auth_user_id: invite.authUserId,
   });
   if (insertError) {
     return {
@@ -97,12 +79,12 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   }
 
   revalidateAdmin();
-  if (inviteLink) {
+  if (!invite.delivered && invite.inviteLink) {
     return {
       ok: true,
       message:
         "Investor created — but the invite email couldn't be sent (email rate limit). Send them this link yourself:",
-      inviteLink,
+      inviteLink: invite.inviteLink,
     };
   }
   return { ok: true, message: "Investor created — invite sent ✓" };

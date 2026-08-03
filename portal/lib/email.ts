@@ -1,3 +1,8 @@
+/** True when Resend is configured and sendEmail() can actually deliver. */
+export function emailConfigured(): boolean {
+  return Boolean(process.env.RESEND_API_KEY);
+}
+
 /**
  * Optional transactional email via Resend (https://resend.com).
  * If RESEND_API_KEY is not set, sends are skipped silently — the portal's

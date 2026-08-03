@@ -2,6 +2,7 @@
 
 import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
+import { deliverPortalInvite } from "@/lib/invites";
 import { firstName, fmtMoney } from "@/lib/format";
 import type { FormState } from "./auth";
 
@@ -41,15 +42,11 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
-    data: { legal_name: legalName },
-  });
-  if (inviteError) {
+  const invite = await deliverPortalInvite(email, legalName);
+  if (!invite.authUserId) {
     return {
-      error: /rate limit/i.test(inviteError.message)
-        ? "Our invite emails are briefly rate-limited — please try again in about an hour, or email kevin@akcapital.fund and we'll set you up directly."
-        : `Could not send your invite: ${inviteError.message}`,
+      error:
+        "Something went wrong setting up your account — email kevin@akcapital.fund and we'll set you up directly.",
     };
   }
 
@@ -60,7 +57,7 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
       email,
       principal: amount,
       status: "invited",
-      auth_user_id: invited.user?.id ?? null,
+      auth_user_id: invite.authUserId,
     })
     .select("id")
     .single();
@@ -83,7 +80,10 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
     },
   ]);
 
-  // Email notifications (no-ops until RESEND_API_KEY is configured).
+  // Email notifications (no-ops until RESEND_API_KEY is configured). The
+  // set-password invite itself was already handled by deliverPortalInvite;
+  // when it couldn't be emailed, the admin copy carries the link so Kevin can
+  // deliver it by hand.
   await Promise.all([
     sendEmail({
       to: ADMIN_EMAIL,
@@ -92,6 +92,10 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
         `New subscription on the 3331 Trumbull investor portal:\n\n` +
         `Name: ${legalName}\nEmail: ${email}\nConsidering: ${fmtMoney(amount)}\n` +
         `Method: ${method || "—"}\n\n` +
+        (!invite.delivered && invite.inviteLink
+          ? `Their invite email couldn't be sent — send them this set-password link ` +
+            `yourself:\n${invite.inviteLink}\n\n`
+          : "") +
         `Their room is live and the LOI is queued for signature.\nAdmin: ${siteUrl}/admin`,
     }),
     sendEmail({
@@ -107,5 +111,17 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
     }),
   ]);
 
+  // Even when no invite email could go out (Supabase rate-limited and Resend
+  // not configured), the subscription went through — say so instead of
+  // dead-ending them. Kevin sees the commitment in the back office and can
+  // send the link from the roster's "Copy invite link".
+  if (!invite.delivered) {
+    return {
+      ok: true,
+      message:
+        "You're subscribed — your room is being set up. We'll email your sign-in link shortly; " +
+        "if you don't hear from us within the hour, email kevin@akcapital.fund.",
+    };
+  }
   return { ok: true, message: "Check your email — your invite is on its way." };
 }
