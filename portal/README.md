@@ -44,6 +44,17 @@ The "Project Website" card links to trumbullnorth.com. Files are private; the ap
 
 The sign-in screen links to **/subscribe**: an interested investor enters their legal name, email, indicative commitment, and investment method. That creates their investor record, emails them the set-password invite, seeds their message thread (so the commitment shows with an unread dot in the back office), and — once they set a password — drops them straight into the room with the Letter of Intent modal open for signature. Set `RESEND_API_KEY` to also send an alert email to the admin and a confirmation email to the subscriber.
 
+## Email: how it works (and works without it)
+
+The portal **never depends on email delivery** for a critical flow:
+
+- Adding an investor always shows the set-password link on screen — text or email it yourself if the automatic email doesn't go out.
+- A self-service subscriber whose invite email can't be sent is redirected straight into their own create-password screen instead of waiting on an empty inbox.
+- The roster's "Copy invite link" mints a fresh link anytime — a set-password invite for new investors, a password-reset link for existing ones (covers "I forgot my password" with zero email).
+- When an investor signs their final document, a "✓ Signed all documents" message lands in their back-office thread with the unread dot.
+
+Automatic email (invites, resets, welcome, all-docs-signed, subscription alerts) requires Resend. The **Email delivery card at the bottom of the admin dashboard** shows live status, a guided setup checklist, a "send me a test email" button, and a log of every send attempt with the exact provider error on failure — nothing fails silently.
+
 ## Day-to-day use
 
 - Add an investor from the admin roster → they receive an invite email → the link lands on a "You're invited — continue to create your password" screen → one click takes them to set-password, then straight into their room. (The link is verified only on that click, not on page load — email security scanners prefetch every link in an email, and verifying on load let them burn the single-use token before the investor ever clicked.)

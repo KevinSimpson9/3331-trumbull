@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
 import { deliverPortalInvite, siteUrl } from "@/lib/invites";
@@ -111,10 +112,12 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
     }),
   ]);
 
-  // Even when no invite email could go out (Supabase rate-limited and Resend
-  // not configured), the subscription went through — say so instead of
-  // dead-ending them. Kevin sees the commitment in the back office and can
-  // send the link from the roster's "Copy invite link".
+  // When the invite email couldn't be delivered, don't dead-end the
+  // subscriber waiting on an inbox that will stay empty — they're right here
+  // on our site, so hand them straight into their own set-password flow.
+  if (!invite.delivered && invite.inviteLink) {
+    redirect(invite.inviteLink);
+  }
   if (!invite.delivered) {
     return {
       ok: true,

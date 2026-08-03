@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
-import { emailConfigured, emailFrom, usingSandboxSender } from "@/lib/email";
+import { emailConfigured, emailFrom, usingSandboxSender, getEmailLog } from "@/lib/email";
 import { DOC_COUNT, PAYMENT_SCHEDULES } from "@/lib/docs";
 import { effectiveSchedule } from "@/lib/schedule";
 import { SIGNED_DOCS_BUCKET } from "@/lib/pdf";
@@ -49,9 +49,10 @@ export default async function AdminPage({
     // cleanup is best-effort; the rows are also invisible to the app either way
   }
 
-  const [{ data: signaturesData }, { data: messagesData }] = await Promise.all([
+  const [{ data: signaturesData }, { data: messagesData }, emailLog] = await Promise.all([
     supabase.from("signatures").select("*"),
     supabase.from("messages").select("*").order("sent_at", { ascending: true }),
+    getEmailLog(),
   ]);
 
   const signatures = (signaturesData as Signature[]) ?? [];
@@ -146,6 +147,7 @@ export default async function AdminPage({
             sandbox: emailConfigured() && usingSandboxSender(),
             adminEmail: ADMIN_EMAIL,
           }}
+          log={emailLog}
         />
       </div>
     </div>
