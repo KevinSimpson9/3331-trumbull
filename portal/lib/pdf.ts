@@ -67,7 +67,7 @@ export async function generateSignedPdf(info: SignInfo): Promise<Uint8Array> {
 
   // ---- letterhead -----------------------------------------------------
   page.drawText("3331 TRUMBULL", { x: MARGIN, y, size: 10, font: helvBold, color: GOLD });
-  page.drawText("AK Capital Investments LLC · Detroit, MI", {
+  page.drawText("3331 Trumbull LLC · Sponsored by AK Capital Investments LLC · Detroit, MI", {
     x: MARGIN,
     y: y - 14,
     size: 9,
@@ -160,7 +160,7 @@ export async function generateSignedPdf(info: SignInfo): Promise<Uint8Array> {
   }
 
   pdf.setTitle(`${info.doc.title} — ${info.signerName}`);
-  pdf.setAuthor("AK Capital Investments LLC");
+  pdf.setAuthor("3331 Trumbull LLC");
   pdf.setSubject("3331 Trumbull — executed investor document");
   pdf.setCreationDate(signedAt);
 

@@ -76,6 +76,25 @@ function SignModal({
             <div className="paper-title">{doc.title}</div>
             <div className="paper-body">{doc.body}</div>
           </div>
+          {doc.key === "accreditation" && (
+            <div className="field">
+              <label className="label">SELECT YOUR INVESTOR STATUS — BOTH ARE ACCEPTABLE</label>
+              <label className="consent-row">
+                <input type="radio" name="accreditationStatus" value="accredited" />
+                <span>
+                  Accredited investor — I meet at least one of the SEC Rule 501 income,
+                  net-worth, or professional-certification standards.
+                </span>
+              </label>
+              <label className="consent-row">
+                <input type="radio" name="accreditationStatus" value="non_accredited" />
+                <span>
+                  Non-accredited investor — I do not currently meet an SEC Rule 501 standard,
+                  and I can evaluate the merits and risks of this investment.
+                </span>
+              </label>
+            </div>
+          )}
           <div className="field">
             <label className="label">TYPE YOUR FULL LEGAL NAME TO SIGN</label>
             <input
@@ -99,8 +118,8 @@ function SignModal({
             <input type="checkbox" name="consent" />
             <span>
               I agree that my electronic signature is the legal equivalent of my handwritten
-              signature, and I consent to do business electronically with AK Capital Investments
-              LLC (E-SIGN Act).
+              signature, and I consent to do business electronically with 3331 Trumbull LLC and
+              its sponsor, AK Capital Investments LLC (E-SIGN Act).
             </span>
           </label>
           {state.error && <div className="error-text">{state.error}</div>}

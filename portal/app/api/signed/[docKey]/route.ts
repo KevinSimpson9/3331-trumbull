@@ -63,7 +63,9 @@ export async function GET(request: NextRequest, { params }: { params: { docKey: 
   let url = await signedUrl();
   if (!url) {
     // Regenerate from the legal record (covers pre-feature signatures).
-    const doc = docDefs(investor).find((d) => d.key === signature.doc_key);
+    const doc = docDefs(investor, {
+      accreditation: signature.accreditation_status ?? null,
+    }).find((d) => d.key === signature.doc_key);
     if (doc) {
       const pdfBytes = await generateSignedPdf({
         investor,

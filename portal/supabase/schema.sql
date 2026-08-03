@@ -37,6 +37,8 @@ create table if not exists public.signatures (
   signed_at    timestamptz not null default now(),
   user_agent   text,
   ip           text,
+  -- accredited / non-accredited selection on the accreditation form (506(b): both acceptable)
+  accreditation_status text check (accreditation_status in ('accredited', 'non_accredited')),
   unique (investor_id, doc_key)
 );
 

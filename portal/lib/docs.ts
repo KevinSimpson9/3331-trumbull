@@ -1,5 +1,5 @@
 import { fmtMoney } from "./format";
-import type { DocKey, Investor } from "./types";
+import type { AccreditationStatus, DocKey, Investor } from "./types";
 
 export interface SignableDoc {
   key: DocKey;
@@ -9,9 +9,16 @@ export interface SignableDoc {
   body: string;
 }
 
-/** The three per-investor signable documents, terms interpolated per the design. */
-export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" | "term_months"> & { email?: string }): SignableDoc[] {
+/** The per-investor signable documents, terms interpolated per the design.
+ *  `opts.accreditation` fills in the investor-status selection on the
+ *  accreditation form once the investor has chosen (both are acceptable). */
+export function docDefs(
+  inv: Pick<Investor, "legal_name" | "principal" | "rate" | "term_months"> & { email?: string },
+  opts?: { accreditation?: AccreditationStatus | null }
+): SignableDoc[] {
   const amt = fmtMoney(inv.principal);
+  const accreditation = opts?.accreditation ?? null;
+  const mark = (k: AccreditationStatus) => (accreditation === k ? "[X]" : "[ ]");
   return [
     {
       key: "loi",
@@ -35,7 +42,7 @@ export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" 
         `Payments: Interest-only, paid quarterly in cash\n` +
         `Term: 18–24 months from funding\n` +
         `Repayment: Principal repaid in full at maturity from unit sale proceeds\n` +
-        `Security: Second position debt, plus a personal guarantee from the sponsor\n` +
+        `Security: Second position debt, plus a personal guarantee from Lukas Bondy of Bondy Construction & Design\n` +
         `Use of Proceeds: Construction of a 25-unit for-sale townhome development in North Corktown, Detroit\n\n` +
         `TERMS OF THIS LETTER\n\n` +
         `1. Non-Binding Effect. Except for the paragraphs titled "Confidentiality" and "Expiration," this letter is a ` +
@@ -61,10 +68,10 @@ export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" 
       desc: `${amt} principal · ${inv.rate}% per annum · ${inv.term_months}-month term`,
       body:
         `PROMISSORY NOTE — 3331 Trumbull, Detroit, MI\n\n` +
-        `Borrower: AK Capital Investments LLC\nLender: ${inv.legal_name}\nPrincipal: ${amt}\n` +
+        `Borrower: 3331 Trumbull LLC (the "Borrower")\nLender: ${inv.legal_name} (the "Lender")\nPrincipal: ${amt}\n` +
         `Rate: ${inv.rate}% per annum\nTerm: ${inv.term_months} months from funding\n` +
-        `Security: Second-position debt on 3331 Trumbull plus personal guarantee of the principals.\n\n` +
-        `For value received, Borrower promises to pay Lender the principal sum with interest as set forth above. ` +
+        `Security: Second-position debt on 3331 Trumbull plus a personal guarantee from Lukas Bondy of Bondy Construction & Design.\n\n` +
+        `For value received, 3331 Trumbull LLC promises to pay Lender the principal sum with interest as set forth above. ` +
         `Prepayment permitted without penalty. Events of default, notice, and cure periods per the full agreement in your document folder.\n\n` +
         `This on-screen summary is provided for e-signature convenience; the countersigned original will be returned to your folder.`,
     },
@@ -75,17 +82,22 @@ export function docDefs(inv: Pick<Investor, "legal_name" | "principal" | "rate" 
       desc: "Acknowledge the personal guarantee backing your note",
       body:
         `PERSONAL GUARANTEE — ACKNOWLEDGMENT\n\n` +
-        `The principals of AK Capital Investments LLC personally and unconditionally guarantee repayment of the note held by ${inv.legal_name}.\n\n` +
+        `Guarantor: Lukas Bondy, Bondy Construction & Design\n\n` +
+        `Lukas Bondy of Bondy Construction & Design personally and unconditionally guarantees repayment of the promissory note issued by 3331 Trumbull LLC and held by ${inv.legal_name}.\n\n` +
         `By signing, you acknowledge receipt of the guarantee instrument and that it remains in force for the life of the note.`,
     },
     {
       key: "accreditation",
       badge: "SIGN",
       title: "Accredited Investor Verification",
-      desc: "Self-certification of accredited status (Reg D 506(b))",
+      desc: "Self-certification of investor status (Reg D 506(b)) · accredited or non-accredited",
       body:
-        `ACCREDITED INVESTOR SELF-CERTIFICATION\n\n` +
-        `I, ${inv.legal_name}, certify that I qualify as an accredited investor under SEC Rule 501 of Regulation D by meeting at least one of the income, net-worth, or professional-certification standards, and that the information I have provided is accurate.`,
+        `INVESTOR STATUS SELF-CERTIFICATION\n\n` +
+        `I, ${inv.legal_name}, certify my investor status in connection with the offering of secured promissory notes by 3331 Trumbull LLC. Both accredited and non-accredited investors may participate in this offering under SEC Rule 506(b) of Regulation D.\n\n` +
+        `${mark("accredited")} ACCREDITED INVESTOR — I qualify as an accredited investor under SEC Rule 501 of Regulation D by meeting at least one of the income, net-worth, or professional-certification standards.\n\n` +
+        `${mark("non_accredited")} NON-ACCREDITED INVESTOR — I do not currently qualify as an accredited investor under SEC Rule 501 of Regulation D, and I have, alone or together with my advisors, sufficient knowledge and experience in financial and business matters to evaluate the merits and risks of this investment.\n\n` +
+        (accreditation ? "" : `Select your status below before signing — either selection is acceptable.\n\n`) +
+        `I confirm the information I have provided is accurate and complete.`,
     },
   ];
 }
