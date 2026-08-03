@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
-import { DEFAULT_PROJECT_DOCS } from "@/lib/docs";
+import { loadProjectDocs } from "@/lib/projectDocs";
 import { withEffectiveSchedule } from "@/lib/schedule";
-import type { Investor, Message, ProjectDocument, Signature } from "@/lib/types";
+import type { Investor, Message, Signature } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import InvestorRoomView from "@/components/InvestorRoomView";
 import { adminSendMessage } from "@/app/actions/admin";
@@ -27,18 +27,15 @@ export default async function ViewAsInvestorPage({ params }: { params: { id: str
   if (!investorRow) redirect("/admin");
   const investor = await withEffectiveSchedule(investorRow);
 
-  const [{ data: signatures }, { data: messages }, { data: projectDocs }] = await Promise.all([
+  const [{ data: signatures }, { data: messages }, docs] = await Promise.all([
     supabase.from("signatures").select("*").eq("investor_id", investor.id),
     supabase
       .from("messages")
       .select("*")
       .eq("investor_id", investor.id)
       .order("sent_at", { ascending: true }),
-    supabase.from("project_documents").select("*").order("sort", { ascending: true }),
+    loadProjectDocs(supabase),
   ]);
-
-  const docs: ProjectDocument[] =
-    projectDocs && projectDocs.length ? projectDocs : (DEFAULT_PROJECT_DOCS as ProjectDocument[]);
 
   return (
     <div style={{ minHeight: "100vh" }}>

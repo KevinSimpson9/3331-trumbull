@@ -570,6 +570,24 @@ select.input {
   color: var(--gold);
   font-size: 16px;
 }
+.link-card-soon {
+  cursor: default;
+  opacity: 0.72;
+}
+.link-card-soon:hover {
+  border-color: var(--border);
+}
+.soon-chip {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1px solid var(--border-input);
+  border-radius: 20px;
+  padding: 5px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 /* ----- chat ------------------------------------------------------------ */
 .chat-card {

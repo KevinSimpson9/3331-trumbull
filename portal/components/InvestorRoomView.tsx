@@ -1,6 +1,7 @@
 import { docDefs, DOC_COUNT } from "@/lib/docs";
 import { firstName, fmtDate, fmtMoney, todayLabel } from "@/lib/format";
-import type { Investor, Message, ProjectDocument, Signature } from "@/lib/types";
+import type { Investor, Message, Signature } from "@/lib/types";
+import type { ProjectDocumentVM } from "@/lib/projectDocs";
 import type { FormState } from "@/app/actions/auth";
 import SignDocsSection from "./SignDocsSection";
 import MessageThread, { type BubbleVM } from "./MessageThread";
@@ -9,7 +10,7 @@ interface Props {
   investor: Investor;
   signatures: Signature[];
   messages: Message[];
-  projectDocs: ProjectDocument[];
+  projectDocs: ProjectDocumentVM[];
   sendAction: (formData: FormData) => Promise<FormState>;
   viewingAs?: boolean;
   /** Doc key to auto-open for signature on load (e.g. "loi" after set-password). */
@@ -98,24 +99,37 @@ export default function InvestorRoomView({
       <div className="section">
         <SectionHead title="Project documents" ordinal="02" />
         <div className="link-card-grid">
-          {projectDocs.map((d) => (
-            <a
-              key={d.id}
-              className="link-card"
-              href={d.href ?? `/api/doc/${d.id}`}
-              target={d.href ? "_blank" : undefined}
-              rel={d.href ? "noopener noreferrer" : undefined}
-            >
-              <div className="doc-glyph">
-                <span className="doc-glyph-badge">{d.badge}</span>
+          {projectDocs.map((d) =>
+            d.available ? (
+              <a
+                key={d.id}
+                className="link-card"
+                href={d.href ?? `/api/doc/${d.id}`}
+                target={d.href ? "_blank" : undefined}
+                rel={d.href ? "noopener noreferrer" : undefined}
+              >
+                <div className="doc-glyph">
+                  <span className="doc-glyph-badge">{d.badge}</span>
+                </div>
+                <div className="link-card-main">
+                  <div className="link-card-title">{d.title}</div>
+                  <div className="link-card-desc">{d.description}</div>
+                </div>
+                <span className="link-card-arrow">→</span>
+              </a>
+            ) : (
+              <div key={d.id} className="link-card link-card-soon" aria-disabled="true">
+                <div className="doc-glyph">
+                  <span className="doc-glyph-badge">{d.badge}</span>
+                </div>
+                <div className="link-card-main">
+                  <div className="link-card-title">{d.title}</div>
+                  <div className="link-card-desc">{d.description}</div>
+                </div>
+                <span className="soon-chip">COMING SOON</span>
               </div>
-              <div className="link-card-main">
-                <div className="link-card-title">{d.title}</div>
-                <div className="link-card-desc">{d.description}</div>
-              </div>
-              <span className="link-card-arrow">→</span>
-            </a>
-          ))}
+            )
+          )}
         </div>
       </div>
 
