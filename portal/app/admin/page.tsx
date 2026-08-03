@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
-import { DOC_COUNT } from "@/lib/docs";
+import { DOC_COUNT, PAYMENT_SCHEDULES } from "@/lib/docs";
 import { fmtDate, fmtMoney, initials } from "@/lib/format";
 import type { Investor, Message, Signature } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
@@ -55,13 +55,14 @@ export default async function AdminPage({
     name: i.legal_name,
     email: i.email,
     amount: fmtMoney(i.principal),
-    terms: `${i.rate}% · ${i.term_months} mo · Interest`,
+    terms: `${i.rate}% · ${i.term_months} mo · ${(PAYMENT_SCHEDULES[i.payment_schedule] ?? PAYMENT_SCHEDULES.quarterly).short}`,
     active: i.status === "active",
     statusLabel: i.status === "active" ? "● Active" : "Invited",
     docsLabel: `${signedCount(i.id)} of ${DOC_COUNT} docs signed`,
     principalRaw: Number(i.principal),
     rateRaw: Number(i.rate),
     termRaw: i.term_months,
+    paymentRaw: i.payment_schedule ?? "quarterly",
   }));
 
   const threads: ThreadVM[] = investors.map((i) => {

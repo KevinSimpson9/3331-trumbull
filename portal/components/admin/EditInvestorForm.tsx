@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { updateInvestorAction } from "@/app/actions/admin";
 import type { FormState } from "@/app/actions/auth";
+import { PAYMENT_SCHEDULE_KEYS, PAYMENT_SCHEDULES } from "@/lib/docs";
 import { useToast } from "@/components/Toast";
 import type { RosterRowVM } from "./AllInvestorsCard";
 
@@ -67,6 +68,16 @@ export default function EditInvestorForm({
           <label className="label label-sm">TERM (MONTHS)</label>
           <input name="term" className="input input-sm" defaultValue={row.termRaw} inputMode="numeric" />
         </div>
+      </div>
+      <div className="field field-tight">
+        <label className="label label-sm">HOW INTEREST IS PAID</label>
+        <select name="paymentSchedule" className="input input-sm" defaultValue={row.paymentRaw}>
+          {PAYMENT_SCHEDULE_KEYS.map((k) => (
+            <option key={k} value={k}>
+              {PAYMENT_SCHEDULES[k].label}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="form-helper">
         Changes apply to their stats and any documents they haven&apos;t signed yet. Documents

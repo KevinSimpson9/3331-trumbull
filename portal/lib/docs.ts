@@ -1,5 +1,33 @@
 import { fmtMoney } from "./format";
-import type { AccreditationStatus, DocKey, Investor } from "./types";
+import type { AccreditationStatus, DocKey, Investor, PaymentSchedule } from "./types";
+
+/** Payout options selectable per investor in the admin forms. `label` is the
+ *  dropdown text, `short` the roster chip, `docText` the wording that flows
+ *  into the LOI and promissory note. */
+export const PAYMENT_SCHEDULES: Record<PaymentSchedule, { label: string; short: string; docText: string }> = {
+  monthly: {
+    label: "Interest paid monthly",
+    short: "Monthly",
+    docText: "Interest-only, paid monthly in cash",
+  },
+  quarterly: {
+    label: "Interest paid quarterly",
+    short: "Quarterly",
+    docText: "Interest-only, paid quarterly in cash",
+  },
+  annual: {
+    label: "Interest paid annually",
+    short: "Annual",
+    docText: "Interest-only, paid annually in cash",
+  },
+  maturity: {
+    label: "Interest paid at maturity",
+    short: "At maturity",
+    docText: "Interest accrues and is paid in full, together with principal, at maturity",
+  },
+};
+
+export const PAYMENT_SCHEDULE_KEYS = Object.keys(PAYMENT_SCHEDULES) as PaymentSchedule[];
 
 export interface SignableDoc {
   key: DocKey;
@@ -13,12 +41,17 @@ export interface SignableDoc {
  *  `opts.accreditation` fills in the investor-status selection on the
  *  accreditation form once the investor has chosen (both are acceptable). */
 export function docDefs(
-  inv: Pick<Investor, "legal_name" | "principal" | "rate" | "term_months"> & { email?: string },
+  inv: Pick<Investor, "legal_name" | "principal" | "rate" | "term_months"> & {
+    email?: string;
+    payment_schedule?: PaymentSchedule | null;
+  },
   opts?: { accreditation?: AccreditationStatus | null }
 ): SignableDoc[] {
   const amt = fmtMoney(inv.principal);
   const accreditation = opts?.accreditation ?? null;
   const mark = (k: AccreditationStatus) => (accreditation === k ? "[X]" : "[ ]");
+  // Rows created before the payment_schedule column existed fall back to quarterly.
+  const sched = PAYMENT_SCHEDULES[inv.payment_schedule ?? "quarterly"] ?? PAYMENT_SCHEDULES.quarterly;
   return [
     {
       key: "loi",
@@ -39,7 +72,7 @@ export function docDefs(
         `Investment Amount: ${amt}\n` +
         `Total Offering: Up to $700,000 across a limited group of accredited investors\n` +
         `Interest Rate: ${inv.rate}% per annum, fixed\n` +
-        `Payments: Interest-only, paid quarterly in cash\n` +
+        `Payments: ${sched.docText}\n` +
         `Term: 18–24 months from funding\n` +
         `Repayment: Principal repaid in full at maturity from unit sale proceeds\n` +
         `Security: Second position debt, plus a personal guarantee from Lukas Bondy of Bondy Construction & Design\n` +
@@ -70,6 +103,7 @@ export function docDefs(
         `PROMISSORY NOTE — 3331 Trumbull, Detroit, MI\n\n` +
         `Borrower: 3331 Trumbull LLC (the "Borrower")\nLender: ${inv.legal_name} (the "Lender")\nPrincipal: ${amt}\n` +
         `Rate: ${inv.rate}% per annum\nTerm: ${inv.term_months} months from funding\n` +
+        `Payments: ${sched.docText}\n` +
         `Security: Second-position debt on 3331 Trumbull plus a personal guarantee from Lukas Bondy of Bondy Construction & Design.\n\n` +
         `For value received, 3331 Trumbull LLC promises to pay Lender the principal sum with interest as set forth above. ` +
         `Prepayment permitted without penalty. Events of default, notice, and cure periods per the full agreement in your document folder.\n\n` +

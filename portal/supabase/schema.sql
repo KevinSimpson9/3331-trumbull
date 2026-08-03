@@ -25,6 +25,9 @@ create table if not exists public.investors (
   principal     numeric not null check (principal > 0),
   rate          numeric not null default 20,
   term_months   integer not null default 20,
+  -- how interest is paid out (flows into the LOI / note wording)
+  payment_schedule text not null default 'quarterly'
+    check (payment_schedule in ('monthly', 'quarterly', 'annual', 'maturity')),
   status        text not null default 'invited' check (status in ('invited', 'active')),
   created_at    timestamptz not null default now()
 );

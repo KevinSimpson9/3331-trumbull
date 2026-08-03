@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { createInvestorAction } from "@/app/actions/admin";
 import type { FormState } from "@/app/actions/auth";
+import { PAYMENT_SCHEDULE_KEYS, PAYMENT_SCHEDULES } from "@/lib/docs";
 import { useToast } from "@/components/Toast";
 
 function CreateButton() {
@@ -79,6 +80,16 @@ export default function AddInvestorForm({ onClose }: { onClose: () => void }) {
           <label className="label label-sm">TERM (MONTHS)</label>
           <input name="term" className="input input-sm" defaultValue="20" inputMode="numeric" />
         </div>
+      </div>
+      <div className="field field-tight">
+        <label className="label label-sm">HOW INTEREST IS PAID</label>
+        <select name="paymentSchedule" className="input input-sm" defaultValue="quarterly">
+          {PAYMENT_SCHEDULE_KEYS.map((k) => (
+            <option key={k} value={k}>
+              {PAYMENT_SCHEDULES[k].label}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="form-helper">
         We&apos;ll create their private folder, generate sign-in credentials, and email a portal

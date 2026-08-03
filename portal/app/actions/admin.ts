@@ -6,7 +6,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { deliverPortalInvite } from "@/lib/invites";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
+import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
+import type { PaymentSchedule } from "@/lib/types";
 import type { FormState } from "./auth";
+
+function parsePaymentSchedule(formData: FormData): PaymentSchedule {
+  const raw = String(formData.get("paymentSchedule") || "") as PaymentSchedule;
+  return PAYMENT_SCHEDULE_KEYS.includes(raw) ? raw : "quarterly";
+}
 
 async function requireAdmin() {
   const supabase = createClient();
@@ -32,6 +39,7 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   const principal = Number(formData.get("principal"));
   const rate = Number(formData.get("rate")) || 20;
   const term = Number(formData.get("term")) || 20;
+  const paymentSchedule = parsePaymentSchedule(formData);
 
   if (!legalName || !email || !principal) {
     return { error: "Name, email, and principal are required" };
@@ -53,6 +61,7 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
     principal,
     rate,
     term_months: term,
+    payment_schedule: paymentSchedule,
     status: "invited",
     auth_user_id: invite.authUserId,
   });
@@ -146,6 +155,7 @@ export async function updateInvestorAction(_prev: FormState, formData: FormData)
   const principal = Number(formData.get("principal"));
   const rate = Number(formData.get("rate"));
   const term = Number(formData.get("term"));
+  const paymentSchedule = parsePaymentSchedule(formData);
 
   if (!investorId) return { error: "Missing investor." };
   if (!legalName) return { error: "Legal name is required." };
@@ -156,7 +166,7 @@ export async function updateInvestorAction(_prev: FormState, formData: FormData)
   const admin = createAdminClient();
   const { error } = await admin
     .from("investors")
-    .update({ legal_name: legalName, principal, rate, term_months: term })
+    .update({ legal_name: legalName, principal, rate, term_months: term, payment_schedule: paymentSchedule })
     .eq("id", investorId);
   if (error) return { error: `Update failed: ${error.message}` };
 

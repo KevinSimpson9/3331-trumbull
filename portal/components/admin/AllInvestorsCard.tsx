@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import type { PaymentSchedule } from "@/lib/types";
 import AddInvestorForm from "./AddInvestorForm";
 import EditInvestorForm from "./EditInvestorForm";
 import RosterActions from "./RosterActions";
@@ -18,6 +19,7 @@ export interface RosterRowVM {
   principalRaw: number;
   rateRaw: number;
   termRaw: number;
+  paymentRaw: PaymentSchedule;
 }
 
 export default function AllInvestorsCard({ rows }: { rows: RosterRowVM[] }) {
