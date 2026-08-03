@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { deliverPortalInvite } from "@/lib/invites";
+import { deliverPortalInvite, siteUrl } from "@/lib/invites";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
@@ -120,7 +120,8 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
     return {
       ok: true,
       message:
-        "Investor created — but the invite email couldn't be sent (email rate limit). Send them this link yourself:",
+        `Investor created — but the invite email couldn't be sent` +
+        `${invite.deliveryError ? ` (${invite.deliveryError})` : ""}. Send them this link yourself:`,
       inviteLink: invite.inviteLink,
     };
   }
@@ -141,7 +142,7 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
     .maybeSingle();
   if (!investor) return { error: "Investor not found" };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const base = siteUrl();
 
   // Links target our own /auth/confirm with the token hash — no dependence on
   // Supabase's redirect allow-list, so they always land inside the portal.
@@ -155,7 +156,7 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
   if (inviteData?.properties?.hashed_token) {
     return {
       ok: true,
-      inviteLink: `${siteUrl}/auth/confirm?token_hash=${inviteData.properties.hashed_token}&type=invite&next=/auth/set-password`,
+      inviteLink: `${base}/auth/confirm?token_hash=${inviteData.properties.hashed_token}&type=invite&next=/auth/set-password`,
     };
   }
 
@@ -168,7 +169,7 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
   }
   return {
     ok: true,
-    inviteLink: `${siteUrl}/auth/confirm?token_hash=${magicData.properties.hashed_token}&type=magiclink&next=${encodeURIComponent("/room?sign=loi")}`,
+    inviteLink: `${base}/auth/confirm?token_hash=${magicData.properties.hashed_token}&type=magiclink&next=${encodeURIComponent("/room?sign=loi")}`,
   };
 }
 

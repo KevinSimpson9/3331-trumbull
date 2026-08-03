@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, emailConfigured } from "@/lib/email";
 import { firstName } from "@/lib/format";
@@ -9,12 +10,29 @@ export interface InviteDelivery {
   inviteLink: string | null;
   /** True when an email carrying the set-password link actually went out. */
   delivered: boolean;
+  /** Why the email didn't go out, when delivered is false (Resend/Supabase reason). */
+  deliveryError?: string;
   /** Underlying failure message when the account couldn't be created at all. */
   error?: string;
 }
 
-function siteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL || "";
+/** The portal's public origin. Prefers NEXT_PUBLIC_SITE_URL; falls back to the
+ *  current request's host so emailed links are never relative/broken when the
+ *  env var is missing or stale. */
+export function siteUrl(): string {
+  const env = process.env.NEXT_PUBLIC_SITE_URL;
+  if (env) return env.replace(/\/+$/, "");
+  try {
+    const h = headers();
+    const host = h.get("x-forwarded-host") ?? h.get("host");
+    if (host) {
+      const proto = h.get("x-forwarded-proto") ?? "https";
+      return `${proto}://${host}`;
+    }
+  } catch {
+    // outside a request scope — nothing to fall back to
+  }
+  return "";
 }
 
 /** Self-contained link to our own /auth/confirm route with the token hash —
@@ -46,7 +64,7 @@ export async function deliverPortalInvite(email: string, legalName: string): Pro
     });
     if (!error && data?.properties?.hashed_token) {
       const link = confirmLink(data.properties.hashed_token, "invite", "/auth/set-password");
-      const delivered = await sendEmail({
+      const sent = await sendEmail({
         to: email,
         subject: "3331 Trumbull investor portal — set your password",
         text:
@@ -56,7 +74,12 @@ export async function deliverPortalInvite(email: string, legalName: string): Pro
           `Once you're in, your documents are ready to review and sign right in the portal.\n\n` +
           `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
       });
-      return { authUserId: data.user?.id ?? null, inviteLink: link, delivered };
+      return {
+        authUserId: data.user?.id ?? null,
+        inviteLink: link,
+        delivered: sent.ok,
+        deliveryError: sent.error,
+      };
     }
     // generateLink failed (e.g. the auth account already exists) — fall
     // through so Supabase's invite path can report the real error.
@@ -84,6 +107,7 @@ export async function deliverPortalInvite(email: string, legalName: string): Pro
     authUserId: linkData.user?.id ?? null,
     inviteLink: confirmLink(linkData.properties.hashed_token, "invite", "/auth/set-password"),
     delivered: false,
+    deliveryError: inviteError.message,
   };
 }
 
@@ -103,7 +127,7 @@ export async function deliverPasswordReset(email: string): Promise<void> {
     if (error) return; // no such account — nothing to send
     if (data?.properties?.hashed_token) {
       const link = confirmLink(data.properties.hashed_token, "recovery", "/auth/set-password");
-      const delivered = await sendEmail({
+      const sent = await sendEmail({
         to: email,
         subject: "3331 Trumbull investor portal — reset your password",
         text:
@@ -111,7 +135,7 @@ export async function deliverPasswordReset(email: string): Promise<void> {
           `If you didn't request this, you can ignore this email.\n\n` +
           `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
       });
-      if (delivered) return;
+      if (sent.ok) return;
     }
   }
 

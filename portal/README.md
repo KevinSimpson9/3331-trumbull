@@ -46,7 +46,9 @@ The sign-in screen links to **/subscribe**: an interested investor enters their 
 
 ## Day-to-day use
 
-- Add an investor from the admin roster → they receive a Supabase invite email → the link lands on the portal's set-password screen → they sign in and see their room.
+- Add an investor from the admin roster → they receive an invite email → the link lands on a "You're invited — continue to create your password" screen → one click takes them to set-password, then straight into their room. (The link is verified only on that click, not on page load — email security scanners prefetch every link in an email, and verifying on load let them burn the single-use token before the investor ever clicked.)
+- An expired or already-used link shows a "this link has expired" screen with a self-service "email me a fresh link" form — investors never dead-end.
+- Once the investor sets their password they get a welcome email; when they sign their final document, both they and the admin get an "all documents signed" email (requires `RESEND_API_KEY`).
 - Signing a document records the typed legal name, timestamp, user agent, and IP in the `signatures` table and flips the investor to Active.
 - The gold dot on a thread means the last message is from the investor and unread; opening the thread clears it.
 
@@ -65,7 +67,7 @@ Signing a document generates an executed PDF (letterhead, full document text, th
 
 ## Not yet wired (deliberate v1 scope)
 
-- **Email notifications** beyond the Supabase invite/reset emails (e.g. "new message" pings, emailing signed PDFs to both parties) — add a Resend/Postmark integration in the server actions when wanted.
+- **Email notifications** beyond invites/resets, the post-setup welcome email, and the "all documents signed" emails (e.g. "new message" pings, emailing signed PDFs as attachments) — extend the Resend integration in the server actions when wanted.
 - If invite emails need custom branding or higher volume, configure custom SMTP in Supabase → Authentication → Emails.
 
 ## Recommended: point Supabase's auth emails at the portal's confirm route
@@ -81,5 +83,7 @@ The admin "Copy invite link" button and the rate-limit fallback link already use
 
 ## Troubleshooting
 
+- **Invite link lands on the sign-in page instead of "create your password"** — fixed: /auth/confirm is now an interstitial that only consumes the single-use token when the investor clicks Continue, so email-scanner prefetch can't burn it. If an old link was already burned, the investor sees the "link expired" screen and can email themselves a fresh one.
+- **Welcome / notification emails aren't arriving but invites show "sent ✓"** — almost always Resend's sandbox sender: without a verified domain and `EMAIL_FROM`, `onboarding@resend.dev` only delivers to your own Resend account email. Delivery failures are now logged in Vercel's function logs with Resend's actual error, and the add-investor form shows the real reason alongside the manual link. Fix: verify `trumbullnorth.com` (or `akcapital.fund`) in Resend → Domains, then set `EMAIL_FROM` in Vercel, e.g. `3331 Trumbull Portal <portal@trumbullnorth.com>`.
 - **"Invite failed: email rate limit exceeded" / invites stop arriving** — Supabase's built-in email service only sends a few emails per hour. With `RESEND_API_KEY` set, the portal never touches it — invites and password resets are minted with `generateLink` and sent through Resend (`lib/invites.ts`), so the rate limit disappears. Without Resend, the admin add-investor flow falls back to showing a manual invite link you can text/email yourself, and the public /subscribe flow still records the subscription (with the link available from the roster's "Copy invite link") instead of erroring. The permanent fix is custom SMTP via Resend: verify your domain in Resend (Domains → add → create the DNS records at your registrar), then set `RESEND_API_KEY` and `EMAIL_FROM` (e.g. `3331 Trumbull Portal <portal@trumbullnorth.com>`) in Vercel. Note Resend's default `onboarding@resend.dev` sender only delivers to your own Resend account email — a verified domain is required to email real investors. Optionally also configure custom SMTP in Supabase → **Project Settings → Authentication → SMTP Settings** (host `smtp.resend.com`, port `465`, username `resend`, password = your Resend API key) so the Supabase-mailer fallback path is unlimited too.
 - **Vercel build fails with "No Next.js version detected"** even though Root Directory is `portal`: check that no repo-root `.vercelignore` excludes `portal/` — Vercel strips ignored files from the upload *before* applying the Root Directory, which deletes the app out from under the build. (This bit us once; the root `vercel.json` now handles keeping `/portal` paths off the marketing site instead.)
