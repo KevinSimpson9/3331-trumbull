@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
 import { DOC_COUNT, PAYMENT_SCHEDULES } from "@/lib/docs";
+import { effectiveSchedule } from "@/lib/schedule";
+import { SIGNED_DOCS_BUCKET } from "@/lib/pdf";
 import { fmtDate, fmtMoney, initials } from "@/lib/format";
 import type { Investor, Message, Signature } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
@@ -23,16 +26,40 @@ export default async function AdminPage({
   if (!user) redirect("/");
   if (!(await isAdminUser(supabase))) redirect("/room");
 
-  const [{ data: investorsData }, { data: signaturesData }, { data: messagesData }] =
-    await Promise.all([
-      supabase.from("investors").select("*").order("created_at", { ascending: true }),
-      supabase.from("signatures").select("*"),
-      supabase.from("messages").select("*").order("sent_at", { ascending: true }),
-    ]);
-
+  const { data: investorsData } = await supabase
+    .from("investors")
+    .select("*")
+    .order("created_at", { ascending: true });
   const investors = (investorsData as Investor[]) ?? [];
+
+  // Self-healing cleanup: the accreditation document was removed from the
+  // portal, so purge any leftover signature rows and stored PDFs. Idempotent
+  // and cheap — runs on every admin visit so no SQL console is ever needed.
+  try {
+    const adminDb = createAdminClient();
+    await adminDb.from("signatures").delete().eq("doc_key", "accreditation");
+    if (investors.length) {
+      await adminDb.storage
+        .from(SIGNED_DOCS_BUCKET)
+        .remove(investors.map((i) => `${i.id}/accreditation.pdf`));
+    }
+  } catch {
+    // cleanup is best-effort; the rows are also invisible to the app either way
+  }
+
+  const [{ data: signaturesData }, { data: messagesData }] = await Promise.all([
+    supabase.from("signatures").select("*"),
+    supabase.from("messages").select("*").order("sent_at", { ascending: true }),
+  ]);
+
   const signatures = (signaturesData as Signature[]) ?? [];
   const messages = (messagesData as Message[]) ?? [];
+
+  const scheduleByInvestor = new Map(
+    await Promise.all(
+      investors.map(async (i) => [i.id, await effectiveSchedule(i)] as const)
+    )
+  );
 
   const signedCount = (id: string) => signatures.filter((s) => s.investor_id === id).length;
 
@@ -55,14 +82,14 @@ export default async function AdminPage({
     name: i.legal_name,
     email: i.email,
     amount: fmtMoney(i.principal),
-    terms: `${i.rate}% · ${i.term_months} mo · ${(PAYMENT_SCHEDULES[i.payment_schedule] ?? PAYMENT_SCHEDULES.quarterly).short}`,
+    terms: `${i.rate}% · ${i.term_months} mo · ${PAYMENT_SCHEDULES[scheduleByInvestor.get(i.id) ?? "quarterly"].short}`,
     active: i.status === "active",
     statusLabel: i.status === "active" ? "● Active" : "Invited",
     docsLabel: `${signedCount(i.id)} of ${DOC_COUNT} docs signed`,
     principalRaw: Number(i.principal),
     rateRaw: Number(i.rate),
     termRaw: i.term_months,
-    paymentRaw: i.payment_schedule ?? "quarterly",
+    paymentRaw: scheduleByInvestor.get(i.id) ?? "quarterly",
   }));
 
   const threads: ThreadVM[] = investors.map((i) => {

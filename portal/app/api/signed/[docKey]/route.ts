@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
 import { docDefs } from "@/lib/docs";
+import { withEffectiveSchedule } from "@/lib/schedule";
 import { generateSignedPdf, signedPdfPath, SIGNED_DOCS_BUCKET } from "@/lib/pdf";
 import type { Investor, Signature } from "@/lib/types";
 
@@ -63,7 +64,8 @@ export async function GET(request: NextRequest, { params }: { params: { docKey: 
   let url = await signedUrl();
   if (!url) {
     // Regenerate from the legal record (covers pre-feature signatures).
-    const doc = docDefs(investor).find((d) => d.key === signature.doc_key);
+    const withSched = await withEffectiveSchedule(investor);
+    const doc = docDefs(withSched).find((d) => d.key === signature.doc_key);
     if (doc) {
       const pdfBytes = await generateSignedPdf({
         investor,

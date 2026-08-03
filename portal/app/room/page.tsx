@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
 import { DEFAULT_PROJECT_DOCS } from "@/lib/docs";
+import { withEffectiveSchedule } from "@/lib/schedule";
 import type { Investor, Message, ProjectDocument, Signature } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import InvestorRoomView from "@/components/InvestorRoomView";
@@ -21,12 +22,13 @@ export default async function RoomPage({
   if (!user) redirect("/");
   if (await isAdminUser(supabase)) redirect("/admin");
 
-  const { data: investor } = await supabase
+  const { data: investorRow } = await supabase
     .from("investors")
     .select("*")
     .eq("auth_user_id", user.id)
     .maybeSingle<Investor>();
-  if (!investor) redirect("/");
+  if (!investorRow) redirect("/");
+  const investor = await withEffectiveSchedule(investorRow);
 
   const [{ data: signatures }, { data: messages }, { data: projectDocs }] = await Promise.all([
     supabase.from("signatures").select("*").eq("investor_id", investor.id),
