@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { signOutAction } from "@/app/actions/auth";
 import SetPasswordForm from "@/components/SetPasswordForm";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,15 @@ export default async function SetPasswordPage() {
           your account.
         </div>
         <SetPasswordForm />
+        <form action={signOutAction} style={{ textAlign: "center", fontSize: 12.5 }}>
+          <button
+            type="submit"
+            className="modal-close"
+            style={{ background: "none", border: "none", cursor: "pointer" }}
+          >
+            Not {user.email ?? "you"}? Sign out
+          </button>
+        </form>
       </div>
     </div>
   );

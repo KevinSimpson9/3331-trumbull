@@ -76,11 +76,13 @@ export async function confirmLinkAction(formData: FormData): Promise<void> {
   }
 
   // Verification failed — but if a session already exists (e.g. the link was
-  // used once in this browser already), let them through anyway.
+  // used once in this browser already), let them through anyway. Never carry
+  // an admin session into an investor's set-password flow, though: that link
+  // wasn't theirs, and continuing would change the ADMIN's password.
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect(next);
+  if (user) redirect((await isAdminUser(supabase)) ? "/admin" : next);
 
   redirect("/auth/confirm?error=expired");
 }

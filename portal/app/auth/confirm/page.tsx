@@ -33,9 +33,13 @@ export default async function ConfirmPage({
   const next = searchParams.next ?? "/auth/set-password";
   const hasToken = Boolean((tokenHash && type) || code);
 
-  // Already signed in (link was verified in another tab, or the session is
-  // still live) — no need to consume anything, carry straight on.
-  if (!searchParams.error && !searchParams.sent) {
+  // Already signed in and the link carries no token — nothing to consume,
+  // carry straight on. When the link DOES carry a token, always show the
+  // continue button instead: verifying the token signs the browser in as the
+  // link's owner, replacing any existing session. Skipping that step here
+  // used to hijack invite links opened in an already-signed-in browser (e.g.
+  // the admin testing an investor's link) into the wrong account.
+  if (!hasToken && !searchParams.error && !searchParams.sent) {
     const supabase = createClient();
     const {
       data: { user },
