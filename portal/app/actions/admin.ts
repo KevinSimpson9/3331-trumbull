@@ -117,12 +117,15 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   }
 
   revalidateAdmin();
-  if (!invite.delivered && invite.inviteLink) {
+  // The link is always surfaced — the portal never depends on email delivery
+  // for onboarding. When the email did go out, the link is a backup channel.
+  if (invite.inviteLink) {
     return {
       ok: true,
-      message:
-        `Investor created — but the invite email couldn't be sent` +
-        `${invite.deliveryError ? ` (${invite.deliveryError})` : ""}. Send them this link yourself:`,
+      message: invite.delivered
+        ? "Investor created — invite emailed ✓ You can also text or email them this same link yourself:"
+        : `Investor created — but the invite email couldn't be sent` +
+          `${invite.deliveryError ? ` (${invite.deliveryError})` : ""}. Send them this link yourself:`,
       inviteLink: invite.inviteLink,
     };
   }
@@ -147,8 +150,9 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
 
   // Links target our own /auth/confirm with the token hash — no dependence on
   // Supabase's redirect allow-list, so they always land inside the portal.
-  // 'invite' only works before the user accepts; fall back to a magic link
-  // for anyone who already has an account.
+  // 'invite' only works before the user accepts; fall back to a recovery
+  // (set-password) link for anyone who already has an account, which also
+  // covers "I forgot my password" without needing email delivery at all.
   const { data: inviteData } = await admin.auth.admin.generateLink({
     type: "invite",
     email: investor.email,
@@ -161,16 +165,16 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
     };
   }
 
-  const { data: magicData, error } = await admin.auth.admin.generateLink({
-    type: "magiclink",
+  const { data: recoveryData, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
     email: investor.email,
   });
-  if (error || !magicData?.properties?.hashed_token) {
+  if (error || !recoveryData?.properties?.hashed_token) {
     return { error: "Couldn't create an invite link — try again." };
   }
   return {
     ok: true,
-    inviteLink: `${base}/auth/confirm?token_hash=${magicData.properties.hashed_token}&type=magiclink&next=${encodeURIComponent("/room?sign=loi")}`,
+    inviteLink: `${base}/auth/confirm?token_hash=${recoveryData.properties.hashed_token}&type=recovery&next=/auth/set-password`,
   };
 }
 
