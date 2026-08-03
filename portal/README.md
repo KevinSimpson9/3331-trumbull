@@ -46,7 +46,7 @@ The sign-in screen links to **/subscribe**: an interested investor enters their 
 
 ## Day-to-day use
 
-- Add an investor from the admin roster → they receive a Supabase invite email → the link lands on the portal's set-password screen → they sign in and see their room.
+- Add an investor from the admin roster → they're emailed an invite link (via Resend when `RESEND_API_KEY` is set, otherwise Supabase's built-in email) → the link lands on the portal's set-password screen → they sign in and see their room. If the email can't be sent, the roster shows a copyable invite link instead.
 - Signing a document records the typed legal name, timestamp, user agent, and IP in the `signatures` table and flips the investor to Active.
 - The gold dot on a thread means the last message is from the investor and unread; opening the thread clears it.
 

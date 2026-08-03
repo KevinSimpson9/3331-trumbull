@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
+import { sendEmail } from "@/lib/email";
 import type { FormState } from "./auth";
 
 async function requireAdmin() {
@@ -42,14 +43,10 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   let authUserId: string | null = null;
   let inviteLink: string | undefined;
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
-    data: { legal_name: legalName },
-  });
-  if (inviteError) {
-    // Email couldn't be sent (commonly Supabase's hourly email rate limit).
-    // Fall back to minting the invite link directly so the admin can deliver
-    // it themselves — the investor is still created. The link targets our own
+
+  if (process.env.RESEND_API_KEY) {
+    // Mint the invite link ourselves and deliver it via Resend — not subject
+    // to Supabase's hourly auth-email rate limit. The link targets our own
     // /auth/confirm with the token hash, avoiding Supabase's redirect hop.
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: "invite",
@@ -57,12 +54,45 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
       options: { data: { legal_name: legalName } },
     });
     if (linkError || !linkData?.properties?.hashed_token) {
-      return { error: `Invite failed: ${inviteError.message}` };
+      return { error: `Invite failed: ${linkError?.message || "couldn't create invite link"}` };
     }
     authUserId = linkData.user?.id ?? null;
     inviteLink = `${siteUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=invite&next=/auth/set-password`;
+
+    const emailed = await sendEmail({
+      to: email,
+      subject: "You're invited to the 3331 Trumbull investor portal",
+      text:
+        `${firstName(legalName)},\n\n` +
+        `You've been invited to the 3331 Trumbull investor portal, where your ` +
+        `investment documents are ready to review and sign.\n\n` +
+        `Set your password and sign in here:\n${inviteLink}\n\n` +
+        `This link is personal to you — please don't forward it.\n\n` +
+        `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
+    });
+    if (emailed) inviteLink = undefined; // delivered — no manual link needed
   } else {
-    authUserId = invited.user?.id ?? null;
+    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
+      data: { legal_name: legalName },
+    });
+    if (inviteError) {
+      // Email couldn't be sent (commonly Supabase's hourly email rate limit).
+      // Fall back to minting the invite link directly so the admin can deliver
+      // it themselves — the investor is still created.
+      const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+        type: "invite",
+        email,
+        options: { data: { legal_name: legalName } },
+      });
+      if (linkError || !linkData?.properties?.hashed_token) {
+        return { error: `Invite failed: ${inviteError.message}` };
+      }
+      authUserId = linkData.user?.id ?? null;
+      inviteLink = `${siteUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=invite&next=/auth/set-password`;
+    } else {
+      authUserId = invited.user?.id ?? null;
+    }
   }
 
   const { error: insertError } = await admin.from("investors").insert({
@@ -101,11 +131,11 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
     return {
       ok: true,
       message:
-        "Investor created — but the invite email couldn't be sent (email rate limit). Send them this link yourself:",
+        "Investor created — but the invite email couldn't be sent. Send them this link yourself:",
       inviteLink,
     };
   }
-  return { ok: true, message: "Investor created — invite sent ✓" };
+  return { ok: true, message: "Investor created — invite email sent ✓" };
 }
 
 /** Mint a fresh sign-in link for an investor so the admin can deliver it by

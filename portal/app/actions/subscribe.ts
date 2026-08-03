@@ -41,16 +41,44 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
-    data: { legal_name: legalName },
-  });
-  if (inviteError) {
-    return {
-      error: /rate limit/i.test(inviteError.message)
-        ? "Our invite emails are briefly rate-limited — please try again in about an hour, or email kevin@akcapital.fund and we'll set you up directly."
-        : `Could not send your invite: ${inviteError.message}`,
-    };
+  let authUserId: string | null = null;
+
+  if (process.env.RESEND_API_KEY) {
+    // Mint the invite link ourselves and deliver it via Resend — not subject
+    // to Supabase's hourly auth-email rate limit.
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: { data: { legal_name: legalName } },
+    });
+    if (linkError || !linkData?.properties?.hashed_token) {
+      return { error: `Could not send your invite: ${linkError?.message || "please email kevin@akcapital.fund"}` };
+    }
+    authUserId = linkData.user?.id ?? null;
+    const inviteLink = `${siteUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=invite&next=/auth/set-password`;
+    await sendEmail({
+      to: email,
+      subject: "You're invited to the 3331 Trumbull investor portal",
+      text:
+        `${firstName(legalName)},\n\n` +
+        `Welcome to the 3331 Trumbull investor portal. Set your password and ` +
+        `sign in here:\n${inviteLink}\n\n` +
+        `This link is personal to you — please don't forward it.\n\n` +
+        `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
+    });
+  } else {
+    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${siteUrl}/auth/confirm?next=/auth/set-password`,
+      data: { legal_name: legalName },
+    });
+    if (inviteError) {
+      return {
+        error: /rate limit/i.test(inviteError.message)
+          ? "Our invite emails are briefly rate-limited — please try again in about an hour, or email kevin@akcapital.fund and we'll set you up directly."
+          : `Could not send your invite: ${inviteError.message}`,
+      };
+    }
+    authUserId = invited.user?.id ?? null;
   }
 
   const { data: created, error: insertError } = await admin
@@ -60,7 +88,7 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
       email,
       principal: amount,
       status: "invited",
-      auth_user_id: invited.user?.id ?? null,
+      auth_user_id: authUserId,
     })
     .select("id")
     .single();
