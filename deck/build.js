@@ -211,7 +211,7 @@ function note(slide, text, x, y, w, dark = false) {
     {
       x: M, tag: "PHASE 1", units: "13 homes", sub: "Buildings 1–3",
       lines: [
-        "Funded by a First Merchants construction loan alongside the $700,000 investor note tranche",
+        "Funded by a First Merchants construction loan — secured at 6% — alongside the $700,000 investor note tranche",
         "Seven $100,000 secured notes — the full raise, and the only raise",
         "Pre-sales launch during construction; closings begin as buildings deliver",
       ],
@@ -301,7 +301,7 @@ function note(slide, text, x, y, w, dark = false) {
   s.addText("PHASE 1 CAPITAL STACK", { x: 8.78, y: 3.62, w: 3.6, h: 0.26, fontFace: SANS, fontSize: 9.5, bold: true, color: GOLD_LT, charSpacing: 1.6, margin: 0, valign: "middle" });
 
   const stack = [
-    ["Senior construction loan", "First Merchants Bank", "27505F"],
+    ["Senior construction loan", "First Merchants Bank · secured at 6%", "27505F"],
     ["Investor notes", "$700,000 · 2nd position", GOLD],
     ["Sponsor equity & land", "Site owned since 2022", "27505F"],
   ];
@@ -397,7 +397,7 @@ function note(slide, text, x, y, w, dark = false) {
   title(s, "Sales proforma — all 25 units", M, 0.86, 11.9);
 
   const end = table(s, {
-    x: M, y: 1.74, w: 7.1,
+    x: M, y: 1.68, w: 7.1,
     cols: [3.2, 1.4],
     header: ["LINE ITEM", "AMOUNT"],
     rows: [
@@ -409,9 +409,9 @@ function note(slide, text, x, y, w, dark = false) {
       { cells: ["Closing costs", "($699,326)"] },
       { cells: ["Projected net profit", "$2,672,512"], highlight: true },
     ],
-    rowH: 0.42, fontSize: 11.5,
+    rowH: 0.40, fontSize: 11.5,
   });
-  note(s, "Source: 3331 Trumbull for-sale proforma, June 2026. Figures reflect launch pricing across both phases before upgrade contracts. All figures should be independently verified.", M, end + 0.16, 7.1);
+  note(s, "Source: 3331 Trumbull for-sale proforma, June 2026. Figures reflect launch pricing across both phases before upgrade contracts. All figures should be independently verified.", M, end + 0.12, 7.1);
 
   const stats = [
     ["$288", "BLENDED PRICE\nPER SQUARE FOOT"],
@@ -421,8 +421,18 @@ function note(slide, text, x, y, w, dark = false) {
   ];
   stats.forEach(([v, l], i) => {
     const col = i % 2, row = Math.floor(i / 2);
-    statCard(s, { x: 8.14 + col * 2.34, y: 1.74 + row * 1.7, w: 2.2, h: 1.56, value: v, label: l });
+    statCard(s, { x: 8.14 + col * 2.34, y: 1.68 + row * 1.66, w: 2.2, h: 1.52, value: v, label: l });
   });
+  // Underwriting cushion — the proforma is modeled above the debt actually secured
+  s.addShape(pres.ShapeType.rect, { x: M, y: 5.58, w: 12.08, h: 1.16, fill: { color: INK }, line: { color: GOLD, width: 1.25 } });
+  s.addText("6%", { x: M + 0.34, y: 5.76, w: 1.5, h: 0.48, fontFace: SERIF, fontSize: 29, bold: true, color: GOLD_LT, margin: 0, valign: "middle" });
+  s.addText("CONSTRUCTION DEBT\nSECURED", { x: M + 0.34, y: 6.24, w: 2.0, h: 0.38, fontFace: SANS, fontSize: 8, bold: true, color: WHITE, charSpacing: 0.7, margin: 0, valign: "top", lineSpacing: 10 });
+  s.addText("9%", { x: M + 2.62, y: 5.76, w: 1.5, h: 0.48, fontFace: SERIF, fontSize: 29, bold: true, color: WHITE, margin: 0, valign: "middle" });
+  s.addText("CARRIED IN THE\nPROFORMA ABOVE", { x: M + 2.62, y: 6.24, w: 2.0, h: 0.38, fontFace: SANS, fontSize: 8, bold: true, color: MUTED_LT, charSpacing: 0.7, margin: 0, valign: "top", lineSpacing: 10 });
+  s.addText(
+    "The construction loan is secured at 6%. Every figure above is underwritten at 9%, with construction overage allowances carried in the budget — so the projected margin is modeled three points above the debt cost actually in hand, before any of that cushion is counted.",
+    { x: M + 4.9, y: 5.78, w: 6.9, h: 0.8, fontFace: SANS, fontSize: 10.5, color: "C6DADE", margin: 0, valign: "middle", lineSpacing: 14 }
+  );
   footer(s, 7);
 }
 

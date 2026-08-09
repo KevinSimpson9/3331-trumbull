@@ -41,6 +41,10 @@ To regenerate the PDF: `soffice --headless --convert-to pdf 3331-Trumbull-Invest
 - **Firm profile and completed work (slide 9):** `BCD_Profile_7.3.26.pdf` — Bondy Construction &
   Design firm profile, July 2026.
 - **Phasing and lender:** First Merchants Bank (Lukas Bondy, 29 July 2026).
+- **Debt terms (slides 3, 4, 7):** construction debt secured at 6%; the June 2026 proforma is
+  underwritten at 9% with construction overage allowances carried in the budget (Kevin Simpson,
+  August 2026). If the secured rate changes, update the band on slide 7, the capital stack on
+  slide 4, and the Phase 1 bullet on slide 3.
 
 ## Known open items
 
