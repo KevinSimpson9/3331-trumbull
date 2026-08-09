@@ -211,8 +211,8 @@ function note(slide, text, x, y, w, dark = false) {
     {
       x: M, tag: "PHASE 1", units: "13 homes", sub: "Buildings 1–3",
       lines: [
-        "Funded by a First Merchants construction loan plus ~$750,000 of sponsor and investor capital",
-        "$700,000 of that is the investor note tranche — seven $100,000 secured notes",
+        "Funded by a First Merchants construction loan alongside the $700,000 investor note tranche",
+        "Seven $100,000 secured notes — the full raise, and the only raise",
         "Pre-sales launch during construction; closings begin as buildings deliver",
       ],
       accent: true,
@@ -481,38 +481,36 @@ function note(slide, text, x, y, w, dark = false) {
 
   s.addText([
     { text: "Luke Bondy — CEO, Bondy Construction & Design\n", options: { bold: true, fontSize: 12.5, color: INK } },
-    { text: "Vertically integrated developer and licensed general contractor across Southeast Michigan. Builder and owner on the portfolio below, with roughly 50 rental units held and ~$30M of development active today.\n\n", options: { fontSize: 11, color: BODY } },
+    { text: "Vertically integrated developer and licensed general contractor across Southeast Michigan. Builder and owner on 140+ residential for-sale units with more than $100M of completed construction, plus a ~50-unit rental portfolio he owns and his team operates.\n\n", options: { fontSize: 11, color: BODY } },
     { text: "Kevin Simpson — AK Capital Investments, Investor Relations\n", options: { bold: true, fontSize: 12.5, color: INK } },
     { text: "Real estate investor across single-family, multifamily, and commercial. Delta Air Lines pilot and former U.S. Army Blackhawk pilot; leads investor reporting and capital structure for the project.", options: { fontSize: 11, color: BODY } },
   ], { x: M, y: 1.82, w: 5.6, h: 2.4, margin: 0, valign: "top", fontFace: SANS, lineSpacing: 16 });
 
   const port = [
-    ["26", "TOTAL PROJECTS\nBUILT OR ACTIVE"],
-    ["122", "TOTAL UNITS\nACROSS PORTFOLIO"],
-    ["75", "UNITS DELIVERED\n20 COMPLETED PROJECTS"],
-    ["47", "UNITS IN DEVELOPMENT\n6 ACTIVE PROJECTS"],
+    ["$100M+", "COMPLETED\nCONSTRUCTION"],
+    ["140+", "UNITS BUILT\n& SOLD"],
+    ["50+", "RENTAL UNITS\nOWNED"],
   ];
   port.forEach(([v, l], i) => {
-    const col = i % 2, row = Math.floor(i / 2);
-    statCard(s, { x: M + col * 2.9, y: 4.44 + row * 1.2, w: 2.78, h: 1.12, value: v, label: l });
+    statCard(s, { x: M + i * 1.93, y: 4.52, w: 1.82, h: 1.15, value: v, label: l, vSize: 21 });
   });
 
   const end = table(s, {
     x: 6.5, y: 1.82, w: 6.18,
-    cols: [2.9, 1.5, 1.1],
-    header: ["ACTIVE PIPELINE", "TYPE", "UNITS"],
+    cols: [3.1, 1.35, 0.95],
+    header: ["COMPLETED PROJECTS", "TYPE", "UNITS"],
     rows: [
-      { cells: ["106 E. Forest — Detroit", "Townhomes", "12"] },
-      { cells: ["1530 Bagley — Detroit", "Apartments", "12"] },
-      { cells: ["3984 Commonwealth — Detroit", "Apartments", "12"] },
-      { cells: ["16740 E. Ave of the Fountains — AZ", "Townhomes", "9"] },
-      { cells: ["4142 4th St — Detroit", "Custom home", "1"] },
-      { cells: ["5130 Trombley — Newport, MI", "Custom home", "1"] },
-      { cells: ["Total in development", "6 projects", "47"], highlight: true },
+      { cells: ["Wesburn Villas", "Townhomes", "28"] },
+      { cells: ["iPG — Detroit", "Townhomes", "16"] },
+      { cells: ["Harrison 12 — North Corktown", "Townhomes", "12"] },
+      { cells: ["North Corktown 11", "Townhomes", "11"] },
+      { cells: ["Sycamore Park — North Corktown", "Townhomes", "10"] },
+      { cells: ["2221 & 2225 Wabash — Detroit", "Multi", "3"] },
+      { cells: ["Total delivered", "6 projects", "80"], highlight: true },
     ],
     rowH: 0.355, fontSize: 10,
   });
-  note(s, "Source: Bondy Construction & Design real-estate-owned and experience schedule, 21 March 2026. Banking reference: First Merchants Bank has financed $10M+ of Bondy projects since 2019, with all obligations met per terms — reference letter available on request.", 6.5, end + 0.16, 6.18);
+  note(s, "Source: Bondy Construction & Design firm profile, July 2026. Banking reference: First Merchants Bank has financed $10M+ of Bondy projects since 2019, with all obligations met per terms — reference letter available on request.", 6.5, end + 0.16, 6.18);
   footer(s, 9);
 }
 
@@ -563,7 +561,7 @@ function note(slide, text, x, y, w, dark = false) {
 
   s.addShape(pres.ShapeType.rect, { x: M, y: 5.58, w: 12.08, h: 0.86, fill: { color: WHITE }, line: { color: HAIR, width: 0.75 }, shadow: shadow({ blur: 8, opacity: 0.09 }) });
   marker(s, M + 0.28, 5.94, 0.1);
-  s.addText("Why the raise is capped: Phase 1 needs roughly $750,000 of capital behind the First Merchants construction loan. $700,000 of that is offered as seven $100,000 secured notes to a small group of accredited investors. Phase 2 requires no additional raise.", {
+  s.addText("Why the raise is capped: the raise is $700,000 — seven $100,000 secured notes to a small group of accredited investors — closing alongside the First Merchants construction loan to fund Phase 1. Phase 2 requires no additional raise.", {
     x: M + 0.5, y: 5.72, w: 11.3, h: 0.58, fontFace: SANS, fontSize: 10.5, color: BODY, margin: 0, valign: "middle", lineSpacing: 14,
   });
   footer(s, 10);

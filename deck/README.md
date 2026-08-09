@@ -36,16 +36,17 @@ To regenerate the PDF: `soffice --headless --convert-to pdf 3331-Trumbull-Invest
 - **Proforma:** 3331 Trumbull for-sale proforma, June 2026 (all 25 units).
 - **Comps:** `3331-Trumbull-Sales-Comps-BCD.pdf` (Lukas Bondy, 8 July 2026) — Realcomp IDX sold
   records, ALTA seller settlement statements, builder price lists.
-- **Track record / portfolio:** `REO & EXPERIENCE 3.21.26 BCD.pdf` — Bondy Construction & Design
-  real-estate-owned and experience schedule, 21 March 2026.
-- **Phasing and lender:** First Merchants Bank; ~$750K of capital required for one of two phases
-  (Lukas Bondy, 29 July 2026).
+- **Closed project economics (slide 8):** `REO & EXPERIENCE 3.21.26 BCD.pdf` — Bondy Construction
+  & Design real-estate-owned and experience schedule, 21 March 2026.
+- **Firm profile and completed work (slide 9):** `BCD_Profile_7.3.26.pdf` — Bondy Construction &
+  Design firm profile, July 2026.
+- **Phasing and lender:** First Merchants Bank (Lukas Bondy, 29 July 2026).
 
 ## Known open items
 
 - **Phase 1 unit mix.** Slide 3 assigns Phase 1 to Buildings 1–3 and Phase 2 to Buildings 4–5.
   Confirm against the final building sequence; if the split changes, the 13/12 counts on slides
   1, 2, 3 and 10 need updating. Slide 7 financials are the full 25-unit proforma and are unaffected.
-- **Track record headline.** Slides 8 and 9 use the REO-documented figures (26 projects, 122 units,
-  75 delivered). The prior deck's "140+ units / $100M+ completed construction" is not reconcilable
-  with the REO schedule and was left out. Swap in Luke's updated schedule when it arrives.
+- **Slide 9 shows completed work only.** Active/pipeline projects are deliberately omitted so the
+  deck does not put concurrent development commitments in front of investors. If that changes, the
+  pipeline detail is in the REO schedule.
