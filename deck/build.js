@@ -128,22 +128,22 @@ function note(slide, text, x, y, w, dark = false) {
 {
   const s = pres.addSlide();
   s.background = { color: INK };
-  s.addImage({ path: IMG("rendering-aerial.jpg"), x: 6.6, y: 0, w: 6.7, h: H, sizing: { type: "cover", w: 6.7, h: H } });
-  s.addShape(pres.ShapeType.rect, { x: 6.6, y: 0, w: 6.7, h: H, fill: { color: INK, transparency: 42 } });
-  s.addShape(pres.ShapeType.rect, { x: 6.0, y: 0, w: 1.2, h: H, fill: { color: INK, transparency: 30 } });
-  s.addShape(pres.ShapeType.rect, { x: 0, y: 0, w: 6.4, h: H, fill: { color: INK } });
+  // Full-bleed hero. The scrim is a real gradient baked into the JPEG — anchored
+  // bottom-left and falling away up and to the right — so the whole development
+  // reads and there is no seam behind the type.
+  s.addImage({ path: IMG("hero-aerial.jpg"), x: 0, y: 0, w: W, h: H });
 
-  marker(s, M, 1.08, 0.13);
+  marker(s, M, 3.42, 0.11);
   s.addText("AK CAPITAL  ×  BONDY CONSTRUCTION & DESIGN", {
-    x: M + 0.26, y: 1.0, w: 5.4, h: 0.3, fontFace: SANS, fontSize: 9.5, bold: true,
+    x: M + 0.24, y: 3.35, w: 5.6, h: 0.26, fontFace: SANS, fontSize: 9.5, bold: true,
     color: GOLD_LT, charSpacing: 1.2, margin: 0, valign: "middle",
   });
 
   s.addText("3331 Trumbull", {
-    x: M, y: 1.5, w: 5.6, h: 0.95, fontFace: SERIF, fontSize: 42, bold: true, color: WHITE, margin: 0, valign: "middle",
+    x: M, y: 3.66, w: 5.8, h: 0.8, fontFace: SERIF, fontSize: 40, bold: true, color: WHITE, margin: 0, valign: "middle",
   });
   s.addText("Twenty-five for-sale townhomes on a full city block in North Corktown, Detroit — built in two phases.", {
-    x: M, y: 2.5, w: 5.3, h: 1.1, fontFace: SANS, fontSize: 14, color: "C6DADE", margin: 0, valign: "top", lineSpacing: 21,
+    x: M, y: 4.5, w: 5.6, h: 0.66, fontFace: SANS, fontSize: 13.5, color: "D2E3E7", margin: 0, valign: "top", lineSpacing: 20,
   });
 
   const chips = [
@@ -153,19 +153,16 @@ function note(slide, text, x, y, w, dark = false) {
   ];
   chips.forEach(([v, l], i) => {
     const x = M + i * 1.78;
-    s.addText(v, { x, y: 3.9, w: 1.7, h: 0.42, fontFace: SERIF, fontSize: 21, bold: true, color: WHITE, margin: 0, valign: "middle" });
-    s.addText(l, { x, y: 4.33, w: 1.7, h: 0.5, fontFace: SANS, fontSize: 7.8, color: MUTED_LT, charSpacing: 0.8, margin: 0, valign: "top", lineSpacing: 10 });
+    s.addText(v, { x, y: 5.3, w: 1.7, h: 0.4, fontFace: SERIF, fontSize: 20, bold: true, color: WHITE, margin: 0, valign: "middle" });
+    s.addText(l, { x, y: 5.7, w: 1.7, h: 0.3, fontFace: SANS, fontSize: 7.6, color: MUTED_LT, charSpacing: 0.7, margin: 0, valign: "top", lineSpacing: 10 });
   });
 
-  s.addShape(pres.ShapeType.rect, { x: M, y: 5.18, w: 5.4, h: 0.012, fill: { color: "2C5566" } });
-  s.addText("DEBT INVESTMENT  ·  SECURED PROMISSORY NOTE", {
-    x: M, y: 5.34, w: 5.4, h: 0.28, fontFace: SANS, fontSize: 10, bold: true, color: GOLD_LT, charSpacing: 1.4, margin: 0, valign: "middle",
-  });
-  s.addText("AUGUST 2026", {
-    x: M, y: 5.64, w: 5.4, h: 0.24, fontFace: SANS, fontSize: 9.5, color: MUTED_LT, charSpacing: 1.4, margin: 0, valign: "middle",
+  s.addShape(pres.ShapeType.rect, { x: M, y: 6.2, w: 5.6, h: 0.012, fill: { color: "3C6272" } });
+  s.addText("DEBT INVESTMENT  ·  SECURED PROMISSORY NOTE  ·  AUGUST 2026", {
+    x: M, y: 6.34, w: 5.8, h: 0.26, fontFace: SANS, fontSize: 9, bold: true, color: GOLD_LT, charSpacing: 1.1, margin: 0, valign: "middle",
   });
   s.addText("Debt only — no equity is offered. Confidential, prepared for the named recipient only. Not an offer to sell securities.", {
-    x: M, y: 5.98, w: 5.4, h: 0.5, fontFace: SANS, fontSize: 8.5, color: "5B7F8A", margin: 0, valign: "top", lineSpacing: 11,
+    x: M, y: 6.66, w: 5.6, h: 0.44, fontFace: SANS, fontSize: 8, color: "8FAAB4", margin: 0, valign: "top", lineSpacing: 10,
   });
 }
 
