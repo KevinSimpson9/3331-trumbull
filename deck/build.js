@@ -180,7 +180,7 @@ function note(slide, text, x, y, w, dark = false) {
 
   const stats = [
     ["25", "TOWNHOMES\n5 BUILDINGS"],
-    ["$10.76M", "PROJECTED\nGROSS REVENUE"],
+    ["$10.76M", "TOTAL PROJECTED\nREVENUE"],
     ["$2.67M", "PROJECTED\nNET PROFIT"],
     ["24.8%", "PROJECTED\nNET MARGIN"],
   ];
@@ -381,7 +381,7 @@ function note(slide, text, x, y, w, dark = false) {
   s.addShape(pres.ShapeType.rect, { x: 9.5, y: 2.36, w: 3.18, h: 3.6, fill: { color: INK } });
   marker(s, 9.76, 2.64, 0.1);
   s.addText("THE HEADROOM", { x: 9.98, y: 2.56, w: 2.5, h: 0.26, fontFace: SANS, fontSize: 9, bold: true, color: GOLD_LT, charSpacing: 1.6, margin: 0, valign: "middle" });
-  s.addText("$288", { x: 9.76, y: 2.98, w: 2.7, h: 0.56, fontFace: SERIF, fontSize: 30, bold: true, color: WHITE, margin: 0, valign: "middle" });
+  s.addText("$285", { x: 9.76, y: 2.98, w: 2.7, h: 0.56, fontFace: SERIF, fontSize: 30, bold: true, color: WHITE, margin: 0, valign: "middle" });
   s.addText("3331 TRUMBULL BLENDED\nLAUNCH PRICE PER SF", { x: 9.76, y: 3.54, w: 2.7, h: 0.44, fontFace: SANS, fontSize: 8.5, color: MUTED_LT, charSpacing: 0.8, margin: 0, valign: "top", lineSpacing: 11 });
   s.addShape(pres.ShapeType.rect, { x: 9.76, y: 4.14, w: 2.7, h: 0.012, fill: { color: "2C5566" } });
   s.addText("$320", { x: 9.76, y: 4.28, w: 2.7, h: 0.5, fontFace: SERIF, fontSize: 27, bold: true, color: GOLD_LT, margin: 0, valign: "middle" });
@@ -414,7 +414,7 @@ function note(slide, text, x, y, w, dark = false) {
   note(s, "Source: 3331 Trumbull for-sale proforma, June 2026. Figures reflect launch pricing across both phases before upgrade contracts. All figures should be independently verified.", M, end + 0.12, 7.1);
 
   const stats = [
-    ["$288", "BLENDED PRICE\nPER SQUARE FOOT"],
+    ["$285", "BLENDED LAUNCH\nPRICE PER SF"],
     ["$106,900", "PROJECTED NET\nPROFIT PER UNIT"],
     ["24.8%", "PROJECTED\nNET MARGIN"],
     ["36.2%", "PROJECTED\nRETURN ON COST"],
