@@ -492,7 +492,7 @@ function note(slide, text, x, y, w, dark = false) {
   s.addText([
     { text: "Luke Bondy — CEO, Bondy Construction & Design\n", options: { bold: true, fontSize: 12.5, color: INK } },
     { text: "Vertically integrated developer and licensed general contractor across Southeast Michigan. Builder and owner on 140+ residential for-sale units with more than $100M of completed construction, plus a ~50-unit rental portfolio he owns and his team operates.\n\n", options: { fontSize: 11, color: BODY } },
-    { text: "Kevin Simpson — AK Capital Investments, Investor Relations\n", options: { bold: true, fontSize: 12.5, color: INK } },
+    { text: "Kevin Simpson — Co-Developer & Investor Relations, AK Capital Investments\n", options: { bold: true, fontSize: 12.5, color: INK } },
     { text: "Real estate investor across single-family, multifamily, and commercial. Delta Air Lines pilot and former U.S. Army Blackhawk pilot; leads investor reporting and capital structure for the project.", options: { fontSize: 11, color: BODY } },
   ], { x: M, y: 1.82, w: 5.6, h: 2.4, margin: 0, valign: "top", fontFace: SANS, lineSpacing: 16 });
 
@@ -601,10 +601,11 @@ function note(slide, text, x, y, w, dark = false) {
   });
 
   s.addShape(pres.ShapeType.rect, { x: M, y: 5.72, w: 5.9, h: 0.012, fill: { color: "2C5566" } });
-  s.addText("Kevin Simpson  ·  AK Capital Investments LLC", { x: M, y: 5.88, w: 5.9, h: 0.28, fontFace: SANS, fontSize: 12, bold: true, color: WHITE, margin: 0, valign: "middle" });
-  s.addText("Kevin@AKCapital.fund   ·   trumbullnorth.com", { x: M, y: 6.16, w: 5.9, h: 0.26, fontFace: SANS, fontSize: 11, color: GOLD_LT, margin: 0, valign: "middle" });
+  s.addText("Kevin Simpson  ·  Co-Developer & Investor Relations", { x: M, y: 5.84, w: 5.9, h: 0.28, fontFace: SANS, fontSize: 12, bold: true, color: WHITE, margin: 0, valign: "middle" });
+  s.addText("AK Capital Investments LLC", { x: M, y: 6.1, w: 5.9, h: 0.24, fontFace: SANS, fontSize: 10.5, color: MUTED_LT, margin: 0, valign: "middle" });
+  s.addText("Kevin@AKCapital.fund   ·   trumbullnorth.com", { x: M, y: 6.36, w: 5.9, h: 0.26, fontFace: SANS, fontSize: 11, color: GOLD_LT, margin: 0, valign: "middle" });
   s.addText("This overview is a summary for discussion purposes only and is not an offer to sell or a solicitation of an offer to buy any security. Any offering is made only to accredited investors through definitive documents. Figures reflect launch pricing, third-party sold records, the Bondy Construction & Design real-estate-owned schedule dated 21 March 2026, and the June 2026 proforma; all figures should be independently verified. Real estate investments involve risk, including loss of principal. Past performance of prior projects does not guarantee future results.", {
-    x: M, y: 6.52, w: 5.9, h: 0.76, fontFace: SANS, fontSize: 7, color: "5B7F8A", margin: 0, valign: "top", lineSpacing: 9,
+    x: M, y: 6.7, w: 5.9, h: 0.66, fontFace: SANS, fontSize: 6.5, color: "5B7F8A", margin: 0, valign: "top", lineSpacing: 9,
   });
 }
 
