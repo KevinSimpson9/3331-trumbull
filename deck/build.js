@@ -148,7 +148,7 @@ function note(slide, text, x, y, w, dark = false) {
 
   const chips = [
     ["13 + 12", "UNITS, PHASE 1 / PHASE 2"],
-    ["$700K", "PHASE 1 NOTE TRANCHE"],
+    ["$700K", "PHASE 1 DEBT RAISE"],
     ["20%", "FIXED, PAID QUARTERLY"],
   ];
   chips.forEach(([v, l], i) => {
@@ -158,11 +158,14 @@ function note(slide, text, x, y, w, dark = false) {
   });
 
   s.addShape(pres.ShapeType.rect, { x: M, y: 5.18, w: 5.4, h: 0.012, fill: { color: "2C5566" } });
-  s.addText("SECURED NOTE OFFERING   ·   AUGUST 2026", {
-    x: M, y: 5.36, w: 5.4, h: 0.28, fontFace: SANS, fontSize: 10, bold: true, color: GOLD_LT, charSpacing: 1.4, margin: 0, valign: "middle",
+  s.addText("DEBT INVESTMENT  ·  SECURED PROMISSORY NOTE", {
+    x: M, y: 5.34, w: 5.4, h: 0.28, fontFace: SANS, fontSize: 10, bold: true, color: GOLD_LT, charSpacing: 1.4, margin: 0, valign: "middle",
   });
-  s.addText("Confidential — prepared for the named recipient only. Not an offer to sell securities.", {
-    x: M, y: 5.72, w: 5.4, h: 0.5, fontFace: SANS, fontSize: 8.5, color: "5B7F8A", margin: 0, valign: "top", lineSpacing: 11,
+  s.addText("AUGUST 2026", {
+    x: M, y: 5.64, w: 5.4, h: 0.24, fontFace: SANS, fontSize: 9.5, color: MUTED_LT, charSpacing: 1.4, margin: 0, valign: "middle",
+  });
+  s.addText("Debt only — no equity is offered. Confidential, prepared for the named recipient only. Not an offer to sell securities.", {
+    x: M, y: 5.98, w: 5.4, h: 0.5, fontFace: SANS, fontSize: 8.5, color: "5B7F8A", margin: 0, valign: "top", lineSpacing: 11,
   });
 }
 
@@ -266,7 +269,7 @@ function note(slide, text, x, y, w, dark = false) {
 {
   const s = pres.addSlide();
   s.background = { color: PAPER };
-  eyebrow(s, "THE OFFER", M, 0.52);
+  eyebrow(s, "THE DEBT INVESTMENT", M, 0.52);
   title(s, "Fixed return, real security, short clock", M, 0.86, 11.9);
 
   const terms = [
@@ -293,7 +296,7 @@ function note(slide, text, x, y, w, dark = false) {
     ],
     rowH: 0.38,
   });
-  note(s, "Interest is a fixed contractual obligation of the borrower under the promissory note, not a projection. Seven $100,000 notes; accredited investors only.", M, end + 0.14, 7.3);
+  note(s, "This is a debt investment, not equity — you are lending to the borrower under a secured promissory note. Interest is a fixed contractual obligation, not a projection and not a share of profits; there is no upside beyond the stated rate. Seven $100,000 notes, accredited investors only.", M, end + 0.14, 7.3);
 
   // Capital stack
   s.addShape(pres.ShapeType.rect, { x: 8.28, y: 3.42, w: 4.42, h: 2.98, fill: { color: INK } });
@@ -376,7 +379,7 @@ function note(slide, text, x, y, w, dark = false) {
     ],
     rowH: 0.375,
   });
-  note(s, "Sources: Realcomp IDX sold records (June–July 2026 pulls), ALTA seller settlement statements, and builder price lists, per Bondy Construction & Design. Full comp book with unit-level closings is in the offering package. All figures should be independently verified.", M, end + 0.16, 8.6);
+  note(s, "Sources: Realcomp IDX sold records (June–July 2026 pulls), ALTA seller settlement statements, and builder price lists, per Bondy Construction & Design. Full comp book with unit-level closings is in the diligence package. All figures should be independently verified.", M, end + 0.16, 8.6);
 
   s.addShape(pres.ShapeType.rect, { x: 9.5, y: 2.36, w: 3.18, h: 3.6, fill: { color: INK } });
   marker(s, 9.76, 2.64, 0.1);
@@ -590,7 +593,7 @@ function note(slide, text, x, y, w, dark = false) {
 
   const steps = [
     ["01", "Reserve your notes", "$100,000 each — seven available in the Phase 1 tranche."],
-    ["02", "Review the documents", "Note terms, comp book, CD set, and the June 2026 proforma."],
+    ["02", "Review the documents", "Promissory note, personal guarantee, comp book, CD set, and the June 2026 proforma."],
     ["03", "Fund at close", "Capital closes alongside the First Merchants construction loan and Phase 1 breaks ground."],
   ];
   steps.forEach(([n, h, b], i) => {
