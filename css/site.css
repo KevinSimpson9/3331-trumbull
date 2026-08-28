@@ -1,30 +1,62 @@
-/* 3331 Trumbull — marketing site
+/* 3331 Trumbull — gated marketing site
    Section layout/spacing/colors live inline in index.html (edit them there);
-   this file holds the base styles, hover/focus states, lightbox, and the
+   this file holds the base styles, the investor access gate, hover/focus
+   states, the renderings rail, the lightbox + PDF overlays, and the
    responsive breakpoints. */
+
+:root {
+  --gx: clamp(20px, 5vw, 56px);
+  --sect: clamp(64px, 10vw, 130px);
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 html,
 body {
   margin: 0;
   padding: 0;
   overflow-x: clip;
-  background: #f3f5f5;
-  color: #2c454f;
-  font-family: 'Archivo', sans-serif;
+  background: #0d2e36; /* solid fallback under the inline body gradient */
+  color: #f4f7f7;
+  font-family: 'Jost', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: #b8892f;
+  color: #e8a64c;
   text-decoration: none;
 }
 a:hover {
-  color: #8a6414;
+  color: #f2c075;
+}
+
+img {
+  max-width: 100%;
+}
+
+button {
+  font-family: inherit;
 }
 
 ::selection {
-  background: #d9a441;
-  color: #12303c;
+  background: #e8a64c;
+  color: #123e48;
+}
+
+/* ----- investor access gate -----
+   !important: both states carry inline display values in index.html */
+.gate-unlocked {
+  display: none;
+}
+body.access-granted .gate-locked {
+  display: none !important;
+}
+body.access-granted .gate-unlocked {
+  display: block;
 }
 
 /* ----- hover / focus states (must beat the inline base styles) ----- */
@@ -32,18 +64,61 @@ a:hover {
   color: #ffffff !important;
 }
 .btn-gold:hover {
-  background: #c8932f !important;
-  color: #ffffff !important;
+  background: #f2c075 !important;
+  color: #123e48 !important;
+}
+.btn-outline-gold:hover {
+  border-color: #f2c075 !important;
+  color: #f2c075 !important;
 }
 .btn-outline-light:hover {
-  border-color: #d9a441 !important;
-  color: #e3c581 !important;
+  border-color: #e8a64c !important;
+  color: #e8a64c !important;
+}
+.btn-dark-on-light:hover {
+  background: #0d2e36 !important;
+  color: #e8a64c !important;
+}
+.rail-btn:hover {
+  border-color: #e8a64c !important;
+  color: #e8a64c !important;
+}
+.doc-row:hover {
+  background: rgba(232, 166, 76, 0.08);
 }
 .form-field:focus {
-  border-color: #d9a441 !important;
+  border-color: #e8a64c !important;
+  outline: none;
+}
+.form-field::placeholder {
+  color: rgba(20, 66, 77, 0.35);
+}
+#gate-code::placeholder {
+  color: rgba(228, 238, 240, 0.4);
+  letter-spacing: 0.16em;
 }
 
-/* ----- renderings lightbox ----- */
+/* ----- renderings rail ----- */
+.rail {
+  display: flex;
+  gap: clamp(16px, 2.5vw, 28px);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 0 var(--gx);
+  scrollbar-width: none;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+
+.dim-hover img {
+  transition: opacity 0.35s ease;
+}
+.dim-hover:hover img {
+  opacity: 0.88;
+}
+
+/* ----- lightbox (renderings + site plan) ----- */
 .lightbox-trigger {
   cursor: zoom-in;
 }
@@ -52,10 +127,10 @@ a:hover {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(10, 26, 32, 0.92);
+  background: rgba(10, 26, 32, 0.94);
   align-items: center;
   justify-content: center;
-  padding: clamp(16px, 4vw, 40px);
+  padding: clamp(20px, 5vw, 64px);
   cursor: zoom-out;
 }
 .lightbox.open {
@@ -64,18 +139,26 @@ a:hover {
 .lightbox img {
   max-width: 100%;
   max-height: 100%;
-  border-radius: 8px;
-  box-shadow: 0 12px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
 }
-.lightbox-close {
-  position: absolute;
-  top: 20px;
-  right: 28px;
-  font-size: 34px;
-  line-height: 1;
-  color: #ffffff;
-  font-family: 'Archivo', sans-serif;
-  cursor: pointer;
+
+/* ----- pdf overlay (document library) ----- */
+.pdf-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  background: #0d2e36;
+  flex-direction: column;
+}
+.pdf-overlay.open {
+  display: flex;
+}
+.pdf-overlay iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #ffffff;
 }
 
 /* ----- responsive ----- */
@@ -87,13 +170,6 @@ a:hover {
     grid-template-columns: 1fr !important;
   }
   .split > * {
-    min-width: 0;
-  }
-  .hero-grid {
-    grid-template-columns: 1fr !important;
-    min-height: auto !important;
-  }
-  .hero-grid > * {
     min-width: 0;
   }
 }
