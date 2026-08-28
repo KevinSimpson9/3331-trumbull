@@ -1,7 +1,8 @@
-/* 3331 Trumbull — marketing site
+/* 3331 Trumbull — gated marketing site
    Section layout/spacing/colors live inline in index.html (edit them there);
-   this file holds the base styles, hover/focus states, the renderings rail,
-   the lightbox, and the responsive breakpoints. */
+   this file holds the base styles, the investor access gate, hover/focus
+   states, the renderings rail, the lightbox + PDF overlays, and the
+   responsive breakpoints. */
 
 :root {
   --gx: clamp(20px, 5vw, 56px);
@@ -46,6 +47,18 @@ button {
   color: #123e48;
 }
 
+/* ----- investor access gate -----
+   !important: both states carry inline display values in index.html */
+.gate-unlocked {
+  display: none;
+}
+body.access-granted .gate-locked {
+  display: none !important;
+}
+body.access-granted .gate-unlocked {
+  display: block;
+}
+
 /* ----- hover / focus states (must beat the inline base styles) ----- */
 .hover-white:hover {
   color: #ffffff !important;
@@ -69,6 +82,20 @@ button {
 .rail-btn:hover {
   border-color: #e8a64c !important;
   color: #e8a64c !important;
+}
+.doc-row:hover {
+  background: rgba(232, 166, 76, 0.08);
+}
+.form-field:focus {
+  border-color: #e8a64c !important;
+  outline: none;
+}
+.form-field::placeholder {
+  color: rgba(20, 66, 77, 0.35);
+}
+#gate-code::placeholder {
+  color: rgba(228, 238, 240, 0.4);
+  letter-spacing: 0.16em;
 }
 
 /* ----- renderings rail ----- */
@@ -113,6 +140,43 @@ button {
   max-width: 100%;
   max-height: 100%;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+/* ----- pdf overlay (document library) ----- */
+.pdf-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  background: #0d2e36;
+  flex-direction: column;
+}
+.pdf-overlay.open {
+  display: flex;
+}
+.pdf-overlay iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+/* scrollable slide viewer (investor deck) */
+.deck-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  padding: clamp(16px, 3vw, 32px) var(--gx);
+}
+.deck-scroll img {
+  width: min(100%, 1280px);
+  height: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
 /* ----- responsive ----- */
