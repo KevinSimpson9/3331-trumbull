@@ -13,25 +13,24 @@ This repo holds both sites:
 
 Plain static HTML/CSS/JS — no build step. Push to the default branch and Vercel deploys it.
 
-The site is a gated investor page: a public project showcase (vision, renderings, plans, builder) with the offering terms, pricing, comps, document library, and indication-of-interest form locked behind an access code.
+The public site is a project showcase only (vision, renderings, plans, builder, project-status timeline). Per securities counsel's 506(b) review, it carries **no offering terms, returns, minimums, documents, or investor sign-up** — all of that lives exclusively behind authenticated login in the investor portal. The "Investor Login" buttons link to investorportal.trumbullnorth.com.
 
 | File | Edit this for… |
 | --- | --- |
-| `index.html` | All page copy and sections (hero, vision, milestones, renderings rail, plans, builder, gated investor area, footer). Section layout/colors are inline on the elements. Fonts (Instrument Serif + Jost) load from Google Fonts via `<link>` in the head. |
-| `css/site.css` | Base styles, access-gate show/hide, hover/focus states, renderings rail, lightbox + PDF overlays, responsive breakpoints |
-| `js/main.js` | Access gate, rail arrows, lightbox, PDF viewer, interest form (composes a mailto — nothing is stored) |
+| `index.html` | All page copy and sections (hero, vision, milestones, renderings rail, plans, builder, portal link section, footer). Section layout/colors are inline on the elements. Fonts (Instrument Serif + Jost) load from Google Fonts via `<link>` in the head. |
+| `css/site.css` | Base styles, hover/focus states, renderings rail, lightbox, responsive breakpoints |
+| `js/main.js` | Rail arrows + renderings lightbox |
 | `assets/images/` | Site plan and renderings (referenced by name from `index.html`) |
-| `assets/docs/` | PDFs listed in the investor document library |
 | `css/fonts.css`, `assets/fonts/` | Legacy self-hosted fonts (Archivo, Playfair) — currently unused but harmless |
 | `site-model/` | The live 3D site model (three.js from CDN + `three-d-stage.js` viewer + the block geometry inline in `site-model/index.html`) — currently not linked from the page |
 
 Common edits:
 
-- **Change the access code** — `ACCESS_CODE` at the top of `js/main.js` (case-insensitive). Note the check is client-side: it screens casual visitors only. Anyone can read the code in the JS source and the PDFs in `assets/docs/` are fetchable by direct URL; for real protection move documents behind the portal.
-- **Change the contact email** — it appears in `index.html` (gate + footer) and at the top of `js/main.js`.
+- **Change the contact email** — it appears in `index.html` (portal section + footer).
 - **Swap a rendering** — replace the file in `assets/images/` keeping the same name, or update the `src` and matching `data-full` attribute in `index.html`.
-- **Add a document** — drop the PDF in `assets/docs/` and copy an existing `.doc-row` block in `index.html` (or convert a "Coming soon" row to a live `<a class="doc-row doc-open">`).
-- **Update comps / pricing / terms** — the terms cards, comp table rows, homes cards, and FAQ are plain repeated HTML blocks in `index.html`; copy an existing block and edit the text.
+- **Update the timeline** — the milestone blocks are plain repeated HTML in `index.html`; copy an existing block and edit the text.
+
+**Compliance note (Rule 506(b)):** do not add offering terms (rate, term, raise size, minimums), commitment/interest forms, or offering documents to this public site — anything in the repo root is publicly fetchable. Investor-facing material belongs in `portal/` behind login. Confirm public-copy changes with securities counsel.
 
 ## Investor portal (`portal/`)
 
