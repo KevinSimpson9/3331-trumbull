@@ -161,6 +161,24 @@ body.access-granted .gate-unlocked {
   background: #ffffff;
 }
 
+/* scrollable slide viewer (investor deck) */
+.deck-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  padding: clamp(16px, 3vw, 32px) var(--gx);
+}
+.deck-scroll img {
+  width: min(100%, 1280px);
+  height: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
 /* ----- responsive ----- */
 @media (max-width: 920px) {
   .nav-links {
