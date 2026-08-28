@@ -82,8 +82,22 @@
   function closePdf() { pdfOverlay.classList.remove('open'); pdfFrame.removeAttribute('src'); }
   document.getElementById('pdf-close').addEventListener('click', closePdf);
 
+  // ----- deck viewer: full deck as scrollable slides -----
+  var deckOverlay = document.getElementById('deck-overlay');
+  document.querySelectorAll('.deck-open').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      deckOverlay.classList.add('open');
+      var scroller = deckOverlay.querySelector('.deck-scroll');
+      if (scroller) scroller.scrollTop = 0;
+    });
+  });
+  function closeDeck() { if (deckOverlay) deckOverlay.classList.remove('open'); }
+  var deckClose = document.getElementById('deck-close');
+  if (deckClose) deckClose.addEventListener('click', closeDeck);
+
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { closeLightbox(); closePdf(); }
+    if (e.key === 'Escape') { closeLightbox(); closePdf(); closeDeck(); }
   });
 
   // ----- indication of interest: composes an email, nothing is stored -----
