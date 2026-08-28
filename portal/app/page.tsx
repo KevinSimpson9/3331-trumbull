@@ -7,12 +7,21 @@ import SignInForm from "@/components/SignInForm";
 export const dynamic = "force-dynamic";
 
 export default async function SignInPage() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // If Supabase is unreachable (paused project, outage), render the sign-in
+  // page as signed-out instead of crashing the route.
+  let user = null;
+  let isAdmin = false;
+  try {
+    const supabase = createClient();
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+    if (user) isAdmin = await isAdminUser(supabase);
+  } catch {
+    user = null;
+  }
   if (user) {
-    redirect((await isAdminUser(supabase)) ? "/admin" : "/room");
+    redirect(isAdmin ? "/admin" : "/room");
   }
 
   return (

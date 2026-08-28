@@ -23,9 +23,17 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // A paused/unreachable Supabase project makes getUser() throw; without the
+  // catch that 500s every route (MIDDLEWARE_INVOCATION_FAILED) instead of
+  // degrading to the signed-out experience.
+  let user = null;
+  try {
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+  } catch {
+    user = null;
+  }
 
   const path = request.nextUrl.pathname;
   const isProtected =

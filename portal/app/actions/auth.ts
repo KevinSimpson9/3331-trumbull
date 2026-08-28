@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import { isAuthRetryableFetchError, type EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { deliverPasswordReset, siteUrl } from "@/lib/invites";
@@ -27,24 +27,43 @@ export async function signInAction(_prev: FormState, formData: FormData): Promis
   }
 
   const supabase = createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    return { error: "Incorrect email or password. First time? Use the link in your invitation email." };
+  // redirect() works by throwing, so it must stay outside the try blocks that
+  // guard against Supabase being unreachable (paused project, outage).
+  let isAdmin = false;
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      // A network/availability failure (e.g. paused Supabase project) is not
+      // the visitor's fault — don't report it as bad credentials.
+      if (isAuthRetryableFetchError(error)) {
+        return {
+          error:
+            "The portal can't reach its data service right now. Please try again in a few minutes, or contact kevin@akcapital.fund.",
+        };
+      }
+      return { error: "Incorrect email or password. First time? Use the link in your invitation email." };
+    }
+
+    isAdmin = await isAdminUser(supabase);
+    if (!isAdmin) {
+      const { data: investor } = await supabase
+        .from("investors")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
+      if (!investor) {
+        await supabase.auth.signOut();
+        return { error: "No investor account found for that email. Contact kevin@akcapital.fund." };
+      }
+    }
+  } catch {
+    return {
+      error:
+        "The portal can't reach its data service right now. Please try again in a few minutes, or contact kevin@akcapital.fund.",
+    };
   }
 
-  if (await isAdminUser(supabase)) redirect("/admin");
-
-  const { data: investor } = await supabase
-    .from("investors")
-    .select("id")
-    .limit(1)
-    .maybeSingle();
-  if (!investor) {
-    await supabase.auth.signOut();
-    return { error: "No investor account found for that email. Contact kevin@akcapital.fund." };
-  }
-
-  redirect("/room");
+  redirect(isAdmin ? "/admin" : "/room");
 }
 
 const OTP_TYPES: EmailOtpType[] = ["invite", "magiclink", "recovery", "signup", "email_change", "email"];
