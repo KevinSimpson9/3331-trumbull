@@ -195,4 +195,14 @@ body.access-granted .gate-unlocked {
   .nav-sub {
     display: none;
   }
+  header .btn-outline-gold {
+    padding: 10px 12px !important;
+    white-space: nowrap;
+  }
+  header {
+    gap: 14px !important;
+  }
+  .wordmark {
+    font-size: 19px !important;
+  }
 }
