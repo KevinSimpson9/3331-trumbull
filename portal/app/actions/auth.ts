@@ -143,8 +143,8 @@ export async function setPasswordAction(_prev: FormState, formData: FormData): P
         text:
           `${greeting}\n\n` +
           `Your account is all set — welcome to the 3331 Trumbull investor portal.\n\n` +
-          `Your private room has your position details, your documents ready to review and ` +
-          `sign, the shared project library, and a direct message line to me.\n\n` +
+          `Your private room has your position details, your executed documents as they're ` +
+          `filed, the shared project library, and a direct message line to me.\n\n` +
           `Sign in anytime: ${siteUrl()}\n\n` +
           `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
       });
@@ -153,8 +153,7 @@ export async function setPasswordAction(_prev: FormState, formData: FormData): P
     }
   }
 
-  // New investors land directly in the LOI signing flow.
-  redirect(isAdmin ? "/admin" : "/room?sign=loi");
+  redirect(isAdmin ? "/admin" : "/room");
 }
 
 export async function requestPasswordResetAction(

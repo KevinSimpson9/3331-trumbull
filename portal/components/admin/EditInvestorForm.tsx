@@ -69,19 +69,29 @@ export default function EditInvestorForm({
           <input name="term" className="input input-sm" defaultValue={row.termRaw} inputMode="numeric" />
         </div>
       </div>
-      <div className="field field-tight">
-        <label className="label label-sm">HOW INTEREST IS PAID</label>
-        <select name="paymentSchedule" className="input input-sm" defaultValue={row.paymentRaw}>
-          {PAYMENT_SCHEDULE_KEYS.map((k) => (
-            <option key={k} value={k}>
-              {PAYMENT_SCHEDULES[k].label}
-            </option>
-          ))}
-        </select>
+      <div className="split">
+        <div className="field field-tight">
+          <label className="label label-sm">HOW INTEREST IS PAID</label>
+          <select name="paymentSchedule" className="input input-sm" defaultValue={row.paymentRaw}>
+            {PAYMENT_SCHEDULE_KEYS.map((k) => (
+              <option key={k} value={k}>
+                {PAYMENT_SCHEDULES[k].label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field field-tight">
+          <label className="label label-sm">STATUS</label>
+          <select name="status" className="input input-sm" defaultValue={row.statusRaw}>
+            <option value="invited">Invited — not yet executed</option>
+            <option value="active">Active — executed and funded</option>
+          </select>
+        </div>
       </div>
       <div className="form-helper">
-        Changes apply to their stats and any documents they haven&apos;t signed yet. Documents
-        already signed keep the executed PDF exactly as it was at signing.
+        These figures drive what the investor sees on their stats. The binding terms are the ones
+        in their DocuSign documents — editing here never changes a document already filed in
+        their folder.
       </div>
       {state.error && <div className="error-text">{state.error}</div>}
       <div className="form-actions">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTransition } from "react";
-import { getInviteLinkAction, removeInvestorAction, resetInvestorDocsAction } from "@/app/actions/admin";
+import { getInviteLinkAction, removeInvestorAction } from "@/app/actions/admin";
 import { useToast } from "@/components/Toast";
 
 interface Props {
@@ -24,7 +24,7 @@ export default function RosterActions({ investorId, investorName, onEdit }: Prop
         Message
       </Link>
       <Link href={`/admin/investor/${investorId}`} className="roster-btn" style={{ textDecoration: "none", display: "inline-block" }}>
-        View their portal →
+        Documents &amp; portal →
       </Link>
       <button
         type="button"
@@ -47,25 +47,6 @@ export default function RosterActions({ investorId, investorName, onEdit }: Prop
         }
       >
         Copy invite link
-      </button>
-      <button
-        type="button"
-        className="roster-btn"
-        disabled={pending}
-        onClick={() => {
-          if (
-            confirm(
-              `Clear ${investorName}'s signed documents so they can re-sign the current versions? Their old PDFs are deleted.`
-            )
-          ) {
-            startTransition(async () => {
-              const res = await resetInvestorDocsAction(investorId);
-              toast(res.error || res.message || "Signed docs cleared ✓");
-            });
-          }
-        }}
-      >
-        Reset docs
       </button>
       <button
         type="button"

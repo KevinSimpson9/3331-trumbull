@@ -7,7 +7,7 @@ This repo holds both sites:
 | Path | What | Deployed |
 | --- | --- | --- |
 | repo root | Public marketing site (trumbullnorth.com) | Existing Vercel project, serves the repo root as a static site |
-| `portal/` | Private investor portal — Next.js + Supabase | Separate Vercel project with Root Directory set to `portal/` |
+| `portal/` | Private investor portal — Next.js + Supabase. Investor documents are executed in DocuSign and uploaded here from the back office. | Separate Vercel project with Root Directory set to `portal/` |
 
 ## Marketing site (repo root)
 

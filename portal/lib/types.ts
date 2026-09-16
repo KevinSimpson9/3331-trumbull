@@ -1,5 +1,4 @@
 export type InvestorStatus = "invited" | "active";
-export type DocKey = "loi" | "note" | "guarantee";
 export type PaymentSchedule = "monthly" | "quarterly" | "annual" | "maturity";
 export type Sender = "admin" | "investor";
 
@@ -16,12 +15,23 @@ export interface Investor {
   created_at: string;
 }
 
-export interface Signature {
+/** An executed document uploaded to an investor's private folder after it was
+ *  signed in DocuSign. The portal stores and serves it; DocuSign holds the
+ *  signature and its audit certificate. */
+export interface InvestorDocument {
   id: string;
   investor_id: string;
-  doc_key: DocKey;
-  signer_name: string;
-  signed_at: string;
+  title: string;
+  doc_type: string;
+  file_name: string;
+  storage_path: string;
+  content_type: string | null;
+  file_size: number | null;
+  /** Date of execution in DocuSign (YYYY-MM-DD), not the upload date. */
+  executed_on: string | null;
+  envelope_id: string | null;
+  uploaded_at: string;
+  sort: number;
 }
 
 export interface Message {

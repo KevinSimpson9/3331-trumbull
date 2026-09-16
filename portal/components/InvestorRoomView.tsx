@@ -1,19 +1,17 @@
-import { docDefs, DOC_COUNT } from "@/lib/docs";
-import { firstName, fmtDate, fmtMoney, todayLabel } from "@/lib/format";
-import type { Investor, Message, ProjectDocument, Signature } from "@/lib/types";
+import { PAYMENT_SCHEDULES } from "@/lib/docs";
+import { firstName, fmtDate, fmtMoney } from "@/lib/format";
+import type { Investor, InvestorDocument, Message, ProjectDocument } from "@/lib/types";
 import type { FormState } from "@/app/actions/auth";
-import SignDocsSection from "./SignDocsSection";
+import InvestorDocsSection from "./InvestorDocsSection";
 import MessageThread, { type BubbleVM } from "./MessageThread";
 
 interface Props {
   investor: Investor;
-  signatures: Signature[];
+  documents: InvestorDocument[];
   messages: Message[];
   projectDocs: ProjectDocument[];
   sendAction: (formData: FormData) => Promise<FormState>;
   viewingAs?: boolean;
-  /** Doc key to auto-open for signature on load (e.g. "loi" after set-password). */
-  autoOpenKey?: string;
 }
 
 function SectionHead({ title, ordinal }: { title: string; ordinal: string }) {
@@ -27,25 +25,17 @@ function SectionHead({ title, ordinal }: { title: string; ordinal: string }) {
 
 export default function InvestorRoomView({
   investor,
-  signatures,
+  documents,
   messages,
   projectDocs,
   sendAction,
   viewingAs,
-  autoOpenKey,
 }: Props) {
-  const signedByKey = new Map(signatures.map((s) => [s.doc_key, s]));
-  const docs = docDefs(investor).map((d) => {
-    const sig = signedByKey.get(d.key);
-    return { ...d, signedAt: sig ? fmtDate(sig.signed_at) : null };
-  });
-  const signedCount = docs.filter((d) => d.signedAt).length;
-
   const stats = [
     { label: "YOUR PRINCIPAL", value: fmtMoney(investor.principal) },
     { label: "RATE", value: `${investor.rate}%` },
     { label: "TERM", value: `${investor.term_months} MO` },
-    { label: "DOCUMENTS SIGNED", value: `${signedCount} / ${DOC_COUNT}` },
+    { label: "INTEREST", value: PAYMENT_SCHEDULES[investor.payment_schedule ?? "quarterly"].short.toUpperCase() },
   ];
 
   // In the investor's room "mine" = investor messages; when Kevin is viewing
@@ -80,23 +70,24 @@ export default function InvestorRoomView({
       </div>
 
       <div className="section">
-        <SectionHead title="Sign your documents" ordinal="01" />
+        <SectionHead title="Your documents" ordinal="01" />
         <div className="section-blurb">
-          Review and e-sign directly in the portal. Signed copies are timestamped and saved to
-          your private folder.
+          Your documents are signed through DocuSign. Fully executed copies are filed here —
+          yours to view or download anytime.
         </div>
-        <SignDocsSection
-          docs={docs}
-          legalName={investor.legal_name}
-          todayLabel={todayLabel()}
-          viewingAs={viewingAs}
-          downloadQuery={viewingAs ? `?investor=${investor.id}` : ""}
-          autoOpenKey={autoOpenKey}
-        />
+        <InvestorDocsSection documents={documents} viewingAs={viewingAs} />
       </div>
 
       <div className="section">
         <SectionHead title="Project documents" ordinal="02" />
+        {projectDocs.length === 0 && (
+          <div className="empty-panel">
+            <div className="empty-panel-title">Nothing here yet</div>
+            <div className="empty-panel-body">
+              Project materials will appear here as they&apos;re published.
+            </div>
+          </div>
+        )}
         <div className="link-card-grid">
           {projectDocs.map((d) => (
             <a

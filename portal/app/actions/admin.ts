@@ -8,8 +8,17 @@ import { sendEmail, emailConfigured, emailFrom, usingSandboxSender, apiKeyFinger
 import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
-import { SIGNED_DOCS_BUCKET } from "@/lib/pdf";
-import type { PaymentSchedule } from "@/lib/types";
+import type { UploadTicket } from "@/lib/investorDocs";
+import {
+  INVESTOR_DOCS_BUCKET,
+  PROJECT_DOCS_BUCKET,
+  badgeFor,
+  investorDocPath,
+  isAllowedUpload,
+  MAX_UPLOAD_BYTES,
+  safeFileName,
+} from "@/lib/investorDocs";
+import type { InvestorStatus, PaymentSchedule } from "@/lib/types";
 import type { FormState } from "./auth";
 
 function parsePaymentSchedule(formData: FormData): PaymentSchedule {
@@ -112,7 +121,10 @@ export async function createInvestorAction(_prev: FormState, formData: FormData)
     await admin.from("messages").insert({
       investor_id: created.id,
       sender: "admin",
-      body: `${firstName(legalName)}, welcome to the 3331 Trumbull portal. Your documents are ready to review and sign.`,
+      body:
+        `${firstName(legalName)}, welcome to the 3331 Trumbull portal. Your documents will come ` +
+        `to you for signature through DocuSign; once they're executed I'll file the signed copies ` +
+        `here in your folder.`,
     });
   }
 
@@ -178,9 +190,10 @@ export async function getInviteLinkAction(investorId: string): Promise<FormState
   };
 }
 
-/** Admin-only edit of an investor's terms (name, principal, rate, term).
- *  Changes flow into all still-unsigned documents; executed PDFs are
- *  immutable records of what was signed. */
+/** Admin-only edit of an investor's position (name, principal, rate, term,
+ *  payout schedule, status). This changes what the investor sees on their
+ *  stats only — the binding terms live in the DocuSign documents, so editing
+ *  here never alters an executed document already filed in their folder. */
 export async function updateInvestorAction(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin();
 
@@ -190,6 +203,8 @@ export async function updateInvestorAction(_prev: FormState, formData: FormData)
   const rate = Number(formData.get("rate"));
   const term = Number(formData.get("term"));
   const paymentSchedule = parsePaymentSchedule(formData);
+  const statusRaw = String(formData.get("status") || "");
+  const status: InvestorStatus = statusRaw === "active" ? "active" : "invited";
 
   if (!investorId) return { error: "Missing investor." };
   if (!legalName) return { error: "Legal name is required." };
@@ -198,7 +213,7 @@ export async function updateInvestorAction(_prev: FormState, formData: FormData)
   if (!term || term <= 0) return { error: "Term must be a positive number of months." };
 
   const admin = createAdminClient();
-  const baseUpdate = { legal_name: legalName, principal, rate, term_months: term };
+  const baseUpdate = { legal_name: legalName, principal, rate, term_months: term, status };
   let { error } = await admin
     .from("investors")
     .update({ ...baseUpdate, payment_schedule: paymentSchedule })
@@ -221,24 +236,261 @@ export async function updateInvestorAction(_prev: FormState, formData: FormData)
   return { ok: true, message: "Investor updated ✓" };
 }
 
-/** Clears an investor's signatures and executed PDFs so their documents
- *  return to "Review & sign" — used after document wording changes. */
-export async function resetInvestorDocsAction(investorId: string): Promise<FormState> {
-  await requireAdmin();
+/** Phase one of an upload: validates the file and mints a short-lived signed
+ *  URL the browser PUTs the bytes to directly. The bytes never pass through
+ *  this server — Next caps server-action bodies at 1 MB and Vercel rejects
+ *  request bodies over 4.5 MB, which an executed document package can exceed.
+ *
+ *  Admin-gated, and the object path is chosen here rather than accepted from
+ *  the client, so a ticket can only ever write where we put it. */
+async function mintUploadTicket(
+  bucket: string,
+  path: string,
+  fileName: string,
+  size: number
+): Promise<UploadTicket> {
+  if (!Number.isFinite(size) || size <= 0) return { error: "That file looks empty." };
+  if (size > MAX_UPLOAD_BYTES) {
+    return { error: `That file is larger than ${Math.round(MAX_UPLOAD_BYTES / 1024 / 1024)} MB.` };
+  }
+  if (!isAllowedUpload(fileName)) {
+    return { error: "Unsupported file type — upload a PDF, Word, Excel or image file." };
+  }
+
   const admin = createAdminClient();
+  const { data, error } = await admin.storage.from(bucket).createSignedUploadUrl(path);
+  if (error || !data?.signedUrl) {
+    return { error: `Could not start the upload: ${error?.message ?? "no signed URL returned"}` };
+  }
+  return { ok: true, uploadUrl: data.signedUrl, path };
+}
 
-  const { error } = await admin.from("signatures").delete().eq("investor_id", investorId);
-  if (error) return { error: "Reset failed — try again." };
+/** Confirms the browser's upload actually landed. Guards the finalize step
+ *  against a forged call creating a row for an object that does not exist. */
+async function uploadedObjectExists(bucket: string, path: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data } = await admin.storage.from(bucket).createSignedUrl(path, 60);
+  return !!data?.signedUrl;
+}
 
-  // Storage deletes go through the API (direct SQL on storage tables is
-  // blocked by Supabase); missing files are silently skipped.
-  await admin.storage
-    .from(SIGNED_DOCS_BUCKET)
-    .remove(["loi", "note", "guarantee", "accreditation"].map((k) => `${investorId}/${k}.pdf`));
+export async function createInvestorUploadTicket(
+  investorId: string,
+  fileName: string,
+  size: number
+): Promise<UploadTicket> {
+  await requireAdmin();
+  if (!investorId) return { error: "Missing investor." };
+
+  const admin = createAdminClient();
+  const { data: investor } = await admin
+    .from("investors")
+    .select("id")
+    .eq("id", investorId)
+    .maybeSingle();
+  if (!investor) return { error: "Investor not found." };
+
+  return mintUploadTicket(
+    INVESTOR_DOCS_BUCKET,
+    investorDocPath(investorId, fileName),
+    fileName,
+    size
+  );
+}
+
+/** Phase two: files the uploaded object in the investor's folder. */
+export async function uploadInvestorDocumentAction(
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  await requireAdmin();
+
+  const investorId = String(formData.get("investorId") || "");
+  const storagePath = String(formData.get("storagePath") || "");
+  const fileName = String(formData.get("fileName") || "").trim();
+  const contentType = String(formData.get("contentType") || "").trim();
+  const fileSize = Number(formData.get("fileSize"));
+  const title = String(formData.get("title") || "").trim();
+  const docType = String(formData.get("docType") || "").trim() || "Other";
+  const executedOn = String(formData.get("executedOn") || "").trim();
+  const notify = formData.get("notify") === "on";
+
+  if (!investorId || !storagePath || !fileName) return { error: "The upload didn't complete." };
+  // The path was minted by createInvestorUploadTicket for this investor; re-check
+  // it here so a replayed finalize can't file a document into someone else's folder.
+  if (!storagePath.startsWith(`${investorId}/`)) return { error: "That upload doesn't belong to this investor." };
+  if (executedOn && !/^\d{4}-\d{2}-\d{2}$/.test(executedOn)) {
+    return { error: "Enter the execution date as YYYY-MM-DD." };
+  }
+
+  const admin = createAdminClient();
+  const { data: investor } = await admin
+    .from("investors")
+    .select("id, legal_name, email")
+    .eq("id", investorId)
+    .maybeSingle();
+  if (!investor) return { error: "Investor not found." };
+
+  if (!(await uploadedObjectExists(INVESTOR_DOCS_BUCKET, storagePath))) {
+    return { error: "The uploaded file couldn't be found — try the upload again." };
+  }
+
+  const { error: insertError } = await admin.from("investor_documents").insert({
+    investor_id: investorId,
+    title: title || fileName.replace(/\.[^.]+$/, ""),
+    doc_type: docType,
+    file_name: fileName,
+    storage_path: storagePath,
+    content_type: contentType || null,
+    file_size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
+    executed_on: executedOn || null,
+  });
+  if (insertError) {
+    await admin.storage.from(INVESTOR_DOCS_BUCKET).remove([storagePath]);
+    return { error: `Could not save the document: ${insertError.message}` };
+  }
+
+  const docLabel = title || docType;
+
+  // In-portal notice first — it lands in the thread whether or not email is
+  // configured, so the investor always has a record that the file arrived.
+  await admin.from("messages").insert({
+    investor_id: investorId,
+    sender: "admin",
+    body: `Your executed ${docLabel} has been filed in your document folder.`,
+  });
+
+  if (notify) {
+    // Best-effort: the document is already filed, so a mail failure must not
+    // surface as an upload error.
+    try {
+      await sendEmail({
+        to: investor.email,
+        subject: `3331 Trumbull — your executed ${docLabel} is in the portal`,
+        text:
+          `${firstName(investor.legal_name)},\n\n` +
+          `Your executed ${docLabel} has been filed in your portal folder. You can view or ` +
+          `download it anytime: ${siteUrl()}/room\n\n` +
+          `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
+      });
+    } catch (e) {
+      console.error("document notification email failed", e);
+    }
+  }
 
   revalidateAdmin();
   revalidatePath(`/admin/investor/${investorId}`);
-  return { ok: true, message: "Signed docs cleared — ready to re-sign ✓" };
+  return { ok: true, message: `${docLabel} filed \u2713` };
+}
+
+/** Removes an executed document and its stored file. */
+export async function deleteInvestorDocumentAction(documentId: string): Promise<FormState> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const { data: doc } = await admin
+    .from("investor_documents")
+    .select("id, investor_id, storage_path")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (!doc) return { error: "Document not found." };
+
+  const { error } = await admin.from("investor_documents").delete().eq("id", documentId);
+  if (error) return { error: "Delete failed — try again." };
+
+  // Storage deletes go through the API (direct SQL on storage tables is
+  // blocked by Supabase); a missing object is silently skipped.
+  await admin.storage.from(INVESTOR_DOCS_BUCKET).remove([doc.storage_path]);
+
+  revalidateAdmin();
+  revalidatePath(`/admin/investor/${doc.investor_id}`);
+  return { ok: true, message: "Document removed" };
+}
+
+export async function createProjectUploadTicket(
+  fileName: string,
+  size: number
+): Promise<UploadTicket> {
+  await requireAdmin();
+  return mintUploadTicket(
+    PROJECT_DOCS_BUCKET,
+    `${Date.now()}-${safeFileName(fileName)}`,
+    fileName,
+    size
+  );
+}
+
+/** Adds an item to the shared project library — either an uploaded file
+ *  (already in storage via a ticket) or an external link. */
+export async function addProjectDocumentAction(
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  await requireAdmin();
+
+  const title = String(formData.get("title") || "").trim();
+  const description = String(formData.get("description") || "").trim();
+  const href = String(formData.get("href") || "").trim();
+  const storagePath = String(formData.get("storagePath") || "").trim();
+  const fileName = String(formData.get("fileName") || "").trim();
+
+  if (!title) return { error: "Give the document a title." };
+  if (!storagePath && !href) return { error: "Upload a file or enter an external link." };
+  if (storagePath && href) return { error: "Use either a file or a link, not both." };
+  if (href && !/^https?:\/\//i.test(href)) {
+    return { error: "External links must start with http:// or https://" };
+  }
+
+  const admin = createAdminClient();
+
+  if (storagePath && !(await uploadedObjectExists(PROJECT_DOCS_BUCKET, storagePath))) {
+    return { error: "The uploaded file couldn't be found — try the upload again." };
+  }
+
+  const { data: last } = await admin
+    .from("project_documents")
+    .select("sort")
+    .order("sort", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error: insertError } = await admin.from("project_documents").insert({
+    title,
+    description: description || null,
+    badge: storagePath ? badgeFor(fileName || storagePath) : "WEB",
+    href: href || null,
+    storage_path: storagePath || null,
+    sort: (last?.sort ?? 0) + 1,
+  });
+  if (insertError) {
+    if (storagePath) await admin.storage.from(PROJECT_DOCS_BUCKET).remove([storagePath]);
+    return { error: `Could not add the document: ${insertError.message}` };
+  }
+
+  revalidateAdmin();
+  return { ok: true, message: `${title} added to the library \u2713` };
+}
+
+/** Removes a shared library item and its stored file, if it had one. */
+export async function deleteProjectDocumentAction(documentId: string): Promise<FormState> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const { data: doc } = await admin
+    .from("project_documents")
+    .select("id, storage_path")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (!doc) return { error: "Document not found." };
+
+  const { error } = await admin.from("project_documents").delete().eq("id", documentId);
+  if (error) return { error: "Delete failed — try again." };
+
+  if (doc.storage_path) {
+    await admin.storage.from(PROJECT_DOCS_BUCKET).remove([doc.storage_path]);
+  }
+
+  revalidateAdmin();
+  return { ok: true, message: "Document removed from the library" };
 }
 
 export async function removeInvestorAction(investorId: string): Promise<FormState> {
