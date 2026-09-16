@@ -32,11 +32,19 @@ Wire instructions aren't signed, so leave the execution date blank when filing t
 
 Investors can add their own files to the same folder (bank details, a voided check) from **+ Upload a document** in their room. Those land in their private folder, post a note in your thread, and email you. They can delete a file they uploaded; they can't touch anything you filed.
 
-## Requesting a signature
+## Requesting confirmation of receipt
 
-DocuSign is the normal path. For the occasional document that needs signing without an envelope, upload it and hit **Request signature** on its row. The investor gets a note in their thread and a "Review & sign" button in their room. Signing records the typed legal name, timestamp, IP and device against that document.
+**Every signature happens in DocuSign.** The portal does not sign anything.
 
-The uploaded file is never altered. The signature is a record attached to it, not a new PDF — so a document signed here is weaker evidence than a DocuSign envelope with its audit certificate. Use it for acknowledgments, not for the note or the guaranty.
+What it does have is a receipt. Upload a document and hit **Request confirmation** on its row; the investor gets a note in their thread and a "Review & confirm" button in their room. Confirming records their typed legal name, the timestamp, IP and device against that document.
+
+Be precise about what this is and isn't:
+
+- It is **not a signature**. There is no field placement — you cannot choose where on the page they sign, and there are no signature, initial, date or text fields. The confirmation applies to the whole document or not at all.
+- The uploaded PDF is **never altered**. Nothing is stamped into it. The confirmation is a row in the database pointing at the file, not a new executed PDF, and there is no audit certificate.
+- Use it for receipts and consents. **Never for the note, the guaranty, or the subscription agreement** — those go through DocuSign, which does field placement properly and issues an audit certificate.
+
+If you ever need placed fields inside the portal, the honest fix is wiring the DocuSign API so envelopes are sent from here and completed documents file themselves back, not rebuilding a signature tool alongside the one you already pay for.
 
 ## Investor updates
 

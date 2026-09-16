@@ -408,10 +408,13 @@ export async function deleteInvestorDocumentAction(documentId: string): Promise<
   return { ok: true, message: "Document removed" };
 }
 
-/** Turns the in-portal signature request on or off for one document. Off is
- *  the default: DocuSign is the norm, and this covers the occasional document
- *  that needs a signature without an envelope. */
-export async function setSignatureRequestAction(
+/** Asks the investor to confirm receipt of a document, or clears the ask.
+ *
+ *  Deliberately not a signature: there is no field placement and the uploaded
+ *  PDF is never altered, so this records only that they opened it and
+ *  confirmed. Use it for receipts and consents. Anything that needs a real
+ *  signature goes through DocuSign. */
+export async function setAcknowledgmentRequestAction(
   documentId: string,
   requested: boolean
 ): Promise<FormState> {
@@ -420,23 +423,23 @@ export async function setSignatureRequestAction(
 
   const { data: doc } = await admin
     .from("investor_documents")
-    .select("id, investor_id, title, signed_at")
+    .select("id, investor_id, title, acknowledged_at")
     .eq("id", documentId)
     .maybeSingle();
   if (!doc) return { error: "Document not found." };
-  if (doc.signed_at) return { error: "That document is already signed." };
+  if (doc.acknowledged_at) return { error: "That document is already acknowledged." };
 
   const { error } = await admin
     .from("investor_documents")
-    .update({ signature_requested: requested })
+    .update({ acknowledgment_requested: requested })
     .eq("id", documentId);
-  if (error) return { error: "Could not update the signature request." };
+  if (error) return { error: "Could not update the request." };
 
   if (requested) {
     await admin.from("messages").insert({
       investor_id: doc.investor_id,
       sender: "admin",
-      body: `${doc.title} is ready for your signature in the portal.`,
+      body: `Please review and confirm receipt of ${doc.title} in the portal.`,
     });
   }
 
@@ -444,7 +447,7 @@ export async function setSignatureRequestAction(
   revalidatePath(`/admin/investor/${doc.investor_id}`);
   return {
     ok: true,
-    message: requested ? "Signature requested \u2713" : "Signature request cleared",
+    message: requested ? "Acknowledgment requested \u2713" : "Request cleared",
   };
 }
 

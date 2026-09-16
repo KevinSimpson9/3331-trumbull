@@ -58,8 +58,10 @@ export default async function AdminPage({
     { label: "INVESTORS", value: String(investors.length) },
     { label: "ACTIVE", value: String(investors.filter((i) => i.status === "active").length) },
     {
-      label: "AWAITING SIGNATURE",
-      value: String(documents.filter((d) => d.signature_requested && !d.signed_at).length),
+      label: "AWAITING CONFIRMATION",
+      value: String(
+        documents.filter((d) => d.acknowledgment_requested && !d.acknowledged_at).length
+      ),
     },
     {
       label: "COMMITTED CAPITAL",

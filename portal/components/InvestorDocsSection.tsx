@@ -17,7 +17,7 @@ import { fmtDate } from "@/lib/format";
 import { uploadToSignedUrl } from "@/lib/upload";
 import { useToast } from "@/components/Toast";
 import type { InvestorDocument } from "@/lib/types";
-import SignDocumentModal from "./SignDocumentModal";
+import AcknowledgeDocumentModal from "./AcknowledgeDocumentModal";
 
 /** The investor's document folder: what Kevin filed for them, what they signed,
  *  and anything they uploaded themselves (banking details for ACH or wire). */
@@ -30,7 +30,7 @@ export default function InvestorDocsSection({
   legalName: string;
   viewingAs?: boolean;
 }) {
-  const [signingId, setSigningId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +38,7 @@ export default function InvestorDocsSection({
   const formRef = useRef<HTMLFormElement>(null);
   const toast = useToast();
 
-  const signing = documents.find((d) => d.id === signingId) ?? null;
+  const confirming = documents.find((d) => d.id === confirmingId) ?? null;
 
   /** Bytes go browser → Supabase against a signed URL; only the metadata
    *  travels through a server action. */
@@ -125,20 +125,22 @@ export default function InvestorDocsSection({
                 </div>
                 <span className="doc-row-actions">
                   {executed && <span className="signed-chip">✓ Executed {executed}</span>}
-                  {d.signed_at && (
-                    <span className="signed-chip">✓ Signed {fmtDate(d.signed_at)}</span>
+                  {d.acknowledged_at && (
+                    <span className="signed-chip">
+                      ✓ Receipt confirmed {fmtDate(d.acknowledged_at)}
+                    </span>
                   )}
-                  {d.signature_requested && !d.signed_at && !viewingAs && (
+                  {d.acknowledgment_requested && !d.acknowledged_at && !viewingAs && (
                     <button
                       type="button"
-                      className="sign-pill"
-                      onClick={() => setSigningId(d.id)}
+                      className="confirm-pill"
+                      onClick={() => setConfirmingId(d.id)}
                     >
-                      Review &amp; sign →
+                      Review &amp; confirm →
                     </button>
                   )}
-                  {d.signature_requested && !d.signed_at && viewingAs && (
-                    <span className="awaiting-chip">Awaiting signature</span>
+                  {d.acknowledgment_requested && !d.acknowledged_at && viewingAs && (
+                    <span className="awaiting-chip">Awaiting confirmation</span>
                   )}
                   <a
                     className="signed-download"
@@ -240,11 +242,11 @@ export default function InvestorDocsSection({
         </div>
       )}
 
-      {signing && !viewingAs && (
-        <SignDocumentModal
-          doc={signing}
+      {confirming && !viewingAs && (
+        <AcknowledgeDocumentModal
+          doc={confirming}
           legalName={legalName}
-          onClose={() => setSigningId(null)}
+          onClose={() => setConfirmingId(null)}
         />
       )}
     </>

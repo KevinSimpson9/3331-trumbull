@@ -20,8 +20,7 @@ export type UploadedBy = "admin" | "investor";
 /** A document in an investor's private folder: an executed DocuSign copy,
  *  their wire instructions, or banking details they uploaded themselves.
  *  DocuSign holds the signature and audit certificate for anything signed
- *  there; the optional in-portal signature below is the exception, used when
- *  a document needs signing without an envelope. */
+ *  there. */
 export interface InvestorDocument {
   id: string;
   investor_id: string;
@@ -34,9 +33,12 @@ export interface InvestorDocument {
   /** Date of execution in DocuSign (YYYY-MM-DD), not the upload date. */
   executed_on: string | null;
   uploaded_by: UploadedBy;
-  signature_requested: boolean;
-  signed_name: string | null;
-  signed_at: string | null;
+  /** True when the admin has asked the investor to confirm receipt. This is an
+   *  acknowledgment, not a signature: no fields, no placement, and the stored
+   *  PDF is never written to. Real signatures go through DocuSign. */
+  acknowledgment_requested: boolean;
+  acknowledged_name: string | null;
+  acknowledged_at: string | null;
   envelope_id: string | null;
   uploaded_at: string;
   sort: number;

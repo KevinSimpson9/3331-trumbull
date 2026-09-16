@@ -25,7 +25,6 @@
   --border-rule: rgba(255, 255, 255, 0.12);
   --border-gold: rgba(217, 164, 65, 0.4);
   --border-gold-strong: rgba(217, 164, 65, 0.5);
-  --script: 'Great Vibes', cursive;
   --serif: 'Playfair Display', serif;
   --sans: 'Archivo', sans-serif;
 }
@@ -623,7 +622,7 @@ textarea.input {
   padding: 6px 14px;
   font-weight: 600;
 }
-.sign-pill {
+.confirm-pill {
   background: var(--gold);
   color: var(--on-gold);
   border: 0;
@@ -635,7 +634,7 @@ textarea.input {
   white-space: nowrap;
   font-family: var(--sans);
 }
-.sign-pill:hover {
+.confirm-pill:hover {
   background: var(--gold-hover);
 }
 
@@ -1213,24 +1212,22 @@ input[type="file"].input::file-selector-button:hover {
   flex-direction: column;
   gap: 18px;
 }
-.sig-box {
+.attest-box {
   border: 1px dashed var(--border-gold-strong);
   border-radius: 8px;
-  padding: 14px 18px;
-  min-height: 64px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
-.sig-script {
-  font-family: var(--script);
-  font-size: 34px;
-  color: var(--ink);
-  min-height: 40px;
+.attest-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--heading);
   overflow-wrap: anywhere;
 }
-.sig-box-meta {
+.attest-meta {
   font-size: 10px;
   letter-spacing: 0.15em;
   color: var(--faint);

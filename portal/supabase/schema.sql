@@ -56,13 +56,16 @@ create table if not exists public.investor_documents (
   -- Who put the file here. Investors upload their own banking details for
   -- ACH/wire setup; everything else is filed by the admin.
   uploaded_by   text not null default 'admin' check (uploaded_by in ('admin', 'investor')),
-  -- Optional in-portal signature. Off by default: DocuSign is the norm, this
-  -- is the exception for a document that needs a signature without an envelope.
-  signature_requested boolean not null default false,
-  signed_name       text,
-  signed_at         timestamptz,
-  signed_ip         text,
-  signed_user_agent text,
+  -- Optional in-portal acknowledgment. Off by default. This is NOT a
+  -- signature: there is no field placement and the stored PDF is never
+  -- written to, so it records only that the investor opened the document and
+  -- confirmed receipt, with their typed name, time and device. Anything that
+  -- needs a real signature goes through DocuSign.
+  acknowledgment_requested boolean not null default false,
+  acknowledged_name       text,
+  acknowledged_at         timestamptz,
+  acknowledged_ip         text,
+  acknowledged_user_agent text,
   -- Reserved for a future DocuSign Connect integration; unused today.
   envelope_id   text,
   uploaded_at   timestamptz not null default now(),

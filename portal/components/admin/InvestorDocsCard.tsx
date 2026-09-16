@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import {
   createInvestorUploadTicket,
   deleteInvestorDocumentAction,
-  setSignatureRequestAction,
+  setAcknowledgmentRequestAction,
   uploadInvestorDocumentAction,
 } from "@/app/actions/admin";
 import {
@@ -121,24 +121,24 @@ export default function InvestorDocsCard({
                 </div>
               </div>
               <span className="doc-row-actions">
-                {d.signed_at ? (
+                {d.acknowledged_at ? (
                   <span className="signed-chip">
-                    ✓ Signed {fmtDate(d.signed_at)}
-                    {d.signed_name ? ` by ${d.signed_name}` : ""}
+                    ✓ Confirmed {fmtDate(d.acknowledged_at)}
+                    {d.acknowledged_name ? ` by ${d.acknowledged_name}` : ""}
                   </span>
-                ) : d.signature_requested ? (
+                ) : d.acknowledgment_requested ? (
                   <button
                     type="button"
                     className="roster-btn"
                     disabled={pending}
                     onClick={() =>
                       startTransition(async () => {
-                        const res = await setSignatureRequestAction(d.id, false);
+                        const res = await setAcknowledgmentRequestAction(d.id, false);
                         toast(res.error || res.message || "Cleared");
                       })
                     }
                   >
-                    Awaiting signature · cancel
+                    Awaiting confirmation · cancel
                   </button>
                 ) : (
                   <button
@@ -147,12 +147,12 @@ export default function InvestorDocsCard({
                     disabled={pending}
                     onClick={() =>
                       startTransition(async () => {
-                        const res = await setSignatureRequestAction(d.id, true);
+                        const res = await setAcknowledgmentRequestAction(d.id, true);
                         toast(res.error || res.message || "Requested");
                       })
                     }
                   >
-                    Request signature
+                    Request confirmation
                   </button>
                 )}
                 <a
@@ -245,8 +245,10 @@ export default function InvestorDocsCard({
           <div className="form-helper">
             Leave the date blank for anything that isn&apos;t signed, like wire instructions.
             Filing a document always posts a note in their message thread, whether or not the
-            email goes out. To have them sign something here rather than in DocuSign, upload it
-            and then use Request signature on the row.
+            email goes out. <strong>Request confirmation</strong> asks the investor to open a
+            document and confirm they received it. That is a receipt, not a signature: there are
+            no fields to place and the file is never altered, so anything needing a signature
+            goes out through DocuSign.
           </div>
           {error && <div className="error-text">{error}</div>}
           <div className="form-actions">

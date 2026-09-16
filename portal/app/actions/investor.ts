@@ -180,18 +180,24 @@ export async function deleteOwnDocumentAction(documentId: string): Promise<FormS
 }
 
 /**
- * Signs a document in the portal. Only available on documents where the admin
- * asked for a signature — the normal path is DocuSign, which holds its own
- * signature and audit certificate. Here the uploaded file is left untouched
- * and the signature is recorded against it: typed name, time, IP and device.
+ * Records an investor's confirmation that they received and reviewed a
+ * document. Only available where the admin asked for one.
+ *
+ * This is deliberately NOT a signature. There is no field placement, and the
+ * uploaded PDF is never altered — the confirmation is a record attached to it,
+ * carrying the typed name, time, IP and device. Anything that needs a real
+ * signature goes through DocuSign, which holds its own audit certificate.
  */
-export async function signDocumentAction(_prev: FormState, formData: FormData): Promise<FormState> {
+export async function acknowledgeDocumentAction(
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
   const documentId = String(formData.get("documentId") || "");
   const signerName = String(formData.get("signerName") || "").trim();
   const consent = formData.get("consent") === "on";
 
-  if (!signerName) return { error: "Type your full legal name to sign." };
-  if (!consent) return { error: "Please check the e-signature consent box." };
+  if (!signerName) return { error: "Type your full legal name to confirm." };
+  if (!consent) return { error: "Please check the confirmation box." };
 
   const investor = await currentInvestor();
   if (!investor) return { error: "Not signed in." };
@@ -203,43 +209,45 @@ export async function signDocumentAction(_prev: FormState, formData: FormData): 
     .eq("id", documentId)
     .maybeSingle<InvestorDocument>();
   if (!doc || doc.investor_id !== investor.id) return { error: "Document not found." };
-  if (!doc.signature_requested) return { error: "That document isn't awaiting a signature." };
-  if (doc.signed_at) return { error: "That document is already signed." };
+  if (!doc.acknowledgment_requested) {
+    return { error: "That document isn't awaiting confirmation." };
+  }
+  if (doc.acknowledged_at) return { error: "That document is already confirmed." };
 
   const hdrs = headers();
   const { error } = await admin
     .from("investor_documents")
     .update({
-      signed_name: signerName,
-      signed_at: new Date().toISOString(),
-      signed_ip: hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
-      signed_user_agent: hdrs.get("user-agent"),
-      signature_requested: false,
+      acknowledged_name: signerName,
+      acknowledged_at: new Date().toISOString(),
+      acknowledged_ip: hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+      acknowledged_user_agent: hdrs.get("user-agent"),
+      acknowledgment_requested: false,
     })
     .eq("id", documentId)
-    .is("signed_at", null);
-  if (error) return { error: "Signing failed — try again." };
+    .is("acknowledged_at", null);
+  if (error) return { error: "That didn't go through — try again." };
 
   await admin.from("messages").insert({
     investor_id: investor.id,
     sender: "investor",
-    body: `Signed ${doc.title} in the portal.`,
+    body: `Confirmed receipt of ${doc.title}.`,
   });
 
   try {
     await sendEmail({
       to: ADMIN_EMAIL,
-      subject: `${investor.legal_name} signed ${doc.title}`,
+      subject: `${investor.legal_name} confirmed receipt of ${doc.title}`,
       text:
-        `${investor.legal_name} (${investor.email}) signed ${doc.title} in the portal as ` +
-        `"${signerName}".\n\nTheir room: ${siteUrl()}/admin/investor/${investor.id}\n`,
+        `${investor.legal_name} (${investor.email}) confirmed receipt of ${doc.title} in the ` +
+        `portal as "${signerName}".\n\nTheir room: ${siteUrl()}/admin/investor/${investor.id}\n`,
     });
   } catch (e) {
-    console.error("signature notification failed", e);
+    console.error("acknowledgment notification failed", e);
   }
 
   revalidatePath("/room");
   revalidatePath("/admin");
   revalidatePath(`/admin/investor/${investor.id}`);
-  return { ok: true, message: "Signed ✓" };
+  return { ok: true, message: "Receipt confirmed ✓" };
 }
