@@ -1,19 +1,18 @@
-import { docDefs, DOC_COUNT } from "@/lib/docs";
-import { firstName, fmtDate, fmtMoney, todayLabel } from "@/lib/format";
-import type { Investor, Message, ProjectDocument, Signature } from "@/lib/types";
+import { PAYMENT_SCHEDULES } from "@/lib/docs";
+import { firstName, fmtDate, fmtMoney } from "@/lib/format";
+import type { Investor, InvestorDocument, InvestorUpdate, Message } from "@/lib/types";
 import type { FormState } from "@/app/actions/auth";
-import SignDocsSection from "./SignDocsSection";
+import InvestorDocsSection from "./InvestorDocsSection";
+import InvestorUpdatesSection from "./InvestorUpdatesSection";
 import MessageThread, { type BubbleVM } from "./MessageThread";
 
 interface Props {
   investor: Investor;
-  signatures: Signature[];
+  documents: InvestorDocument[];
+  updates: InvestorUpdate[];
   messages: Message[];
-  projectDocs: ProjectDocument[];
   sendAction: (formData: FormData) => Promise<FormState>;
   viewingAs?: boolean;
-  /** Doc key to auto-open for signature on load (e.g. "loi" after set-password). */
-  autoOpenKey?: string;
 }
 
 function SectionHead({ title, ordinal }: { title: string; ordinal: string }) {
@@ -27,25 +26,17 @@ function SectionHead({ title, ordinal }: { title: string; ordinal: string }) {
 
 export default function InvestorRoomView({
   investor,
-  signatures,
+  documents,
+  updates,
   messages,
-  projectDocs,
   sendAction,
   viewingAs,
-  autoOpenKey,
 }: Props) {
-  const signedByKey = new Map(signatures.map((s) => [s.doc_key, s]));
-  const docs = docDefs(investor).map((d) => {
-    const sig = signedByKey.get(d.key);
-    return { ...d, signedAt: sig ? fmtDate(sig.signed_at) : null };
-  });
-  const signedCount = docs.filter((d) => d.signedAt).length;
-
   const stats = [
     { label: "YOUR PRINCIPAL", value: fmtMoney(investor.principal) },
     { label: "RATE", value: `${investor.rate}%` },
     { label: "TERM", value: `${investor.term_months} MO` },
-    { label: "DOCUMENTS SIGNED", value: `${signedCount} / ${DOC_COUNT}` },
+    { label: "INTEREST", value: PAYMENT_SCHEDULES[investor.payment_schedule ?? "quarterly"].short.toUpperCase() },
   ];
 
   // In the investor's room "mine" = investor messages; when Kevin is viewing
@@ -80,43 +71,25 @@ export default function InvestorRoomView({
       </div>
 
       <div className="section">
-        <SectionHead title="Sign your documents" ordinal="01" />
+        <SectionHead title="Investor documents" ordinal="01" />
         <div className="section-blurb">
-          Review and e-sign directly in the portal. Signed copies are timestamped and saved to
-          your private folder.
+          Your signed documents and wire instructions. Anything requiring your signature is sent
+          through DocuSign; the fully executed copy is filed here. You can add your own banking
+          details for ACH or wire setup.
         </div>
-        <SignDocsSection
-          docs={docs}
+        <InvestorDocsSection
+          documents={documents}
           legalName={investor.legal_name}
-          todayLabel={todayLabel()}
           viewingAs={viewingAs}
-          downloadQuery={viewingAs ? `?investor=${investor.id}` : ""}
-          autoOpenKey={autoOpenKey}
         />
       </div>
 
       <div className="section">
-        <SectionHead title="Project documents" ordinal="02" />
-        <div className="link-card-grid">
-          {projectDocs.map((d) => (
-            <a
-              key={d.id}
-              className="link-card"
-              href={d.href ?? `/api/doc/${d.id}`}
-              target={d.href ? "_blank" : undefined}
-              rel={d.href ? "noopener noreferrer" : undefined}
-            >
-              <div className="doc-glyph">
-                <span className="doc-glyph-badge">{d.badge}</span>
-              </div>
-              <div className="link-card-main">
-                <div className="link-card-title">{d.title}</div>
-                <div className="link-card-desc">{d.description}</div>
-              </div>
-              <span className="link-card-arrow">→</span>
-            </a>
-          ))}
+        <SectionHead title="Investor updates" ordinal="02" />
+        <div className="section-blurb">
+          Progress on the build, newest first.
         </div>
+        <InvestorUpdatesSection updates={updates} />
       </div>
 
       <div className="section">

@@ -77,7 +77,10 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
     {
       investor_id: created.id,
       sender: "admin",
-      body: `${firstName(legalName)}, welcome to the 3331 Trumbull portal. Your commitment letter is ready to review and sign — I'll follow up shortly.`,
+      body:
+        `${firstName(legalName)}, welcome to the 3331 Trumbull portal. I'll follow up shortly ` +
+        `with next steps; your documents will come to you for signature through DocuSign, and ` +
+        `the executed copies get filed here in your folder.`,
     },
   ]);
 
@@ -97,7 +100,8 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
           ? `Their invite email couldn't be sent — send them this set-password link ` +
             `yourself:\n${invite.inviteLink}\n\n`
           : "") +
-        `Their room is live and the LOI is queued for signature.\nAdmin: ${base}/admin`,
+        `Their room is live — send their documents through DocuSign when you're ready.\n` +
+        `Admin: ${base}/admin`,
     }),
     sendEmail({
       to: email,
@@ -106,8 +110,10 @@ export async function subscribeAction(_prev: FormState, formData: FormData): Pro
         `${firstName(legalName)},\n\n` +
         `Thanks for subscribing to the 3331 Trumbull investor portal. We've recorded your ` +
         `indicative commitment of ${fmtMoney(amount)}.\n\n` +
-        `A separate email invites you to set your password. Once you're in, your ` +
-        `Non-Binding Letter of Intent is ready to review and sign right in the portal.\n\n` +
+        `A separate email invites you to set your password. Once you're in, you'll find your ` +
+        `position, the project document library, and a direct line to me. Any documents you ` +
+        `need to sign come to you through DocuSign; the executed copies are filed in your ` +
+        `portal folder.\n\n` +
         `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
     }),
   ]);

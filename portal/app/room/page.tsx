@@ -1,20 +1,15 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
-import { DEFAULT_PROJECT_DOCS } from "@/lib/docs";
 import { withEffectiveSchedule } from "@/lib/schedule";
-import type { Investor, Message, ProjectDocument, Signature } from "@/lib/types";
+import type { Investor, InvestorDocument, InvestorUpdate, Message } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import InvestorRoomView from "@/components/InvestorRoomView";
 import { sendInvestorMessage } from "@/app/actions/investor";
 
 export const dynamic = "force-dynamic";
 
-export default async function RoomPage({
-  searchParams,
-}: {
-  searchParams: { sign?: string };
-}) {
+export default async function RoomPage() {
   const supabase = createClient();
   const {
     data: { user },
@@ -30,29 +25,32 @@ export default async function RoomPage({
   if (!investorRow) redirect("/");
   const investor = await withEffectiveSchedule(investorRow);
 
-  const [{ data: signatures }, { data: messages }, { data: projectDocs }] = await Promise.all([
-    supabase.from("signatures").select("*").eq("investor_id", investor.id),
+  // RLS scopes all three reads: own documents, own thread, and updates that
+  // are either shared with everyone or targeted at this investor.
+  const [{ data: documents }, { data: updates }, { data: messages }] = await Promise.all([
+    supabase
+      .from("investor_documents")
+      .select("*")
+      .eq("investor_id", investor.id)
+      .order("sort", { ascending: true })
+      .order("uploaded_at", { ascending: true }),
+    supabase.from("investor_updates").select("*").order("posted_at", { ascending: false }),
     supabase
       .from("messages")
       .select("*")
       .eq("investor_id", investor.id)
       .order("sent_at", { ascending: true }),
-    supabase.from("project_documents").select("*").order("sort", { ascending: true }),
   ]);
-
-  const docs: ProjectDocument[] =
-    projectDocs && projectDocs.length ? projectDocs : (DEFAULT_PROJECT_DOCS as ProjectDocument[]);
 
   return (
     <div style={{ minHeight: "100vh" }}>
       <PortalHeader signedInAs={investor.legal_name} />
       <InvestorRoomView
         investor={investor}
-        signatures={(signatures as Signature[]) ?? []}
+        documents={(documents as InvestorDocument[]) ?? []}
+        updates={(updates as InvestorUpdate[]) ?? []}
         messages={(messages as Message[]) ?? []}
-        projectDocs={docs}
         sendAction={sendInvestorMessage}
-        autoOpenKey={searchParams.sign}
       />
     </div>
   );

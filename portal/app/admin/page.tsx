@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient, ADMIN_EMAIL } from "@/lib/supabase/admin";
+import { ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
 import { emailConfigured, emailFrom, usingSandboxSender, getEmailLog } from "@/lib/email";
-import { DOC_COUNT, PAYMENT_SCHEDULES } from "@/lib/docs";
+import { PAYMENT_SCHEDULES } from "@/lib/docs";
 import { effectiveSchedule } from "@/lib/schedule";
-import { SIGNED_DOCS_BUCKET } from "@/lib/pdf";
 import { fmtDate, fmtMoney, initials } from "@/lib/format";
-import type { Investor, Message, Signature } from "@/lib/types";
+import type { Investor, InvestorDocument, InvestorUpdate, Message } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import AllInvestorsCard, { type RosterRowVM } from "@/components/admin/AllInvestorsCard";
+import InvestorUpdatesCard from "@/components/admin/InvestorUpdatesCard";
 import MessagesCard, { type ThreadVM } from "@/components/admin/MessagesCard";
 import EmailHealthCard from "@/components/admin/EmailHealthCard";
 import type { BubbleVM } from "@/components/MessageThread";
@@ -34,29 +34,17 @@ export default async function AdminPage({
     .order("created_at", { ascending: true });
   const investors = (investorsData as Investor[]) ?? [];
 
-  // Self-healing cleanup: the accreditation document was removed from the
-  // portal, so purge any leftover signature rows and stored PDFs. Idempotent
-  // and cheap — runs on every admin visit so no SQL console is ever needed.
-  try {
-    const adminDb = createAdminClient();
-    await adminDb.from("signatures").delete().eq("doc_key", "accreditation");
-    if (investors.length) {
-      await adminDb.storage
-        .from(SIGNED_DOCS_BUCKET)
-        .remove(investors.map((i) => `${i.id}/accreditation.pdf`));
-    }
-  } catch {
-    // cleanup is best-effort; the rows are also invisible to the app either way
-  }
+  const [{ data: documentsData }, { data: messagesData }, { data: updatesData }, emailLog] =
+    await Promise.all([
+      supabase.from("investor_documents").select("*"),
+      supabase.from("messages").select("*").order("sent_at", { ascending: true }),
+      supabase.from("investor_updates").select("*").order("posted_at", { ascending: false }),
+      getEmailLog(),
+    ]);
 
-  const [{ data: signaturesData }, { data: messagesData }, emailLog] = await Promise.all([
-    supabase.from("signatures").select("*"),
-    supabase.from("messages").select("*").order("sent_at", { ascending: true }),
-    getEmailLog(),
-  ]);
-
-  const signatures = (signaturesData as Signature[]) ?? [];
+  const documents = (documentsData as InvestorDocument[]) ?? [];
   const messages = (messagesData as Message[]) ?? [];
+  const updates = (updatesData as InvestorUpdate[]) ?? [];
 
   const scheduleByInvestor = new Map(
     await Promise.all(
@@ -64,14 +52,16 @@ export default async function AdminPage({
     )
   );
 
-  const signedCount = (id: string) => signatures.filter((s) => s.investor_id === id).length;
+  const docCount = (id: string) => documents.filter((d) => d.investor_id === id).length;
 
   const stats = [
     { label: "INVESTORS", value: String(investors.length) },
     { label: "ACTIVE", value: String(investors.filter((i) => i.status === "active").length) },
     {
-      label: "FULLY SIGNED",
-      value: String(investors.filter((i) => signedCount(i.id) === DOC_COUNT).length),
+      label: "AWAITING CONFIRMATION",
+      value: String(
+        documents.filter((d) => d.acknowledgment_requested && !d.acknowledged_at).length
+      ),
     },
     {
       label: "COMMITTED CAPITAL",
@@ -88,11 +78,15 @@ export default async function AdminPage({
     terms: `${i.rate}% · ${i.term_months} mo · ${PAYMENT_SCHEDULES[scheduleByInvestor.get(i.id) ?? "quarterly"].short}`,
     active: i.status === "active",
     statusLabel: i.status === "active" ? "● Active" : "Invited",
-    docsLabel: `${signedCount(i.id)} of ${DOC_COUNT} docs signed`,
+    docsLabel:
+      docCount(i.id) === 0
+        ? "No documents filed"
+        : `${docCount(i.id)} document${docCount(i.id) === 1 ? "" : "s"} on file`,
     principalRaw: Number(i.principal),
     rateRaw: Number(i.rate),
     termRaw: i.term_months,
     paymentRaw: scheduleByInvestor.get(i.id) ?? "quarterly",
+    statusRaw: i.status,
   }));
 
   const threads: ThreadVM[] = investors.map((i) => {
@@ -126,8 +120,8 @@ export default async function AdminPage({
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div className="admin-title">Investor roster</div>
           <div className="admin-subtitle">
-            All committed investors, their position, signing progress, and messages. Each investor
-            sees only their own room.
+            All committed investors, their position, the documents on file, and messages. Each
+            investor sees only their own room.
           </div>
         </div>
         <div className="stat-grid">
@@ -139,6 +133,10 @@ export default async function AdminPage({
           ))}
         </div>
         <AllInvestorsCard rows={rows} />
+        <InvestorUpdatesCard
+          updates={updates}
+          investors={investors.map((i) => ({ id: i.id, name: i.legal_name }))}
+        />
         <MessagesCard threads={threads} openThreadId={openThreadId} />
         <EmailHealthCard
           health={{
