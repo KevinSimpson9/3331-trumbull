@@ -149,12 +149,11 @@ export default function InvestorUpdatesCard({
             )}
           </div>
         ))}
-        {updates.length === 0 && (
-          <div className="empty-panel">
-            <div className="empty-panel-title">No updates posted</div>
-            <div className="empty-panel-body">
-              Post a note or a progress report and every investor sees it in their room.
-            </div>
+        {updates.length === 0 && !open && (
+          <div className="empty-row">
+            {lockedTo
+              ? `No updates addressed to ${lockedTo.name} yet.`
+              : "No updates posted yet."}
           </div>
         )}
       </div>

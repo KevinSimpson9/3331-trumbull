@@ -31,7 +31,7 @@ export default function InvestorDocsCard({
   documents: InvestorDocument[];
 }) {
   const [pending, startTransition] = useTransition();
-  const [open, setOpen] = useState(documents.length === 0);
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -193,14 +193,9 @@ export default function InvestorDocsCard({
             </div>
           );
         })}
-        {documents.length === 0 && (
-          <div className="empty-panel">
-            <div className="empty-panel-title">Nothing filed yet</div>
-            <div className="empty-panel-body">
-              Download the completed envelope from DocuSign and upload it here, along with their
-              wire instructions. The investor sees each one in their room immediately, and can
-              add their own banking details for ACH or wire setup.
-            </div>
+        {documents.length === 0 && !open && (
+          <div className="empty-row">
+            Nothing filed yet. Upload their executed DocuSign copies and wire instructions.
           </div>
         )}
       </div>
@@ -254,12 +249,8 @@ export default function InvestorDocsCard({
             <span>Email {investorName} to let them know the document is in their folder.</span>
           </label>
           <div className="form-helper">
-            Leave the date blank for anything that isn&apos;t signed, like wire instructions.
-            Filing a document always posts a note in their message thread, whether or not the
-            email goes out. <strong>Request confirmation</strong> asks the investor to open a
-            document and confirm they received it. That is a receipt, not a signature: there are
-            no fields to place and the file is never altered, so anything needing a signature
-            goes out through DocuSign.
+            Leave the date blank for anything unsigned, like wire instructions. Filing always
+            posts a note in their message thread.
           </div>
           {error && <div className="error-text">{error}</div>}
           <div className="form-actions">

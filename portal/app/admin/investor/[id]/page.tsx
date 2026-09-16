@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
 import { withEffectiveSchedule } from "@/lib/schedule";
+import { PAYMENT_SCHEDULES } from "@/lib/docs";
+import { fmtMoney, initials } from "@/lib/format";
 import type { Investor, InvestorDocument, InvestorUpdate, Message } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import InvestorRoomView from "@/components/InvestorRoomView";
@@ -11,8 +13,9 @@ import { adminSendMessage } from "@/app/actions/admin";
 
 export const dynamic = "force-dynamic";
 
-/** Per-investor back office: their document folder and targeted updates, above
- *  a clearly bannered view of the room as they see it. */
+/** Per-investor back office. This is an admin tool that *contains* a preview of
+ *  the investor's room, so it leads with who is being managed and marks the
+ *  preview explicitly — it is never mistaken for the investor's own view. */
 export default async function ViewAsInvestorPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
   const {
@@ -46,16 +49,33 @@ export default async function ViewAsInvestorPage({ params }: { params: { id: str
 
   const docs = (documents as InvestorDocument[]) ?? [];
   const allUpdates = (updates as InvestorUpdate[]) ?? [];
-  // The room below shows what this investor sees; the card above manages only
-  // the updates addressed to them specifically.
   const theirUpdates = allUpdates.filter(
     (u) => u.investor_id === null || u.investor_id === investor.id
   );
 
+  const schedule = PAYMENT_SCHEDULES[investor.payment_schedule ?? "quarterly"].short;
+
   return (
     <div style={{ minHeight: "100vh" }}>
-      <PortalHeader signedInAs={investor.legal_name} viewingAs />
+      <PortalHeader signedInAs="Kevin Simpson" managing={investor.legal_name} />
       <div className="page-col page-col-admin">
+        <div className="subject-head">
+          <div className="subject-avatar">{initials(investor.legal_name)}</div>
+          <div className="subject-ident">
+            <div className="subject-name">{investor.legal_name}</div>
+            <div className="subject-email">{investor.email}</div>
+          </div>
+          <div className="subject-facts">
+            <span className="subject-fact">{fmtMoney(investor.principal)}</span>
+            <span className="subject-fact">
+              {investor.rate}% · {investor.term_months} mo · {schedule}
+            </span>
+            <span className={`status-chip ${investor.status === "active" ? "active" : "invited"}`}>
+              {investor.status === "active" ? "● Active" : "Invited"}
+            </span>
+          </div>
+        </div>
+
         <InvestorDocsCard
           investorId={investor.id}
           investorName={investor.legal_name}
@@ -65,6 +85,12 @@ export default async function ViewAsInvestorPage({ params }: { params: { id: str
           updates={allUpdates.filter((u) => u.investor_id === investor.id)}
           lockedTo={{ id: investor.id, name: investor.legal_name }}
         />
+
+        <div className="preview-divider">
+          <span className="preview-divider-label">
+            Below is {investor.legal_name}&apos;s room, exactly as they see it
+          </span>
+        </div>
       </div>
       <InvestorRoomView
         investor={investor}
