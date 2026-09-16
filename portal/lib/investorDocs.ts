@@ -15,14 +15,17 @@ export const INVESTOR_DOCS_BUCKET = "investor-documents";
 export const PROJECT_DOCS_BUCKET = "project-documents";
 
 /** Suggested labels in the upload form's dropdown. Free text is allowed —
- *  the document set is decided in DocuSign, not in the portal. */
+ *  the document set is decided in DocuSign, not in the portal.
+ *
+ *  The first five are the standard package every investor receives; Investor
+ *  Update covers the periodic reports filed into individual folders. */
 export const DOC_TYPE_SUGGESTIONS = [
   "Promissory Note",
-  "Personal Guarantee",
+  "Guaranty",
   "Subscription Agreement",
-  "Letter of Intent",
-  "Mortgage / Security Agreement",
-  "Investor Questionnaire",
+  "Offering Memorandum",
+  "Wire Instructions",
+  "Investor Update",
   "Amendment",
   "Other",
 ];

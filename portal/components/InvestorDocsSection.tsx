@@ -13,10 +13,10 @@ export default function InvestorDocsSection({
   if (documents.length === 0) {
     return (
       <div className="empty-panel">
-        <div className="empty-panel-title">No executed documents yet</div>
+        <div className="empty-panel-title">No documents yet</div>
         <div className="empty-panel-body">
           {viewingAs
-            ? "Nothing filed for this investor yet. Upload their executed DocuSign copies from the back office."
+            ? "Nothing filed for this investor yet. Upload their DocuSign copies, wire instructions and updates from the back office."
             : "Your documents are sent for signature through DocuSign. Once each one is fully executed, the signed copy is filed here for you to download anytime."}
         </div>
       </div>

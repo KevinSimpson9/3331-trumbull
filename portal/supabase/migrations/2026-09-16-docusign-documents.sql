@@ -83,6 +83,15 @@ create policy "investor documents: own folder or admin" on storage.objects
 -- 3. Clear the seeded shared library
 -- ---------------------------------------------------------------------------
 -- The seeded rows named files that were never correct (and in most cases were
--- never uploaded). The library is managed from the admin back office now, so
--- start it empty rather than showing investors cards that lead nowhere.
+-- never uploaded). The library keeps one card: the public site, where investor
+-- updates are posted. Everything else an investor receives is filed
+-- per-investor, not shared.
 delete from public.project_documents;
+
+-- The shared library holds one card for now: the public site, which is where
+-- investor updates are posted. Everything else an investor receives is filed
+-- per-investor, not shared.
+insert into public.project_documents (title, description, badge, href, storage_path, sort)
+select 'Investor Updates', 'trumbullnorth.com · Project news and progress reports', 'WEB',
+       'https://trumbullnorth.com', null, 1
+where not exists (select 1 from public.project_documents where href = 'https://trumbullnorth.com');

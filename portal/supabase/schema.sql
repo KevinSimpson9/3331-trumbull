@@ -157,6 +157,10 @@ create policy "investor documents: own folder or admin" on storage.objects
     )
   );
 
--- The shared library starts empty on purpose — upload the real files from the
--- admin back office (Project document library card) rather than seeding names
--- for files that may not exist yet.
+-- The shared library holds one card for now: the public site, which is where
+-- investor updates are posted. Everything else an investor receives is filed
+-- per-investor, not shared.
+insert into public.project_documents (title, description, badge, href, storage_path, sort)
+select 'Investor Updates', 'trumbullnorth.com · Project news and progress reports', 'WEB',
+       'https://trumbullnorth.com', null, 1
+where not exists (select 1 from public.project_documents where href = 'https://trumbullnorth.com');

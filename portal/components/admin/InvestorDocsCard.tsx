@@ -17,8 +17,8 @@ import { uploadToSignedUrl } from "@/lib/upload";
 import { useToast } from "@/components/Toast";
 import type { InvestorDocument } from "@/lib/types";
 
-/** Back-office filing cabinet: upload an investor's executed DocuSign copies
- *  and manage what's already filed. */
+/** Back-office filing cabinet: the investor's executed DocuSign copies, their
+ *  wire instructions, and the investor updates filed to their folder. */
 export default function InvestorDocsCard({
   investorId,
   investorName,
@@ -90,7 +90,7 @@ export default function InvestorDocsCard({
   return (
     <div className="admin-card">
       <div className="admin-card-head">
-        <div className="admin-card-title">Executed documents — {investorName}</div>
+        <div className="admin-card-title">Documents — {investorName}</div>
         <button type="button" className="btn-gold btn-gold-sm" onClick={() => setOpen((v) => !v)}>
           {open ? "Close" : "+ Upload document"}
         </button>
@@ -145,8 +145,9 @@ export default function InvestorDocsCard({
           <div className="empty-panel">
             <div className="empty-panel-title">Nothing filed yet</div>
             <div className="empty-panel-body">
-              Download the completed envelope from DocuSign and upload it here. The investor sees
-              it in their room immediately.
+              Download the completed envelope from DocuSign and upload it here, along with their
+              wire instructions. Investor updates go here too. The investor sees each one in
+              their room immediately.
             </div>
           </div>
         )}
@@ -155,14 +156,14 @@ export default function InvestorDocsCard({
       {open && (
         <form ref={formRef} onSubmit={handleSubmit} className="dashed-panel">
           <input type="hidden" name="investorId" value={investorId} />
-          <div className="dashed-panel-title">Upload an executed document</div>
+          <div className="dashed-panel-title">Upload a document</div>
           <div className="split">
             <div className="field field-tight">
               <label className="label label-sm">TITLE SHOWN TO THE INVESTOR</label>
               <input
                 name="title"
                 className="input input-sm"
-                placeholder="e.g. Promissory Note — executed"
+                placeholder="e.g. Promissory Note"
               />
             </div>
             <div className="field field-tight">
@@ -182,7 +183,7 @@ export default function InvestorDocsCard({
           </div>
           <div className="split">
             <div className="field field-tight">
-              <label className="label label-sm">DATE EXECUTED IN DOCUSIGN</label>
+              <label className="label label-sm">DATE EXECUTED (BLANK IF UNSIGNED)</label>
               <input name="executedOn" type="date" className="input input-sm" />
             </div>
             <div className="field field-tight">
@@ -201,8 +202,9 @@ export default function InvestorDocsCard({
             <span>Email {investorName} to let them know the document is in their folder.</span>
           </label>
           <div className="form-helper">
-            Filing a document always posts a note in their message thread, whether or not the
-            email goes out.
+            Leave the date blank for anything that isn&apos;t signed, like wire instructions or an
+            investor update. Filing a document always posts a note in their message thread,
+            whether or not the email goes out.
           </div>
           {error && <div className="error-text">{error}</div>}
           <div className="form-actions">

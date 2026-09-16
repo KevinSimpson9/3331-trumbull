@@ -350,13 +350,16 @@ export async function uploadInvestorDocumentAction(
   }
 
   const docLabel = title || docType;
+  // Only documents carrying an execution date are described as executed —
+  // wire instructions and investor updates are filed, not signed.
+  const docPhrase = executedOn ? `executed ${docLabel}` : docLabel;
 
   // In-portal notice first — it lands in the thread whether or not email is
   // configured, so the investor always has a record that the file arrived.
   await admin.from("messages").insert({
     investor_id: investorId,
     sender: "admin",
-    body: `Your executed ${docLabel} has been filed in your document folder.`,
+    body: `Your ${docPhrase} has been filed in your document folder.`,
   });
 
   if (notify) {
@@ -365,10 +368,10 @@ export async function uploadInvestorDocumentAction(
     try {
       await sendEmail({
         to: investor.email,
-        subject: `3331 Trumbull — your executed ${docLabel} is in the portal`,
+        subject: `3331 Trumbull — your ${docPhrase} is in the portal`,
         text:
           `${firstName(investor.legal_name)},\n\n` +
-          `Your executed ${docLabel} has been filed in your portal folder. You can view or ` +
+          `Your ${docPhrase} has been filed in your portal folder. You can view or ` +
           `download it anytime: ${siteUrl()}/room\n\n` +
           `Kevin Simpson\nAK Capital Investments\nkevin@akcapital.fund`,
       });

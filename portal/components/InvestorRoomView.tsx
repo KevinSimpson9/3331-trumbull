@@ -72,8 +72,9 @@ export default function InvestorRoomView({
       <div className="section">
         <SectionHead title="Your documents" ordinal="01" />
         <div className="section-blurb">
-          Your documents are signed through DocuSign. Fully executed copies are filed here —
-          yours to view or download anytime.
+          Your signed documents, wire instructions and project updates, all in one place.
+          Anything requiring your signature is sent through DocuSign; the fully executed copy
+          is filed here for you to view or download anytime.
         </div>
         <InvestorDocsSection documents={documents} viewingAs={viewingAs} />
       </div>

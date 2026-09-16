@@ -36,11 +36,25 @@ Access control is enforced in the database with Postgres row-level security: an 
    - `ADMIN_EMAIL` — `kevin@akcapital.fund`
 3. Deploy, then attach the domain (e.g. `portal.trumbullnorth.com`).
 
-### 3. Add the project documents
+### 3. The shared library
 
-The shared library starts empty. Add each item from the admin dashboard's **Project document library** card — upload a file, or point a card at an external link (that's how the trumbullnorth.com card works). No trip through the Supabase dashboard.
+The schema seeds one card: **Investor Updates**, linking to trumbullnorth.com, where project news and progress reports are posted. Everything else an investor receives is filed to their own folder, not shared.
 
-Files are private; the app serves them through short-lived signed URLs to signed-in users only.
+Add or remove library items from the admin dashboard's **Project document library** card — upload a file, or point a card at an external link. No trip through the Supabase dashboard. Uploaded files are private; the app serves them through short-lived signed URLs to signed-in users only.
+
+### What goes in an investor's folder
+
+The standard package, filed per-investor after DocuSign completion:
+
+- Promissory Note
+- Guaranty
+- Subscription Agreement
+- Offering Memorandum
+- Wire Instructions
+
+Plus periodic **Investor Update** reports, filed to each folder as they're issued.
+
+Wire instructions and updates aren't signed, so leave the execution date blank when filing them — the room shows the "✓ Executed" chip only on documents that carry one.
 
 ## Subscribe funnel (self-service)
 
