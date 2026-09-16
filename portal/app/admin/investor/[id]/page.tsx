@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
+import { checkSetup } from "@/lib/setup";
 import { withEffectiveSchedule } from "@/lib/schedule";
 import { PAYMENT_SCHEDULES } from "@/lib/docs";
 import { fmtMoney, initials } from "@/lib/format";
 import type { Investor, InvestorDocument, InvestorUpdate, Message } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
+import SetupBanner from "@/components/admin/SetupBanner";
 import InvestorRoomView from "@/components/InvestorRoomView";
 import InvestorDocsCard from "@/components/admin/InvestorDocsCard";
 import InvestorUpdatesCard from "@/components/admin/InvestorUpdatesCard";
@@ -31,6 +33,8 @@ export default async function ViewAsInvestorPage({ params }: { params: { id: str
     .maybeSingle<Investor>();
   if (!investorRow) redirect("/admin");
   const investor = await withEffectiveSchedule(investorRow);
+
+  const setup = await checkSetup();
 
   const [{ data: documents }, { data: updates }, { data: messages }] = await Promise.all([
     supabase
@@ -76,6 +80,7 @@ export default async function ViewAsInvestorPage({ params }: { params: { id: str
           </div>
         </div>
 
+        {!setup.ready && <SetupBanner missing={setup.missing} />}
         <InvestorDocsCard
           investorId={investor.id}
           investorName={investor.legal_name}

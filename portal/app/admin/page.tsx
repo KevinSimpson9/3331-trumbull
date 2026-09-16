@@ -2,12 +2,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN_EMAIL } from "@/lib/supabase/admin";
 import { isAdminUser } from "@/lib/auth";
+import { checkSetup } from "@/lib/setup";
 import { emailConfigured, emailFrom, usingSandboxSender, getEmailLog } from "@/lib/email";
 import { PAYMENT_SCHEDULES } from "@/lib/docs";
 import { effectiveSchedule } from "@/lib/schedule";
 import { fmtDate, fmtMoney, initials } from "@/lib/format";
 import type { Investor, InvestorDocument, InvestorUpdate, Message } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
+import SetupBanner from "@/components/admin/SetupBanner";
 import AllInvestorsCard, { type RosterRowVM } from "@/components/admin/AllInvestorsCard";
 import InvestorUpdatesCard from "@/components/admin/InvestorUpdatesCard";
 import MessagesCard, { type ThreadVM } from "@/components/admin/MessagesCard";
@@ -33,6 +35,8 @@ export default async function AdminPage({
     .select("*")
     .order("created_at", { ascending: true });
   const investors = (investorsData as Investor[]) ?? [];
+
+  const setup = await checkSetup();
 
   const [{ data: documentsData }, { data: messagesData }, { data: updatesData }, emailLog] =
     await Promise.all([
@@ -132,6 +136,7 @@ export default async function AdminPage({
             </div>
           ))}
         </div>
+        {!setup.ready && <SetupBanner missing={setup.missing} />}
         <AllInvestorsCard rows={rows} />
         <InvestorUpdatesCard
           updates={updates}

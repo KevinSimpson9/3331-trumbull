@@ -13,6 +13,7 @@ import {
   MAX_UPLOAD_BYTES,
   type UploadTicket,
 } from "@/lib/investorDocs";
+import { signedUploadUrl } from "@/lib/storage";
 import type { Investor, InvestorDocument } from "@/lib/types";
 import type { FormState } from "./auth";
 
@@ -70,13 +71,13 @@ export async function createSelfUploadTicket(
 
   const path = investorDocPath(investor.id, fileName);
   const admin = createAdminClient();
-  const { data, error } = await admin.storage
-    .from(INVESTOR_DOCS_BUCKET)
-    .createSignedUploadUrl(path);
-  if (error || !data?.signedUrl) {
-    return { error: "Could not start the upload — try again." };
+  const { url, error } = await signedUploadUrl(admin, INVESTOR_DOCS_BUCKET, path);
+  if (error || !url) {
+    // Investors get a plain apology, never setup instructions meant for Kevin.
+    console.error("investor upload ticket failed", error);
+    return { error: "Uploads aren't available right now — message Kevin and he'll sort it." };
   }
-  return { ok: true, uploadUrl: data.signedUrl, path };
+  return { ok: true, uploadUrl: url, path };
 }
 
 /** Phase two: files the investor's own upload in their folder and tells Kevin. */
@@ -121,7 +122,8 @@ export async function uploadOwnDocumentAction(
   });
   if (error) {
     await admin.storage.from(INVESTOR_DOCS_BUCKET).remove([storagePath]);
-    return { error: "Could not save the document — try again." };
+    console.error("investor document insert failed", error);
+    return { error: "Could not save the document — message Kevin and he'll sort it." };
   }
 
   const label = title || docType;

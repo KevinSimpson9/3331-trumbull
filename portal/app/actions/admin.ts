@@ -9,6 +9,7 @@ import { isAdminUser } from "@/lib/auth";
 import { firstName } from "@/lib/format";
 import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
 import type { UploadTicket } from "@/lib/investorDocs";
+import { isMissingTable, signedUploadUrl } from "@/lib/storage";
 import {
   INVESTOR_DOCS_BUCKET,
   UPDATES_BUCKET,
@@ -51,6 +52,16 @@ async function requireAdmin() {
     throw new Error("Not authorized");
   }
   return user;
+}
+
+/** Turns a missing-table error into an instruction instead of Postgres jargon. */
+function setupError(error: { code?: string; message?: string } | null): string | null {
+  if (!isMissingTable(error)) return null;
+  return (
+    "Setup isn't finished — the database migration hasn't been run. In Supabase, open " +
+    "SQL Editor and run portal/supabase/migrations/2026-09-16-docusign-documents.sql, " +
+    "then try again."
+  );
 }
 
 function revalidateAdmin() {
@@ -257,11 +268,9 @@ async function mintUploadTicket(
   }
 
   const admin = createAdminClient();
-  const { data, error } = await admin.storage.from(bucket).createSignedUploadUrl(path);
-  if (error || !data?.signedUrl) {
-    return { error: `Could not start the upload: ${error?.message ?? "no signed URL returned"}` };
-  }
-  return { ok: true, uploadUrl: data.signedUrl, path };
+  const { url, error } = await signedUploadUrl(admin, bucket, path);
+  if (error || !url) return { error: error ?? "Could not start the upload." };
+  return { ok: true, uploadUrl: url, path };
 }
 
 /** Confirms the browser's upload actually landed. Guards the finalize step
@@ -345,7 +354,7 @@ export async function uploadInvestorDocumentAction(
   });
   if (insertError) {
     await admin.storage.from(INVESTOR_DOCS_BUCKET).remove([storagePath]);
-    return { error: `Could not save the document: ${insertError.message}` };
+    return { error: setupError(insertError) ?? `Could not save the document: ${insertError.message}` };
   }
 
   const docLabel = title || docType;
@@ -511,7 +520,7 @@ export async function postInvestorUpdateAction(
   });
   if (error) {
     if (storagePath) await admin.storage.from(UPDATES_BUCKET).remove([storagePath]);
-    return { error: `Could not post the update: ${error.message}` };
+    return { error: setupError(error) ?? `Could not post the update: ${error.message}` };
   }
 
   revalidateAdmin();
