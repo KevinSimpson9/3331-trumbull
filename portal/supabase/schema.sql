@@ -50,8 +50,19 @@ create table if not exists public.investor_documents (
   storage_path  text not null unique,
   content_type  text,
   file_size     bigint,
-  -- Date the document was executed in DocuSign (not the upload date).
+  -- Date the document was executed in DocuSign. Null for anything unsigned,
+  -- such as wire instructions or a bank statement.
   executed_on   date,
+  -- Who put the file here. Investors upload their own banking details for
+  -- ACH/wire setup; everything else is filed by the admin.
+  uploaded_by   text not null default 'admin' check (uploaded_by in ('admin', 'investor')),
+  -- Optional in-portal signature. Off by default: DocuSign is the norm, this
+  -- is the exception for a document that needs a signature without an envelope.
+  signature_requested boolean not null default false,
+  signed_name       text,
+  signed_at         timestamptz,
+  signed_ip         text,
+  signed_user_agent text,
   -- Reserved for a future DocuSign Connect integration; unused today.
   envelope_id   text,
   uploaded_at   timestamptz not null default now(),
@@ -72,16 +83,22 @@ create table if not exists public.messages (
 
 create index if not exists messages_investor_sent_idx on public.messages (investor_id, sent_at);
 
--- Shared project document library (one list, visible to every signed-in investor).
-create table if not exists public.project_documents (
+-- Progress reports. A null investor_id means the update goes to every
+-- investor: one row, one file, no duplication across the roster.
+create table if not exists public.investor_updates (
   id            uuid primary key default gen_random_uuid(),
+  investor_id   uuid references public.investors (id) on delete cascade,
   title         text not null,
-  description   text,
-  badge         text not null default 'PDF',
-  href          text,          -- external link (e.g. the public project site)
-  storage_path  text,          -- object path inside the 'project-documents' bucket
-  sort          integer not null default 0
+  body          text,
+  file_name     text,
+  storage_path  text,
+  content_type  text,
+  file_size     bigint,
+  posted_at     timestamptz not null default now()
 );
+
+create index if not exists investor_updates_posted_idx
+  on public.investor_updates (posted_at desc);
 
 -- ---------------------------------------------------------------------------
 -- Row-level security. CRITICAL: an investor may only ever see their own row,
@@ -89,8 +106,8 @@ create table if not exists public.project_documents (
 -- ---------------------------------------------------------------------------
 alter table public.investors          enable row level security;
 alter table public.investor_documents enable row level security;
+alter table public.investor_updates   enable row level security;
 alter table public.messages           enable row level security;
-alter table public.project_documents  enable row level security;
 
 drop policy if exists "investors: own row or admin" on public.investors;
 create policy "investors: own row or admin" on public.investors
@@ -125,24 +142,30 @@ drop policy if exists "messages: admin writes any thread" on public.messages;
 create policy "messages: admin writes any thread" on public.messages
   for insert with check (public.is_admin() and sender = 'admin');
 
-drop policy if exists "project documents: any signed-in user" on public.project_documents;
-create policy "project documents: any signed-in user" on public.project_documents
-  for select using (auth.role() = 'authenticated');
+drop policy if exists "investor updates: shared, own, or admin" on public.investor_updates;
+create policy "investor updates: shared, own, or admin" on public.investor_updates
+  for select using (
+    public.is_admin()
+    or investor_id is null
+    or investor_id in (select id from public.investors where auth_user_id = auth.uid())
+  );
 
 -- ---------------------------------------------------------------------------
 -- Storage. Both buckets are private; files are served through short-lived
--- signed URLs minted by the app after an ownership check.
+-- signed URLs minted by the app after an ownership check. The policies are
+-- defence in depth behind that check.
 -- ---------------------------------------------------------------------------
 
--- Shared library, visible to every signed-in investor.
-insert into storage.buckets (id, name, public)
-values ('project-documents', 'project-documents', false)
-on conflict (id) do nothing;
-
--- Executed documents, filed under <investor_id>/ and readable only by that
--- investor. The storage policy is defence in depth behind the app's own check.
+-- Executed documents, wire instructions and investor-uploaded banking details,
+-- filed under <investor_id>/ and readable only by that investor.
 insert into storage.buckets (id, name, public)
 values ('investor-documents', 'investor-documents', false)
+on conflict (id) do nothing;
+
+-- Progress reports. Anything under all/ goes to every investor; the rest sits
+-- in the target investor's own folder.
+insert into storage.buckets (id, name, public)
+values ('investor-updates', 'investor-updates', false)
 on conflict (id) do nothing;
 
 drop policy if exists "investor documents: own folder or admin" on storage.objects;
@@ -157,10 +180,15 @@ create policy "investor documents: own folder or admin" on storage.objects
     )
   );
 
--- The shared library holds one card for now: the public site, which is where
--- investor updates are posted. Everything else an investor receives is filed
--- per-investor, not shared.
-insert into public.project_documents (title, description, badge, href, storage_path, sort)
-select 'Investor Updates', 'trumbullnorth.com · Project news and progress reports', 'WEB',
-       'https://trumbullnorth.com', null, 1
-where not exists (select 1 from public.project_documents where href = 'https://trumbullnorth.com');
+drop policy if exists "investor updates: shared folder or own" on storage.objects;
+create policy "investor updates: shared folder or own" on storage.objects
+  for select using (
+    bucket_id = 'investor-updates'
+    and (
+      public.is_admin()
+      or (storage.foldername(name))[1] = 'all'
+      or (storage.foldername(name))[1] in (
+        select id::text from public.investors where auth_user_id = auth.uid()
+      )
+    )
+  );

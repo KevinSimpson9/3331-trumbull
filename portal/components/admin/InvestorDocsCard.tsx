@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import {
   createInvestorUploadTicket,
   deleteInvestorDocumentAction,
+  setSignatureRequestAction,
   uploadInvestorDocumentAction,
 } from "@/app/actions/admin";
 import {
@@ -13,6 +14,7 @@ import {
   fmtFileSize,
   MAX_UPLOAD_BYTES,
 } from "@/lib/investorDocs";
+import { fmtDate } from "@/lib/format";
 import { uploadToSignedUrl } from "@/lib/upload";
 import { useToast } from "@/components/Toast";
 import type { InvestorDocument } from "@/lib/types";
@@ -108,12 +110,51 @@ export default function InvestorDocsCard({
               <div className="doc-row-main">
                 <div className="doc-row-title">{d.title}</div>
                 <div className="doc-row-desc">
-                  {[d.doc_type, executed ? `executed ${executed}` : null, size]
+                  {[
+                    d.doc_type,
+                    d.uploaded_by === "investor" ? "uploaded by them" : null,
+                    executed ? `executed ${executed}` : null,
+                    size,
+                  ]
                     .filter(Boolean)
                     .join(" · ")}
                 </div>
               </div>
               <span className="doc-row-actions">
+                {d.signed_at ? (
+                  <span className="signed-chip">
+                    ✓ Signed {fmtDate(d.signed_at)}
+                    {d.signed_name ? ` by ${d.signed_name}` : ""}
+                  </span>
+                ) : d.signature_requested ? (
+                  <button
+                    type="button"
+                    className="roster-btn"
+                    disabled={pending}
+                    onClick={() =>
+                      startTransition(async () => {
+                        const res = await setSignatureRequestAction(d.id, false);
+                        toast(res.error || res.message || "Cleared");
+                      })
+                    }
+                  >
+                    Awaiting signature · cancel
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="roster-btn"
+                    disabled={pending}
+                    onClick={() =>
+                      startTransition(async () => {
+                        const res = await setSignatureRequestAction(d.id, true);
+                        toast(res.error || res.message || "Requested");
+                      })
+                    }
+                  >
+                    Request signature
+                  </button>
+                )}
                 <a
                   className="signed-download"
                   href={`/api/investor-doc/${d.id}`}
@@ -146,8 +187,8 @@ export default function InvestorDocsCard({
             <div className="empty-panel-title">Nothing filed yet</div>
             <div className="empty-panel-body">
               Download the completed envelope from DocuSign and upload it here, along with their
-              wire instructions. Investor updates go here too. The investor sees each one in
-              their room immediately.
+              wire instructions. The investor sees each one in their room immediately, and can
+              add their own banking details for ACH or wire setup.
             </div>
           </div>
         )}
@@ -202,9 +243,10 @@ export default function InvestorDocsCard({
             <span>Email {investorName} to let them know the document is in their folder.</span>
           </label>
           <div className="form-helper">
-            Leave the date blank for anything that isn&apos;t signed, like wire instructions or an
-            investor update. Filing a document always posts a note in their message thread,
-            whether or not the email goes out.
+            Leave the date blank for anything that isn&apos;t signed, like wire instructions.
+            Filing a document always posts a note in their message thread, whether or not the
+            email goes out. To have them sign something here rather than in DocuSign, upload it
+            and then use Request signature on the row.
           </div>
           {error && <div className="error-text">{error}</div>}
           <div className="form-actions">

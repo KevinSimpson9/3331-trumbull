@@ -27,11 +27,20 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Deny by default. Everything needs a session except the sign-in page, the
+  // routes that exist to get you one, and the public subscribe funnel. A new
+  // route is protected the moment it is added, without anyone remembering to
+  // list it here.
   const path = request.nextUrl.pathname;
-  const isProtected =
-    path.startsWith("/room") || path.startsWith("/admin") || path.startsWith("/auth/set-password");
+  const isPublic =
+    path === "/" ||
+    path === "/robots.txt" ||
+    path === "/favicon.ico" ||
+    path === "/subscribe" ||
+    path === "/auth/confirm" ||
+    path === "/auth/forgot";
 
-  if (!user && isProtected) {
+  if (!user && !isPublic) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

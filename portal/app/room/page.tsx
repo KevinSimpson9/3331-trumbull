@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/auth";
 import { withEffectiveSchedule } from "@/lib/schedule";
-import type { Investor, InvestorDocument, Message, ProjectDocument } from "@/lib/types";
+import type { Investor, InvestorDocument, InvestorUpdate, Message } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import InvestorRoomView from "@/components/InvestorRoomView";
 import { sendInvestorMessage } from "@/app/actions/investor";
@@ -25,20 +25,21 @@ export default async function RoomPage() {
   if (!investorRow) redirect("/");
   const investor = await withEffectiveSchedule(investorRow);
 
-  // RLS scopes all three reads to this investor.
-  const [{ data: documents }, { data: messages }, { data: projectDocs }] = await Promise.all([
+  // RLS scopes all three reads: own documents, own thread, and updates that
+  // are either shared with everyone or targeted at this investor.
+  const [{ data: documents }, { data: updates }, { data: messages }] = await Promise.all([
     supabase
       .from("investor_documents")
       .select("*")
       .eq("investor_id", investor.id)
       .order("sort", { ascending: true })
       .order("uploaded_at", { ascending: true }),
+    supabase.from("investor_updates").select("*").order("posted_at", { ascending: false }),
     supabase
       .from("messages")
       .select("*")
       .eq("investor_id", investor.id)
       .order("sent_at", { ascending: true }),
-    supabase.from("project_documents").select("*").order("sort", { ascending: true }),
   ]);
 
   return (
@@ -47,8 +48,8 @@ export default async function RoomPage() {
       <InvestorRoomView
         investor={investor}
         documents={(documents as InvestorDocument[]) ?? []}
+        updates={(updates as InvestorUpdate[]) ?? []}
         messages={(messages as Message[]) ?? []}
-        projectDocs={(projectDocs as ProjectDocument[]) ?? []}
         sendAction={sendInvestorMessage}
       />
     </div>

@@ -6,10 +6,10 @@ import { emailConfigured, emailFrom, usingSandboxSender, getEmailLog } from "@/l
 import { PAYMENT_SCHEDULES } from "@/lib/docs";
 import { effectiveSchedule } from "@/lib/schedule";
 import { fmtDate, fmtMoney, initials } from "@/lib/format";
-import type { Investor, InvestorDocument, Message, ProjectDocument } from "@/lib/types";
+import type { Investor, InvestorDocument, InvestorUpdate, Message } from "@/lib/types";
 import PortalHeader from "@/components/PortalHeader";
 import AllInvestorsCard, { type RosterRowVM } from "@/components/admin/AllInvestorsCard";
-import ProjectLibraryCard from "@/components/admin/ProjectLibraryCard";
+import InvestorUpdatesCard from "@/components/admin/InvestorUpdatesCard";
 import MessagesCard, { type ThreadVM } from "@/components/admin/MessagesCard";
 import EmailHealthCard from "@/components/admin/EmailHealthCard";
 import type { BubbleVM } from "@/components/MessageThread";
@@ -34,17 +34,17 @@ export default async function AdminPage({
     .order("created_at", { ascending: true });
   const investors = (investorsData as Investor[]) ?? [];
 
-  const [{ data: documentsData }, { data: messagesData }, { data: projectDocsData }, emailLog] =
+  const [{ data: documentsData }, { data: messagesData }, { data: updatesData }, emailLog] =
     await Promise.all([
       supabase.from("investor_documents").select("*"),
       supabase.from("messages").select("*").order("sent_at", { ascending: true }),
-      supabase.from("project_documents").select("*").order("sort", { ascending: true }),
+      supabase.from("investor_updates").select("*").order("posted_at", { ascending: false }),
       getEmailLog(),
     ]);
 
   const documents = (documentsData as InvestorDocument[]) ?? [];
   const messages = (messagesData as Message[]) ?? [];
-  const projectDocs = (projectDocsData as ProjectDocument[]) ?? [];
+  const updates = (updatesData as InvestorUpdate[]) ?? [];
 
   const scheduleByInvestor = new Map(
     await Promise.all(
@@ -58,8 +58,8 @@ export default async function AdminPage({
     { label: "INVESTORS", value: String(investors.length) },
     { label: "ACTIVE", value: String(investors.filter((i) => i.status === "active").length) },
     {
-      label: "DOCUMENTS FILED",
-      value: String(documents.length),
+      label: "AWAITING SIGNATURE",
+      value: String(documents.filter((d) => d.signature_requested && !d.signed_at).length),
     },
     {
       label: "COMMITTED CAPITAL",
@@ -79,7 +79,7 @@ export default async function AdminPage({
     docsLabel:
       docCount(i.id) === 0
         ? "No documents filed"
-        : `${docCount(i.id)} executed document${docCount(i.id) === 1 ? "" : "s"}`,
+        : `${docCount(i.id)} document${docCount(i.id) === 1 ? "" : "s"} on file`,
     principalRaw: Number(i.principal),
     rateRaw: Number(i.rate),
     termRaw: i.term_months,
@@ -118,8 +118,8 @@ export default async function AdminPage({
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div className="admin-title">Investor roster</div>
           <div className="admin-subtitle">
-            All committed investors, their position, the executed documents on file, and
-            messages. Each investor sees only their own room.
+            All committed investors, their position, the documents on file, and messages. Each
+            investor sees only their own room.
           </div>
         </div>
         <div className="stat-grid">
@@ -131,7 +131,10 @@ export default async function AdminPage({
           ))}
         </div>
         <AllInvestorsCard rows={rows} />
-        <ProjectLibraryCard documents={projectDocs} />
+        <InvestorUpdatesCard
+          updates={updates}
+          investors={investors.map((i) => ({ id: i.id, name: i.legal_name }))}
+        />
         <MessagesCard threads={threads} openThreadId={openThreadId} />
         <EmailHealthCard
           health={{

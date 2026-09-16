@@ -11,12 +11,11 @@ import { PAYMENT_SCHEDULE_KEYS } from "@/lib/docs";
 import type { UploadTicket } from "@/lib/investorDocs";
 import {
   INVESTOR_DOCS_BUCKET,
-  PROJECT_DOCS_BUCKET,
-  badgeFor,
+  UPDATES_BUCKET,
   investorDocPath,
   isAllowedUpload,
   MAX_UPLOAD_BYTES,
-  safeFileName,
+  updatePath,
 } from "@/lib/investorDocs";
 import type { InvestorStatus, PaymentSchedule } from "@/lib/types";
 import type { FormState } from "./auth";
@@ -409,91 +408,138 @@ export async function deleteInvestorDocumentAction(documentId: string): Promise<
   return { ok: true, message: "Document removed" };
 }
 
-export async function createProjectUploadTicket(
+/** Turns the in-portal signature request on or off for one document. Off is
+ *  the default: DocuSign is the norm, and this covers the occasional document
+ *  that needs a signature without an envelope. */
+export async function setSignatureRequestAction(
+  documentId: string,
+  requested: boolean
+): Promise<FormState> {
+  await requireAdmin();
+  const admin = createAdminClient();
+
+  const { data: doc } = await admin
+    .from("investor_documents")
+    .select("id, investor_id, title, signed_at")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (!doc) return { error: "Document not found." };
+  if (doc.signed_at) return { error: "That document is already signed." };
+
+  const { error } = await admin
+    .from("investor_documents")
+    .update({ signature_requested: requested })
+    .eq("id", documentId);
+  if (error) return { error: "Could not update the signature request." };
+
+  if (requested) {
+    await admin.from("messages").insert({
+      investor_id: doc.investor_id,
+      sender: "admin",
+      body: `${doc.title} is ready for your signature in the portal.`,
+    });
+  }
+
+  revalidateAdmin();
+  revalidatePath(`/admin/investor/${doc.investor_id}`);
+  return {
+    ok: true,
+    message: requested ? "Signature requested \u2713" : "Signature request cleared",
+  };
+}
+
+export async function createUpdateUploadTicket(
+  investorId: string | null,
   fileName: string,
   size: number
 ): Promise<UploadTicket> {
   await requireAdmin();
-  return mintUploadTicket(
-    PROJECT_DOCS_BUCKET,
-    `${Date.now()}-${safeFileName(fileName)}`,
-    fileName,
-    size
-  );
+  return mintUploadTicket(UPDATES_BUCKET, updatePath(investorId, fileName), fileName, size);
 }
 
-/** Adds an item to the shared project library — either an uploaded file
- *  (already in storage via a ticket) or an external link. */
-export async function addProjectDocumentAction(
+/** Posts a progress report. An update can be a file, a written note, or both;
+ *  a null investor means every investor sees it. */
+export async function postInvestorUpdateAction(
   _prev: FormState,
   formData: FormData
 ): Promise<FormState> {
   await requireAdmin();
 
   const title = String(formData.get("title") || "").trim();
-  const description = String(formData.get("description") || "").trim();
-  const href = String(formData.get("href") || "").trim();
+  const body = String(formData.get("body") || "").trim();
+  const audience = String(formData.get("audience") || "all");
+  const investorId = audience === "all" ? null : audience;
   const storagePath = String(formData.get("storagePath") || "").trim();
   const fileName = String(formData.get("fileName") || "").trim();
+  const contentType = String(formData.get("contentType") || "").trim();
+  const fileSize = Number(formData.get("fileSize"));
 
-  if (!title) return { error: "Give the document a title." };
-  if (!storagePath && !href) return { error: "Upload a file or enter an external link." };
-  if (storagePath && href) return { error: "Use either a file or a link, not both." };
-  if (href && !/^https?:\/\//i.test(href)) {
-    return { error: "External links must start with http:// or https://" };
+  if (!title) return { error: "Give the update a title." };
+  if (!body && !storagePath) return { error: "Write a note, attach a file, or both." };
+  // The path was minted by createUpdateUploadTicket for this audience; re-check
+  // it so a replayed call can't file one investor's update into another's folder.
+  if (storagePath && !storagePath.startsWith(`${investorId ?? "all"}/`)) {
+    return { error: "That upload doesn't match the chosen audience." };
   }
 
   const admin = createAdminClient();
 
-  if (storagePath && !(await uploadedObjectExists(PROJECT_DOCS_BUCKET, storagePath))) {
+  if (investorId) {
+    const { data: investor } = await admin
+      .from("investors")
+      .select("id")
+      .eq("id", investorId)
+      .maybeSingle();
+    if (!investor) return { error: "Investor not found." };
+  }
+
+  if (storagePath && !(await uploadedObjectExists(UPDATES_BUCKET, storagePath))) {
     return { error: "The uploaded file couldn't be found — try the upload again." };
   }
 
-  const { data: last } = await admin
-    .from("project_documents")
-    .select("sort")
-    .order("sort", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const { error: insertError } = await admin.from("project_documents").insert({
+  const { error } = await admin.from("investor_updates").insert({
+    investor_id: investorId,
     title,
-    description: description || null,
-    badge: storagePath ? badgeFor(fileName || storagePath) : "WEB",
-    href: href || null,
+    body: body || null,
+    file_name: fileName || null,
     storage_path: storagePath || null,
-    sort: (last?.sort ?? 0) + 1,
+    content_type: contentType || null,
+    file_size: Number.isFinite(fileSize) && fileSize > 0 ? fileSize : null,
   });
-  if (insertError) {
-    if (storagePath) await admin.storage.from(PROJECT_DOCS_BUCKET).remove([storagePath]);
-    return { error: `Could not add the document: ${insertError.message}` };
+  if (error) {
+    if (storagePath) await admin.storage.from(UPDATES_BUCKET).remove([storagePath]);
+    return { error: `Could not post the update: ${error.message}` };
   }
 
   revalidateAdmin();
-  return { ok: true, message: `${title} added to the library \u2713` };
+  if (investorId) revalidatePath(`/admin/investor/${investorId}`);
+  return {
+    ok: true,
+    message: investorId ? `${title} posted \u2713` : `${title} posted to every investor \u2713`,
+  };
 }
 
-/** Removes a shared library item and its stored file, if it had one. */
-export async function deleteProjectDocumentAction(documentId: string): Promise<FormState> {
+export async function deleteInvestorUpdateAction(updateId: string): Promise<FormState> {
   await requireAdmin();
   const admin = createAdminClient();
 
-  const { data: doc } = await admin
-    .from("project_documents")
-    .select("id, storage_path")
-    .eq("id", documentId)
+  const { data: update } = await admin
+    .from("investor_updates")
+    .select("id, investor_id, storage_path")
+    .eq("id", updateId)
     .maybeSingle();
-  if (!doc) return { error: "Document not found." };
+  if (!update) return { error: "Update not found." };
 
-  const { error } = await admin.from("project_documents").delete().eq("id", documentId);
+  const { error } = await admin.from("investor_updates").delete().eq("id", updateId);
   if (error) return { error: "Delete failed — try again." };
 
-  if (doc.storage_path) {
-    await admin.storage.from(PROJECT_DOCS_BUCKET).remove([doc.storage_path]);
+  if (update.storage_path) {
+    await admin.storage.from(UPDATES_BUCKET).remove([update.storage_path]);
   }
 
   revalidateAdmin();
-  return { ok: true, message: "Document removed from the library" };
+  if (update.investor_id) revalidatePath(`/admin/investor/${update.investor_id}`);
+  return { ok: true, message: "Update removed" };
 }
 
 export async function removeInvestorAction(investorId: string): Promise<FormState> {

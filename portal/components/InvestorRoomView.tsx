@@ -1,15 +1,16 @@
 import { PAYMENT_SCHEDULES } from "@/lib/docs";
 import { firstName, fmtDate, fmtMoney } from "@/lib/format";
-import type { Investor, InvestorDocument, Message, ProjectDocument } from "@/lib/types";
+import type { Investor, InvestorDocument, InvestorUpdate, Message } from "@/lib/types";
 import type { FormState } from "@/app/actions/auth";
 import InvestorDocsSection from "./InvestorDocsSection";
+import InvestorUpdatesSection from "./InvestorUpdatesSection";
 import MessageThread, { type BubbleVM } from "./MessageThread";
 
 interface Props {
   investor: Investor;
   documents: InvestorDocument[];
+  updates: InvestorUpdate[];
   messages: Message[];
-  projectDocs: ProjectDocument[];
   sendAction: (formData: FormData) => Promise<FormState>;
   viewingAs?: boolean;
 }
@@ -26,8 +27,8 @@ function SectionHead({ title, ordinal }: { title: string; ordinal: string }) {
 export default function InvestorRoomView({
   investor,
   documents,
+  updates,
   messages,
-  projectDocs,
   sendAction,
   viewingAs,
 }: Props) {
@@ -70,45 +71,25 @@ export default function InvestorRoomView({
       </div>
 
       <div className="section">
-        <SectionHead title="Your documents" ordinal="01" />
+        <SectionHead title="Investor documents" ordinal="01" />
         <div className="section-blurb">
-          Your signed documents, wire instructions and project updates, all in one place.
-          Anything requiring your signature is sent through DocuSign; the fully executed copy
-          is filed here for you to view or download anytime.
+          Your signed documents and wire instructions. Anything requiring your signature is sent
+          through DocuSign; the fully executed copy is filed here. You can add your own banking
+          details for ACH or wire setup.
         </div>
-        <InvestorDocsSection documents={documents} viewingAs={viewingAs} />
+        <InvestorDocsSection
+          documents={documents}
+          legalName={investor.legal_name}
+          viewingAs={viewingAs}
+        />
       </div>
 
       <div className="section">
-        <SectionHead title="Project documents" ordinal="02" />
-        {projectDocs.length === 0 && (
-          <div className="empty-panel">
-            <div className="empty-panel-title">Nothing here yet</div>
-            <div className="empty-panel-body">
-              Project materials will appear here as they&apos;re published.
-            </div>
-          </div>
-        )}
-        <div className="link-card-grid">
-          {projectDocs.map((d) => (
-            <a
-              key={d.id}
-              className="link-card"
-              href={d.href ?? `/api/doc/${d.id}`}
-              target={d.href ? "_blank" : undefined}
-              rel={d.href ? "noopener noreferrer" : undefined}
-            >
-              <div className="doc-glyph">
-                <span className="doc-glyph-badge">{d.badge}</span>
-              </div>
-              <div className="link-card-main">
-                <div className="link-card-title">{d.title}</div>
-                <div className="link-card-desc">{d.description}</div>
-              </div>
-              <span className="link-card-arrow">→</span>
-            </a>
-          ))}
+        <SectionHead title="Investor updates" ordinal="02" />
+        <div className="section-blurb">
+          Progress on the build, newest first.
         </div>
+        <InvestorUpdatesSection updates={updates} />
       </div>
 
       <div className="section">

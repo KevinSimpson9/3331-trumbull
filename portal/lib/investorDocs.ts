@@ -12,21 +12,28 @@ export interface UploadTicket {
 }
 
 export const INVESTOR_DOCS_BUCKET = "investor-documents";
-export const PROJECT_DOCS_BUCKET = "project-documents";
+export const UPDATES_BUCKET = "investor-updates";
 
-/** Suggested labels in the upload form's dropdown. Free text is allowed —
- *  the document set is decided in DocuSign, not in the portal.
- *
- *  The first five are the standard package every investor receives; Investor
- *  Update covers the periodic reports filed into individual folders. */
+/** Suggested labels in the admin upload form's dropdown. Free text is allowed —
+ *  the document set is decided in DocuSign, not in the portal. The first five
+ *  are the standard package every investor receives. */
 export const DOC_TYPE_SUGGESTIONS = [
   "Promissory Note",
   "Guaranty",
   "Subscription Agreement",
   "Offering Memorandum",
   "Wire Instructions",
-  "Investor Update",
   "Amendment",
+  "Other",
+];
+
+/** What an investor is uploading when they add a file themselves — banking
+ *  details for ACH or wire setup, in practice. */
+export const INVESTOR_DOC_TYPE_SUGGESTIONS = [
+  "Bank Information",
+  "Bank Statement",
+  "Voided Check",
+  "Identification",
   "Other",
 ];
 
@@ -66,10 +73,16 @@ export function safeFileName(fileName: string): string {
   return cleaned || "document";
 }
 
-/** Object key for an executed document: one folder per investor, so the
- *  storage policy can scope reads by the leading path segment. */
+/** Object key for a document: one folder per investor, so the storage policy
+ *  can scope reads by the leading path segment. */
 export function investorDocPath(investorId: string, fileName: string): string {
   return `${investorId}/${Date.now()}-${safeFileName(fileName)}`;
+}
+
+/** Object key for an update. A null investor means every investor sees it, so
+ *  it goes under all/ where the storage policy lets any of them read it. */
+export function updatePath(investorId: string | null, fileName: string): string {
+  return `${investorId ?? "all"}/${Date.now()}-${safeFileName(fileName)}`;
 }
 
 export function fmtFileSize(bytes: number | null): string {
@@ -92,3 +105,6 @@ export function fmtExecutedOn(date: string | null): string | null {
     year: "numeric",
   });
 }
+
+/** The public project site, linked from the Investor Updates section. */
+export const PROJECT_SITE_URL = "https://trumbullnorth.com";

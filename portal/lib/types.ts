@@ -15,9 +15,13 @@ export interface Investor {
   created_at: string;
 }
 
-/** An executed document uploaded to an investor's private folder after it was
- *  signed in DocuSign. The portal stores and serves it; DocuSign holds the
- *  signature and its audit certificate. */
+export type UploadedBy = "admin" | "investor";
+
+/** A document in an investor's private folder: an executed DocuSign copy,
+ *  their wire instructions, or banking details they uploaded themselves.
+ *  DocuSign holds the signature and audit certificate for anything signed
+ *  there; the optional in-portal signature below is the exception, used when
+ *  a document needs signing without an envelope. */
 export interface InvestorDocument {
   id: string;
   investor_id: string;
@@ -29,9 +33,27 @@ export interface InvestorDocument {
   file_size: number | null;
   /** Date of execution in DocuSign (YYYY-MM-DD), not the upload date. */
   executed_on: string | null;
+  uploaded_by: UploadedBy;
+  signature_requested: boolean;
+  signed_name: string | null;
+  signed_at: string | null;
   envelope_id: string | null;
   uploaded_at: string;
   sort: number;
+}
+
+/** A progress report. `investor_id` null means every investor sees it. An
+ *  update can be a file, a written note, or both. */
+export interface InvestorUpdate {
+  id: string;
+  investor_id: string | null;
+  title: string;
+  body: string | null;
+  file_name: string | null;
+  storage_path: string | null;
+  content_type: string | null;
+  file_size: number | null;
+  posted_at: string;
 }
 
 export interface Message {
@@ -41,14 +63,4 @@ export interface Message {
   body: string;
   sent_at: string;
   read_at: string | null;
-}
-
-export interface ProjectDocument {
-  id: string;
-  title: string;
-  description: string | null;
-  badge: string;
-  href: string | null;
-  storage_path: string | null;
-  sort: number;
 }

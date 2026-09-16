@@ -10,10 +10,48 @@ The portal used to generate its own documents and capture a typed-name "signatur
 
 ## What it does
 
-- **Investor side** — each investor signs in and sees only their own room: position stats (principal / rate / term / payout schedule), their executed documents to view or download, the shared project document library, and a private 1:1 message thread with Kevin.
-- **Admin back office** (`kevin@akcapital.fund`) — investor roster, add/remove investor (invite email with a set-password link), per-investor document filing, the shared project library, per-investor message threads with unread indicators, "message everyone" broadcast, and a bannered impersonation view of any investor's room.
+- **Investor side** — each investor signs in and sees only their own room:
+  - **Investor documents** — their executed DocuSign copies and wire instructions, plus anything they upload themselves (banking details for ACH or wire setup). Occasionally a document needs a signature without a DocuSign envelope; when you request one, they sign it here.
+  - **Investor updates** — progress reports, newest first, with the project website linked underneath.
+  - **Messages** — a private 1:1 thread with Kevin.
+- **Admin back office** (`kevin@akcapital.fund`) — investor roster, add/remove investor, per-investor document filing and signature requests, investor updates posted to everyone or to one person, message threads with unread indicators, "message everyone" broadcast, and a bannered impersonation view of any investor's room.
 
-Access control is enforced in the database with Postgres row-level security: an investor's session can only ever read their own investor row, their own documents, and their own message thread. The roster, other investors, and aggregate figures are admin-only.
+Access control is enforced in the database with Postgres row-level security: an investor's session can only ever read their own investor row, their own documents, their own message thread, and updates either shared with everyone or addressed to them. The roster, other investors, and aggregate figures are admin-only.
+
+## What goes in an investor's folder
+
+The standard package, filed per-investor after DocuSign completion:
+
+- Promissory Note
+- Guaranty
+- Subscription Agreement
+- Offering Memorandum
+- Wire Instructions
+
+Wire instructions aren't signed, so leave the execution date blank when filing them — the room shows the "✓ Executed" chip only on documents that carry one.
+
+Investors can add their own files to the same folder (bank details, a voided check) from **+ Upload a document** in their room. Those land in their private folder, post a note in your thread, and email you. They can delete a file they uploaded; they can't touch anything you filed.
+
+## Requesting a signature
+
+DocuSign is the normal path. For the occasional document that needs signing without an envelope, upload it and hit **Request signature** on its row. The investor gets a note in their thread and a "Review & sign" button in their room. Signing records the typed legal name, timestamp, IP and device against that document.
+
+The uploaded file is never altered. The signature is a record attached to it, not a new PDF — so a document signed here is weaker evidence than a DocuSign envelope with its audit certificate. Use it for acknowledgments, not for the note or the guaranty.
+
+## Investor updates
+
+An update is a written note, a file, or both. Posted from the dashboard it goes to **every investor** — one row, one file, no duplication across the roster. Posted from an investor's own page it goes to that person only. Deleting one removes it for everyone who could see it.
+
+## Security posture
+
+The portal holds executed documents and investors' banking details, so:
+
+- **Deny by default.** `middleware.ts` requires a session for every route except the sign-in page, the auth routes that exist to get you one, and `/subscribe`. A new route is protected the moment it is added.
+- **Row-level security** is the real gate on every read; the app's own checks sit on top of it, not instead of it.
+- **Private buckets.** Files are never public. Each download is a signed URL valid for ten minutes, minted only after the caller has been allowed to read the row.
+- **Headers** on every response (`next.config.mjs`): `noindex` for crawlers, `frame-ancestors 'none'` and `X-Frame-Options: DENY` against clickjacking, `Referrer-Policy: no-referrer` so a signed URL can't leak through a click-through, HSTS, and `nosniff`. `app/robots.ts` disallows everything.
+
+**`/subscribe` is the one public page.** Anyone who finds the URL can create an account. That is how the self-service funnel is meant to work, but if the portal should be invite-only, delete `app/subscribe/`, drop the `/subscribe` entry from the public list in `middleware.ts`, and remove the link on the sign-in screen.
 
 ## One-time setup
 
@@ -36,25 +74,9 @@ Access control is enforced in the database with Postgres row-level security: an 
    - `ADMIN_EMAIL` — `kevin@akcapital.fund`
 3. Deploy, then attach the domain (e.g. `portal.trumbullnorth.com`).
 
-### 3. The shared library
+### 3. First run
 
-The schema seeds one card: **Investor Updates**, linking to trumbullnorth.com, where project news and progress reports are posted. Everything else an investor receives is filed to their own folder, not shared.
-
-Add or remove library items from the admin dashboard's **Project document library** card — upload a file, or point a card at an external link. No trip through the Supabase dashboard. Uploaded files are private; the app serves them through short-lived signed URLs to signed-in users only.
-
-### What goes in an investor's folder
-
-The standard package, filed per-investor after DocuSign completion:
-
-- Promissory Note
-- Guaranty
-- Subscription Agreement
-- Offering Memorandum
-- Wire Instructions
-
-Plus periodic **Investor Update** reports, filed to each folder as they're issued.
-
-Wire instructions and updates aren't signed, so leave the execution date blank when filing them — the room shows the "✓ Executed" chip only on documents that carry one.
+Nothing to seed. Add an investor from the roster, file their documents once DocuSign completes, and post your first update.
 
 ## Subscribe funnel (self-service)
 
@@ -77,6 +99,8 @@ Automatic email (invites, resets, welcome, document-filed notices, subscription 
 - An expired or already-used link shows a "this link has expired" screen with a self-service "email me a fresh link" form — investors never dead-end.
 - Once the investor sets their password they get a welcome email.
 - Send documents for signature in DocuSign. When an envelope completes, download the combined PDF and upload it from **Documents & portal →** on the investor's roster row: give it a title, a type, the execution date, and optionally email the investor that it landed.
+- Post updates from the dashboard's **Investor updates** card. From an investor's own page the same card posts to that person only.
+- When an investor uploads their banking details, it shows in their folder marked "uploaded by them", lands in your thread with the unread dot, and emails you.
 - Investor status (Invited / Active) is set by hand on the Edit form. The portal doesn't witness signatures any more, so it can't infer it — flip an investor to Active once their position is executed and funded.
 - The gold dot on a thread means the last message is from the investor and unread; opening the thread clears it.
 
@@ -95,7 +119,7 @@ File bytes go **browser → Supabase Storage directly**, never through a server 
 
 So an upload is two steps:
 
-1. An admin-gated server action validates the file and mints a short-lived signed upload URL (`createInvestorUploadTicket` / `createProjectUploadTicket` in `app/actions/admin.ts`). The object path is chosen server-side, so a ticket can only ever write where we put it.
+1. A server action validates the file and mints a short-lived signed upload URL. `createInvestorUploadTicket` and `createUpdateUploadTicket` in `app/actions/admin.ts` are admin-gated; `createSelfUploadTicket` in `app/actions/investor.ts` is scoped to the signed-in investor and derives the path from their own row. Either way the object path is chosen server-side, so a ticket can only ever write where we put it, and the finalize step re-checks the path prefix before filing anything.
 2. The browser PUTs the bytes to that URL (`lib/upload.ts`), then a second server action files the metadata, after confirming the object really landed.
 
 The ceiling is `MAX_UPLOAD_BYTES` in `lib/investorDocs.ts` (25 MB), bounded above by the file-size limit on the Supabase bucket.
