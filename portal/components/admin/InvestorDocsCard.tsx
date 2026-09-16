@@ -34,6 +34,7 @@ export default function InvestorDocsCard({
   const [open, setOpen] = useState(documents.length === 0);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const toast = useToast();
 
@@ -165,18 +166,28 @@ export default function InvestorDocsCard({
                 </a>
                 <button
                   type="button"
-                  className="roster-btn roster-remove"
-                  disabled={pending}
+                  className="roster-btn roster-delete"
+                  disabled={pending || deletingId === d.id}
                   onClick={() => {
-                    if (confirm(`Remove "${d.title}" from ${investorName}'s folder? The file is deleted.`)) {
+                    const warning =
+                      `Delete "${d.title}" from ${investorName}'s folder?\n\n` +
+                      `The file is permanently removed from storage and disappears from their ` +
+                      `room. This cannot be undone` +
+                      (d.acknowledged_at
+                        ? `, and the record of them confirming receipt on ` +
+                          `${fmtDate(d.acknowledged_at)} goes with it.`
+                        : `.`);
+                    if (confirm(warning)) {
+                      setDeletingId(d.id);
                       startTransition(async () => {
                         const res = await deleteInvestorDocumentAction(d.id);
-                        toast(res.error || res.message || "Document removed");
+                        setDeletingId(null);
+                        toast(res.error || res.message || "Document deleted");
                       });
                     }
                   }}
                 >
-                  ✕
+                  {deletingId === d.id ? "Deleting…" : "Delete"}
                 </button>
               </span>
             </div>

@@ -50,6 +50,19 @@ If you ever need placed fields inside the portal, the honest fix is wiring the D
 
 An update is a written note, a file, or both. Posted from the dashboard it goes to **every investor** — one row, one file, no duplication across the roster. Posted from an investor's own page it goes to that person only. Deleting one removes it for everyone who could see it.
 
+## Tests
+
+```bash
+cd portal
+npm run lint          # eslint, next/core-web-vitals
+npx tsc --noEmit      # types
+npm run build         # production build
+```
+
+`supabase/tests/rls.sql` is a row-level-security regression test. Run it against a throwaway database, never production. It asserts that an investor reaches only their own row, documents, thread, and updates addressed to them or shared with everyone, and that a signed-out caller reaches nothing at all.
+
+That last case caught a real hole: an earlier version of the updates policy read `is_admin() or investor_id is null or ...`, which is true for anonymous callers. Since the anon key ships in the browser bundle, every broadcast update and its attachment were readable straight off the REST API. The policy now requires the caller to be an actual investor before the "shared" branch applies.
+
 ## Security posture
 
 The portal holds executed documents and investors' banking details, so:

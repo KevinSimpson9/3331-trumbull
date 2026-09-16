@@ -57,7 +57,7 @@ export default async function ConfirmPage({
           <>
             <div className="login-title">Check your email</div>
             <div style={{ fontSize: 13, color: "var(--muted)", textAlign: "center", lineHeight: 1.6 }}>
-              If that email is on the roster, a fresh sign-in link is on its way. It's valid for a
+              If that email is on the roster, a fresh sign-in link is on its way. It&apos;s valid for a
               limited time — open it as soon as it arrives.
             </div>
           </>
@@ -85,7 +85,7 @@ export default async function ConfirmPage({
           <>
             <div className="login-title">This link has expired</div>
             <div style={{ fontSize: 13, color: "var(--muted)", textAlign: "center", lineHeight: 1.6 }}>
-              Sign-in links are single-use and expire for security. Enter your email and we'll send
+              Sign-in links are single-use and expire for security. Enter your email and we&apos;ll send
               you a fresh one right away.
             </div>
             <form action={resendPortalLinkAction} style={{ display: "flex", flexDirection: "column", gap: 12 }}>

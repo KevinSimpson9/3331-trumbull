@@ -111,8 +111,17 @@ drop policy if exists "investor updates: shared, own, or admin" on public.invest
 create policy "investor updates: shared, own, or admin" on public.investor_updates
   for select using (
     public.is_admin()
-    or investor_id is null
-    or investor_id in (select id from public.investors where auth_user_id = auth.uid())
+    or (
+      -- The caller must actually be an investor. Without this guard the
+      -- `investor_id is null` branch below is also true for anonymous
+      -- callers, and the anon key ships in the browser bundle — every
+      -- broadcast update would be readable straight off the REST API.
+      exists (select 1 from public.investors where auth_user_id = auth.uid())
+      and (
+        investor_id is null
+        or investor_id in (select id from public.investors where auth_user_id = auth.uid())
+      )
+    )
   );
 
 -- ---------------------------------------------------------------------------
@@ -150,9 +159,16 @@ create policy "investor updates: shared folder or own" on storage.objects
     bucket_id = 'investor-updates'
     and (
       public.is_admin()
-      or (storage.foldername(name))[1] = 'all'
-      or (storage.foldername(name))[1] in (
-        select id::text from public.investors where auth_user_id = auth.uid()
+      or (
+        -- Same guard as the table policy: 'all' means every investor, not
+        -- everyone on the internet holding the public anon key.
+        exists (select 1 from public.investors where auth_user_id = auth.uid())
+        and (
+          (storage.foldername(name))[1] = 'all'
+          or (storage.foldername(name))[1] in (
+            select id::text from public.investors where auth_user_id = auth.uid()
+          )
+        )
       )
     )
   );

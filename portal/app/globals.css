@@ -1004,6 +1004,19 @@ input[type="file"].input::file-selector-button:hover {
   border-color: var(--error);
   color: var(--error);
 }
+.roster-delete {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 45%, transparent);
+}
+.roster-delete:hover:not(:disabled) {
+  border-color: var(--error);
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 12%, transparent);
+}
+.roster-delete:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 
 .dashed-panel {
   border: 1px dashed var(--border-gold-strong);
