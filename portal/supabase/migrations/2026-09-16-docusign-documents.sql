@@ -20,12 +20,31 @@
 -- Run once in the Supabase SQL editor. Safe to re-run.
 
 -- ---------------------------------------------------------------------------
+-- 0. The policies below call public.is_admin(). It already exists on any
+--    database created from schema.sql; defined here too so this migration
+--    cannot fail on a database where it is missing.
+-- ---------------------------------------------------------------------------
+create extension if not exists pgcrypto;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+as $fn$
+  select coalesce(lower(auth.jwt() ->> 'email'), '') = 'kevin@akcapital.fund'
+$fn$;
+
+-- ---------------------------------------------------------------------------
 -- 1. Remove the in-portal signing records
 -- ---------------------------------------------------------------------------
 drop table if exists public.signatures cascade;
 
-delete from storage.objects where bucket_id = 'signed-documents';
-delete from storage.buckets where id = 'signed-documents';
+-- The old 'signed-documents' bucket and its generated PDFs are NOT removed
+-- here: Supabase blocks direct deletes from storage.objects and
+-- storage.buckets with a trigger (storage.protect_delete) and requires the
+-- Storage API instead. Delete that bucket by hand in
+-- Supabase → Storage → signed-documents → delete bucket. It is private and
+-- nothing in the app references it, so leaving it costs only disk.
 
 -- ---------------------------------------------------------------------------
 -- 2. Investor documents
@@ -131,47 +150,60 @@ create policy "investor updates: shared, own, or admin" on public.investor_updat
 -- identity check; files are served by short-lived signed URLs. The policies
 -- below are defence in depth for anyone reaching a bucket with their own JWT.
 
-insert into storage.buckets (id, name, public)
-values ('investor-documents', 'investor-documents', false)
-on conflict (id) do nothing;
+-- Buckets and their policies are wrapped so that a permissions difference on
+-- the storage schema cannot roll back the tables above. The app creates the
+-- buckets on first upload anyway, and file access always goes through
+-- short-lived signed URLs minted server-side, so these policies are defence in
+-- depth rather than the only gate.
+do $mig$
+begin
+  insert into storage.buckets (id, name, public)
+  values ('investor-documents', 'investor-documents', false)
+  on conflict (id) do nothing;
 
-insert into storage.buckets (id, name, public)
-values ('investor-updates', 'investor-updates', false)
-on conflict (id) do nothing;
+  insert into storage.buckets (id, name, public)
+  values ('investor-updates', 'investor-updates', false)
+  on conflict (id) do nothing;
+exception when others then
+  raise notice 'Skipped creating storage buckets (%). The portal creates them on first upload.', sqlerrm;
+end $mig$;
 
-drop policy if exists "investor documents: own folder or admin" on storage.objects;
-create policy "investor documents: own folder or admin" on storage.objects
-  for select using (
-    bucket_id = 'investor-documents'
-    and (
-      public.is_admin()
-      or (storage.foldername(name))[1] in (
-        select id::text from public.investors where auth_user_id = auth.uid()
+do $mig$
+begin
+  drop policy if exists "investor documents: own folder or admin" on storage.objects;
+  create policy "investor documents: own folder or admin" on storage.objects
+    for select using (
+      bucket_id = 'investor-documents'
+      and (
+        public.is_admin()
+        or (storage.foldername(name))[1] in (
+          select id::text from public.investors where auth_user_id = auth.uid()
+        )
       )
-    )
-  );
+    );
 
--- Updates filed under all/ go to every investor; the rest sit in the target
--- investor's own folder.
-drop policy if exists "investor updates: shared folder or own" on storage.objects;
-create policy "investor updates: shared folder or own" on storage.objects
-  for select using (
-    bucket_id = 'investor-updates'
-    and (
-      public.is_admin()
-      or (
-        -- Same guard as the table policy: 'all' means every investor, not
-        -- everyone on the internet holding the public anon key.
-        exists (select 1 from public.investors where auth_user_id = auth.uid())
-        and (
-          (storage.foldername(name))[1] = 'all'
-          or (storage.foldername(name))[1] in (
-            select id::text from public.investors where auth_user_id = auth.uid()
+  drop policy if exists "investor updates: shared folder or own" on storage.objects;
+  create policy "investor updates: shared folder or own" on storage.objects
+    for select using (
+      bucket_id = 'investor-updates'
+      and (
+        public.is_admin()
+        or (
+          -- 'all' means every investor, not everyone on the internet holding
+          -- the public anon key.
+          exists (select 1 from public.investors where auth_user_id = auth.uid())
+          and (
+            (storage.foldername(name))[1] = 'all'
+            or (storage.foldername(name))[1] in (
+              select id::text from public.investors where auth_user_id = auth.uid()
+            )
           )
         )
       )
-    )
-  );
+    );
+exception when others then
+  raise notice 'Skipped storage policies (%). Files are still served only through signed URLs.', sqlerrm;
+end $mig$;
 
 -- ---------------------------------------------------------------------------
 -- 5. Drop the shared project-document library
@@ -181,5 +213,5 @@ create policy "investor updates: shared folder or own" on storage.objects
 -- filed to their own folder.
 drop table if exists public.project_documents cascade;
 
-delete from storage.objects where bucket_id = 'project-documents';
-delete from storage.buckets where id = 'project-documents';
+-- As above, the 'project-documents' bucket has to go through the Storage API.
+-- Remove it in Supabase → Storage → project-documents → delete bucket.

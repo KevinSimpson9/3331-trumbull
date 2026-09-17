@@ -81,7 +81,9 @@ The portal holds executed documents and investors' banking details, so:
 1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
 2. In **SQL Editor**, paste and run `supabase/schema.sql` from this folder. This creates the tables, security policies, and the two private storage buckets (`project-documents` for the shared library, `investor-documents` for executed documents).
 
-   **Upgrading an existing database instead?** Run `supabase/migrations/2026-09-16-docusign-documents.sql`. It drops the `signatures` table and the `signed-documents` bucket, creates `investor_documents` and its bucket, and clears the seeded shared library. That deletion is deliberate and irreversible — see "How documents work" above.
+   **Upgrading an existing database instead?** Run `supabase/migrations/2026-09-16-docusign-documents.sql`. It drops the `signatures` and `project_documents` tables and creates `investor_documents` and `investor_updates` with their buckets and policies. Those drops are deliberate and irreversible — see "How documents work" above. It is safe to run more than once.
+
+   **The old buckets are left behind on purpose.** Supabase blocks `delete from storage.objects` and `delete from storage.buckets` in SQL (a `storage.protect_delete` trigger) and requires the Storage API instead, so the migration cannot remove `signed-documents` or `project-documents`. Delete each by hand in Supabase → Storage → select the bucket → delete. Both are private and nothing in the app references them, so leaving them only costs disk.
 3. In **Authentication → Users**, click **Add user** and create the admin account `kevin@akcapital.fund` with a password (check "Auto confirm user").
 4. In **Authentication → URL Configuration**, set the Site URL to the portal's public URL (e.g. `https://portal.trumbullnorth.com`) and add `https://portal.trumbullnorth.com/auth/confirm` to the redirect allow list.
 
