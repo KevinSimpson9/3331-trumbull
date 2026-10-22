@@ -97,11 +97,11 @@ const PLAN_LEVELS = [
 ];
 
 const PAGES = {
-  home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez progress availability faq', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2.5 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
+  home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez availability faq', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2.5 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
   residences: { path: '/residences', sections: 'residences rooftop', eyebrow: 'The Residences', h1: '3 bedroom townhomes in North Corktown, Detroit', title: 'Type A Townhomes | 3 Bedroom New Construction in North Corktown, Detroit | Trumbull North', desc: 'The Type A residence: 3 bed, 2.5 bath, 1,535 sq ft across three levels and a private rooftop terrace. New townhomes in Detroit by 4545 Architecture.' },
   availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 North Corktown townhomes for sale in Phase 1 at 3331 Trumbull. Pick your homesite on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
   neighborhood: { path: '/neighborhood', sections: 'neighborhood', eyebrow: 'The Neighborhood', h1: 'North Corktown, Detroit: homes near Michigan Central', title: 'Living in North Corktown, Detroit | Homes Near Michigan Central | Trumbull North', desc: 'About a mile to Michigan Central, Corktown and Little Caesars Arena. The Stadium District, Theatre District, CBD and Riverwalk nearby. Distances are estimates.' },
-  progress: { path: '/progress', sections: 'progress', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
+  progress: { path: '/progress', sections: 'availability', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
   faq: { path: '/faq', sections: 'faq', eyebrow: 'FAQ', h1: 'Questions about Trumbull North', title: 'FAQ | NEZ-NC, Pricing and Buying | Trumbull North', desc: 'Answers on NEZ-NC Property Tax Abatement, pricing, timing and buying a new construction townhome in North Corktown, Detroit.' },
   gallery: { path: '/gallery', sections: 'gallery', eyebrow: 'Gallery', h1: 'Trumbull North gallery', title: 'Gallery | Trumbull North Townhomes, Detroit', desc: 'Trumbull North: the Trumbull frontage, front porches, private parking court and rooftop terraces with the Detroit skyline.' },
   about: { path: '/about', sections: 'vision', eyebrow: 'About', h1: 'About Trumbull North', title: 'About | 3331 Trumbull, North Corktown, Detroit | Trumbull North', desc: "Trumbull North at 3331 Trumbull: five buildings by 4545 Architecture, built by Bondy's Construction, developed by AK Capital." },
@@ -366,35 +366,6 @@ S.nez = () => `
   </div>
 </section>`;
 
-S.progress = () => {
-  const rows = [['June 2026', 'Permitting complete', 'Full construction set documented.'], ['Now', 'Pre-construction', 'Phase 1 reservations open.'], ['2026–27', 'Construction', 'Five buildings.'], ['2027–28', 'Move-ins', 'Phase 1 homes, planned.']];
-  return `
-<section id="progress" class="section" data-screen-label="05 Permitted">
-  <div class="two-col progress">
-    <div>
-      ${eyebrow('05', 'Permitted and engineered')}
-      <h2 class="h2">Not a concept. <span class="accent">A construction masterpiece.</span></h2>
-      <p class="copy">Designed by 4545 Architecture, permitted, and ready to rise.</p>
-      <div class="timeline">
-        ${rows.map(([w, s, t]) => `<div><span class="timeline__when">${w}</span><div class="timeline__what"><strong>${s}</strong><span>. ${t}</span></div></div>`).join('\n        ')}
-      </div>
-      <form class="follow" data-follow>
-        <label for="follow-email">Follow the build</label>
-        <div class="follow__row" data-follow-row>
-          <input id="follow-email" required type="email" name="email" autocomplete="email" placeholder="Email">
-          <button class="btn btn--dark" type="submit">Get updates</button>
-        </div>
-        <p class="follow__done" data-follow-done hidden>You're on the list. Construction updates will come to your inbox.</p>
-      </form>
-    </div>
-    <figure class="framed framed--plan">
-      <div class="framed__box"><img loading="lazy" decoding="async" src="${img('site-plan.webp')}" width="1884" height="1178" alt="Architectural site plan SP1.1 by 4545 Architecture: two 6-unit buildings on Trumbull, two 4-unit buildings on Sycamore and Ash, and a 5-unit building around the private parking court"></div>
-      <figcaption class="cap">SP1.1 · Architectural site plan · 4545 Architecture</figcaption>
-    </figure>
-  </div>
-</section>`;
-};
-
 S.faq = () => `
 <section id="faq" class="faq" data-screen-label="06 FAQ">
   <div class="two-col faq__in">
@@ -410,39 +381,43 @@ S.faq = () => `
   </div>
 </section>`;
 
+// Availability on the real 4545 site plan (SP1.1). Positions are percentages of the drawing:
+// the two 6-unit buildings on Trumbull span x 11.73-47.93% and 54.46-90.66%, y 33.96-52.97%.
+const PLAN_BUILDINGS = [['A', 11.73], ['B', 54.46]], BLD_W = 36.2, BLD_Y = 33.96, BLD_H = 19.0;
+const FUTURE = [[11.6, 61.8, 10.9, 38.2], [35.6, 80.9, 30.8, 19.1], [79.3, 61.8, 11.2, 38.2]];   // x, y, w, h of the back three buildings
+
 S.availability = () => {
   const units = [];
-  const w = 41 / 6;
-  const box = (x, y, ww, h) => `left:${+x.toFixed(3)}%;top:${y}%;width:calc(${+ww.toFixed(3)}% - 3px);height:calc(${h}% - 3px)`;
   for (let i = 0; i < 12; i++) {
-    const num = i + 1, b = i < 6 ? 'A' : 'B', x = (i < 6 ? 7 : 52) + (i % 6) * w, st = HOMESITES[num];
-    units.push(`<button class="sp-unit" type="button" style="${box(x, 66, w, 16)}" data-unit="${pad2(num)}" data-building="${b}" data-status="${st}" aria-pressed="false" aria-label="Homesite ${num}, ${STATUS_LABEL[st]}">${pad2(num)}</button>`);
+    const [b, x0] = PLAN_BUILDINGS[i < 6 ? 0 : 1], num = i + 1, st = HOMESITES[num], w = BLD_W / 6;
+    units.push(`<button class="sp-unit" type="button" style="left:${(x0 + (i % 6) * w).toFixed(2)}%;top:${BLD_Y}%;width:${w.toFixed(2)}%;height:${BLD_H}%" data-unit="${pad2(num)}" data-building="${b}" data-status="${st}" aria-pressed="false" aria-label="Homesite ${num}, ${STATUS_LABEL[st]}">${pad2(num)}</button>`);
   }
-  const fut = [];
-  for (let i = 0; i < 4; i++) fut.push(box(7, 9 + i * 12, 12, 12), box(81, 9 + i * 12, 12, 12));
-  for (let i = 0; i < 5; i++) fut.push(box(25 + i * 10, 7, 10, 16));
+  const future = FUTURE.map(([x, y, w, h]) => `<div class="bp-future" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%"><span>Future release</span></div>`).join('');
   const avail = Object.values(HOMESITES).filter(v => v === 'available').length;
-  const legend = [['Available', '#8A5A3B'], ['Reserved', '#E3C9A8'], ['Under contract', '#6A6357'], ['Sold', '#201D19']];
+  const legend = [['available', 'Available'], ['reserved', 'Reserved'], ['contract', 'Under contract'], ['sold', 'Sold']];
   return `
-<section id="availability" class="band band--sand" data-screen-label="07 Availability">
+<section id="availability" class="band band--sand" data-screen-label="Availability">
   <div class="wrap">
+    <div class="section-head avail-head">
+      <div>
+        ${eyebrow('', 'Permitted · 4545 Architecture')}
+        <h2 class="h2">Select your <span class="accent">homesite</span></h2>
+      </div>
+      <p class="avail-head__note">The 12 Phase 1 homes face Trumbull. Tap one on the plan.</p>
+    </div>
     <div class="avail-grid">
       <div>
-        <div class="siteplan-frame">
-          <div class="siteplan" data-siteplan>
-            <div class="sp-court"><span>Private parking court</span></div>
-            <div class="sp-drive"></div>
-            ${fut.map(s => `<div class="sp-future" style="${s}" aria-hidden="true"></div>`).join('\n            ')}
+        <p class="bp-swipe">Swipe the plan for homesites 07–12 →</p>
+        <div class="bp">
+          <div class="bp__inner" data-siteplan>
+            <img src="${img('site-plan.webp')}" width="1884" height="1178" loading="lazy" decoding="async" alt="Architectural site plan SP1.1 by 4545 Architecture with the 12 Phase 1 homesites highlighted on the two buildings facing Trumbull">
+            ${future}
             ${units.join('\n            ')}
-            <div class="sp-commercial"><i></i><span>Commercial, ground floor</span></div>
-            <div class="sp-street"><span>Trumbull Ave</span></div>
-            <span class="sp-side sp-side--l">Sycamore</span>
-            <span class="sp-side sp-side--r">Ash</span>
           </div>
         </div>
-        <div class="legend">
-          ${legend.map(([l, c]) => `<span><i style="background:${c}"></i>${l}</span>`).join('\n          ')}
-          <span><i style="background:#FAF8F4;border:1px dashed #C9BBA6"></i>Future release</span>
+        <div class="bp-foot">
+          <div class="legend">${legend.map(([k, l]) => `<span><i class="lg-${k}"></i>${l}</span>`).join('')}<span><i class="lg-future"></i>Future release</span></div>
+          <p class="cap">SP1.1 · Architectural site plan · 4545 Architecture</p>
         </div>
       </div>
       <div class="unit-card" aria-live="polite">
@@ -450,20 +425,21 @@ S.availability = () => {
           <p class="unit-card__kicker" data-unit-kicker>Phase 1</p>
           <span class="chip" data-unit-status hidden></span>
         </div>
-        <h3 data-unit-title>Select a homesite on the site plan.</h3>
-        <div class="unit-card__counts">
-          <div><p class="stat__n" data-avail-count>${avail}</p><p class="stat__l">Available</p></div>
-          <div><p class="stat__n" style="color:#201D19">12</p><p class="stat__l">Homes in Phase 1</p></div>
-        </div>
-        <div class="specs">
-          <div><span>Bedrooms / baths</span><span>3 / 2.5</span></div>
-          <div><span>Living area</span><span>1,535 sq ft</span></div>
-          <div><span>Levels</span><span>Three</span></div>
-          <div><span>Parking</span><span>Private parking court</span></div>
-          <div><span>Outdoor</span><span>Private rooftop terrace</span></div>
-          <div><span>Property tax</span><span>NEZ-NC Abatement Eligible</span></div>
-        </div>
-        <p class="unit-card__copy">3 bed, 2.5 bath, 1,535 sq ft across three levels. Private rooftop terrace and parking in the private court. The ${cta} homes for sale face Trumbull in the two front buildings.</p>
+        <h3 data-unit-title>Select a homesite on the plan.</h3>
+        <p class="unit-card__avail"><strong data-avail-count>${avail}</strong> of 12 available</p>
+        <ul class="unit-card__specs">
+          <li><strong>3 bed · 2.5 bath</strong></li>
+          <li><strong>1,535</strong> sq ft</li>
+          <li>Private rooftop terrace</li>
+          <li>Private parking court</li>
+          <li>NEZ-NC Abatement Eligible</li>
+          <li>Faces Trumbull</li>
+        </ul>
+        <ol class="unit-card__steps">
+          <li><span>Jun 2026</span>Permitted</li>
+          <li><span>2026–27</span>Construction</li>
+          <li><span>2027–28</span>Move-ins</li>
+        </ol>
         <a class="btn btn--dark btn--block" href="#reserve" data-reserve-unit>Reserve Your Home</a>
       </div>
     </div>
