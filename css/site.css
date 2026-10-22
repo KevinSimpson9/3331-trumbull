@@ -188,10 +188,6 @@ input::placeholder { color: #9A9184; }
 .rooftop__note { margin-top: 14px; font-size: 12px; color: var(--on-dark-2); }
 
 /* 02 Residences */
-.res-head { margin-bottom: 60px; }
-.res-head .h2 { max-width: 760px; }
-.res-head__aside { max-width: 320px; font-size: 15px; line-height: 1.7; color: var(--body); }
-.res-head__aside a { font-weight: 500; }
 .res-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 28px; align-items: stretch; }
 .res-photo { position: relative; min-height: 460px; background: var(--line); overflow: hidden; }
 .res-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }

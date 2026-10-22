@@ -209,13 +209,6 @@ S.residences = () => {
   return `
 <section id="residences" class="band band--sand" data-screen-label="02 The Residences">
   <div class="wrap">
-    <div class="section-head res-head">
-      <div>
-        ${eyebrow('02', 'The Residences')}
-        <h2 class="h2">The Type A residence. <span class="accent">Three bedrooms, three levels.</span></h2>
-      </div>
-      <p class="res-head__aside">3 bedroom townhomes in Detroit, each with a private rooftop terrace, designed by 4545 Architecture. Floor plans, finishes and pricing come in the full package. <a href="#reserve" data-interest="Full package">Request the full package</a> and it comes straight to you.</p>
-    </div>
     <div class="res-grid">
       <div class="res-photo">
         <img src="${img('interior.webp')}" alt="Rendering of the Type A living floor with open kitchen and island" loading="lazy" decoding="async">
