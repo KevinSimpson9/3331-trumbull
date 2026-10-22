@@ -78,7 +78,6 @@ const FAQS = [
 const GALLERY = [
   ['g-frontage.webp', 'The Trumbull frontage', 'Rendering of the Trumbull frontage: ivory panel, warm grey brick, charcoal siding and cedar'],
   ['g-porches.webp', 'Front porches', 'Rendering of brick-pier front porches on new North Corktown townhomes for sale'],
-  ['g-entries.webp', 'Entries and the court', 'Rendering of townhome entries with the private parking court behind'],
   ['g-court-entry.webp', 'Into the private court', 'Rendering of the drive into the private parking court'],
   ['g-garages.webp', 'The private parking court', 'Rendering of the private parking court'],
   ['g-rooftops.webp', 'Rooftop terraces', 'Rendering of private rooftop terraces above the court, Detroit beyond'],
