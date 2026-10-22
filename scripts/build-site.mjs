@@ -167,7 +167,7 @@ S.vision = () => `
   <div class="two-col vision">
     <div>
       ${eyebrow('01', 'The Block')}
-      <h2 class="h2">Five buildings <span class="accent">by 4545 Architecture.</span></h2>
+      <h2 class="h2">A whole block on Trumbull. <span class="accent">Twelve front doors on the street.</span></h2>
       <p class="copy">248 feet of frontage where Trumbull meets Sycamore and Ash, arranged around a private parking court.</p>
       <p class="copy">Michigan Central and Corktown's Michigan Avenue restaurants are each about a mile away. With the design finished and permits in hand, all that's left is choosing which address is yours.</p>
       <a class="text-link" href="/neighborhood">Explore the neighborhood →</a>
@@ -211,8 +211,8 @@ S.residences = () => {
   <div class="wrap">
     <div class="res-grid">
       <div class="res-photo">
-        <img src="${img('interior.webp')}" alt="Rendering of the Type A living floor with open kitchen and island" loading="lazy" decoding="async">
-        <span class="label-light">Interior · Living and kitchen · Rendering</span>
+        <img src="${img('facade.webp')}" alt="Rendering of Trumbull North townhomes on Trumbull: ivory panel, warm grey brick, charcoal siding and cedar" loading="lazy" decoding="async">
+        <span class="label-light">Trumbull frontage · Rendering</span>
       </div>
       <div class="res-card">
         <div class="res-card__top">
