@@ -191,7 +191,6 @@ S.rooftop = () => `
   </div>
   <blockquote class="rooftop__quote">
     <p class="rooftop__line">Sunset dinners. Morning coffee. Fireworks over the city. All from a rooftop that belongs to no one but you.</p>
-    <p class="rooftop__sub">From up here, the city is yours.</p>
     <div class="rooftop__stats">
       <div><p class="rooftop__n">~1.2 mi</p><p class="rooftop__l">Michigan Central</p></div>
       <div><p class="rooftop__n">~1.1 mi</p><p class="rooftop__l">Little Caesars Arena</p></div>
