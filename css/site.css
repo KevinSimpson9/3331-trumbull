@@ -115,7 +115,7 @@ input::placeholder { color: #9A9184; }
 /* Hero: scroll-controlled build. The track is tall; the stage sticks under the nav while
    scrolling through it drives the frame sequence from foundations to complete. */
 .hero { position: relative; background: var(--deep); color: var(--ivory); }
-.hero__track { position: relative; height: 280vh; }
+.hero__track { position: relative; height: calc(100svh - var(--nav-h) + 120vh); }  /* sticky stage + 1.2 screens of scroll to build */
 .hero__sticky { position: sticky; top: var(--nav-h); height: calc(100svh - var(--nav-h)); min-height: 520px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
 .hero.is-static .hero__track { height: auto; }
 .hero.is-static .hero__sticky { position: relative; top: 0; }
@@ -153,7 +153,6 @@ input::placeholder { color: #9A9184; }
 .hero__stat-n { font-family: var(--serif); font-weight: 600; font-size: clamp(22px, 2.2vw, 32px); letter-spacing: -.02em; white-space: nowrap; color: var(--ivory); }
 .hero__stat-l { margin-top: 4px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--on-dark); }
 @media (max-width: 700px) {
-  .hero__track { height: 240vh; }
   .hero__lede { display: none; }
   .hero__ctas .btn { flex: 1 1 100%; padding: 15px 20px; }
   .build__stages, .build__tag { display: none; }
