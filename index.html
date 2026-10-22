@@ -50,26 +50,29 @@
 </nav>
 <main>
 
-<header class="hero" data-screen-label="Hero">
-  <div class="hero__media">
-    <img src="/assets/img/facade.webp" fetchpriority="high" decoding="async" width="1885" height="834" alt="Rendering of Trumbull North, new construction North Corktown townhomes for sale on Trumbull">
-    <video data-hero-video muted loop playsinline preload="metadata" poster="/assets/img/facade.webp" aria-hidden="true">
-      <source src="/assets/video/hero-720.webm" type='video/webm; codecs="vp9"' media="(max-width: 900px)">
-      <source src="/assets/video/hero-720.mp4" type="video/mp4" media="(max-width: 900px)">
-      <source src="/assets/video/hero-1080.webm" type='video/webm; codecs="vp9"'>
-      <source src="/assets/video/hero-1080.mp4" type="video/mp4">
-    </video>
-    <div class="hero__scrim"></div>
-  </div>
-  <div class="hero__content">
-    <p class="hero__kicker">3331 Trumbull · North Corktown, Detroit</p>
-    <h1>Your own private rooftop, <span class="accent-gold">overlooking the Detroit skyline.</span></h1>
-    <p class="hero__lede">Three-bedroom new construction townhomes for sale in North Corktown, designed by 4545 Architecture. A private rooftop terrace with every home.</p>
-    <div class="hero__ctas">
-      <a class="btn btn--gold" href="#reserve">Reserve Your Home</a>
-      <a class="btn btn--ghost" href="/availability">View Availability</a>
+<header class="hero hero--build" data-screen-label="Hero" data-build data-frames="82" data-stages='[0,0.16,0.4,0.56,0.78]'>
+  <div class="hero__track">
+    <div class="hero__sticky">
+      <div class="hero__media">
+        <img class="hero__still" src="/assets/build/lg/082.webp" width="1062" height="596" fetchpriority="high" decoding="async" alt="Aerial rendering of Trumbull North, five buildings around a private court on Trumbull">
+        <canvas class="hero__canvas" aria-hidden="true"></canvas>
+        <div class="hero__scrim"></div>
+      </div>
+      <div class="hero__content">
+        <p class="hero__kicker">3331 Trumbull · North Corktown, Detroit</p>
+        <h1>Your own private rooftop, <span class="accent-gold">overlooking the Detroit skyline.</span></h1>
+        <p class="hero__lede">Three-bedroom new construction townhomes for sale in North Corktown, designed by 4545 Architecture. A private rooftop terrace with every home.</p>
+        <div class="hero__ctas">
+          <a class="btn btn--gold" href="#reserve">Reserve Your Home</a>
+          <a class="btn btn--ghost" href="/availability">View Availability</a>
+        </div>
+      </div>
+      <div class="build" data-build-ui>
+        <div class="build__head"><span class="build__hint">Scroll or drag to build Trumbull North</span><span class="build__now" data-build-now>Foundations</span><span class="build__tag">Rendering</span></div>
+        <div class="build__stages"><button type="button" class="build__stage is-on" data-at="0">Foundations</button><button type="button" class="build__stage" data-at="0.16">Framing</button><button type="button" class="build__stage" data-at="0.4">Weather wrap</button><button type="button" class="build__stage" data-at="0.56">Exterior</button><button type="button" class="build__stage" data-at="0.78">Complete</button></div>
+        <div class="build__bar"><i class="build__fill"></i><input class="build__range" type="range" min="0" max="1000" value="0" aria-label="Construction stage, from foundations to complete"></div>
+      </div>
     </div>
-    <p class="hero__tag">Rendering</p>
   </div>
   <div class="hero__stats">
     <div class="hero__stats-in">
@@ -357,13 +360,6 @@
       <div class="framed__box"><img loading="lazy" decoding="async" src="/assets/img/aerial.webp" alt="Aerial rendering of the finished block: five buildings around a private court, two fronting Trumbull"></div>
       <figcaption class="cap">The full block from above · Rendering</figcaption>
     </figure>
-  </div>
-</section>
-
-<section id="about" class="proof" data-screen-label="Proof">
-  <div class="proof__in">
-    <p class="eyebrow">Built by people who build Detroit</p>
-    <p class="proof__line">Built by Bondy Construction &amp; Design with AK Capital Investments, designed by 4545 Architecture. Same builder as Sycamore Park, a block away and sold out.</p>
   </div>
 </section>
 

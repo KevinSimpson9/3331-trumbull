@@ -17,12 +17,12 @@ The pages are generated. **Edit `scripts/build-site.mjs`, run `node scripts/buil
 
 | File | What it holds |
 | --- | --- |
-| `scripts/build-site.mjs` | All copy, data and settings: `SETTINGS` (video paths, draft notice, GA4/Meta IDs, status sheet, form endpoint, socials), `POIS`, `FAQS`, `GALLERY`, `HOMESITES`, `PLAN_LEVELS`, `PAGES` (title/description per route), and every section's markup |
+| `scripts/build-site.mjs` | All copy, data and settings: `SETTINGS` (hero build frames and stages, draft notice, GA4/Meta IDs, status sheet, form endpoint, socials), `POIS`, `FAQS`, `GALLERY`, `HOMESITES`, `PLAN_LEVELS`, `PAGES` (title/description per route), and every section's markup |
 | `index.html`, `residences.html`, … `thank-you.html`, `404.html`, `sitemap.xml`, `robots.txt` | Generated output. `vercel.json` sets `cleanUrls`, so `/residences` serves `residences.html` |
 | `css/site.css` | Design tokens and all styles |
-| `js/site.js` | Hero film, time-lapse, reserve form (FormSubmit → `/thank-you`), plan tabs, map filters, site plan, status sheet, consent + GA4/Meta |
+| `js/site.js` | Hero build scrub, time-lapse, reserve form (FormSubmit → `/thank-you`), plan tabs, map filters, site plan, status sheet, consent + GA4/Meta |
 | `assets/img/` | Renderings, optional floor plan, og.jpg |
-| `assets/video/` | Hero film: `hero-1080` and `hero-720`, each as `.webm` (VP9) and `.mp4` (H.264) |
+| `assets/build/` | Hero build sequence: `lg/` (1062 px, desktop) and `sm/` (640 px, phones), numbered WebP frames scrubbed by scroll or the drag bar |
 | `vendor/leaflet/` | Leaflet 1.9.4 (BSD-2), self-hosted, for the satellite proximity map on the home and Neighborhood pages. Imagery tiles come from Esri World Imagery; the SVG map in the page is the fallback |
 | `site-model/` | Live 3D site model — not linked from the site |
 
@@ -30,17 +30,15 @@ Common edits (all in `scripts/build-site.mjs`, then rebuild):
 
 - **Mark a homesite reserved/sold** — `HOMESITES`, or set `statusSheetUrl` to a published Google Sheet CSV (`homesite,status` rows plus an optional `cta_count,N` row) and edit the sheet instead.
 - **Approve renderings** — set `showDraftNotice: false`.
-- **Swap the hero film** — encode the new master to the same four file names in `assets/video/` (commands below). An empty `heroVideo` turns the film off and leaves the facade image.
+- **Swap the hero build footage** — re-cut the frames from the new master (commands below), set `build.frames` to the new count, and adjust the `build.stages` start points.
 - **Nearby places** — `POIS`: category, name, map label, description, listed distance, lat/lng, and the map label side (`r`/`l`/`t`/`b`, trailing `*` = labelled by default).
 - **Tracking** — set `ga4Id` / `metaPixelId`. The consent banner and tags only appear once an ID is set.
 
-Hero film encodes (from the master file):
+Hero build frames (from the master film; skip any opening frames with blurred machinery):
 
 ```
-ffmpeg -i master.mov -an -vf "scale=1920:-2:flags=lanczos" -c:v libx264 -preset slow -crf 22 -pix_fmt yuv420p -movflags +faststart assets/video/hero-1080.mp4
-ffmpeg -i master.mov -an -vf "scale=1920:-2:flags=lanczos" -c:v libvpx-vp9 -b:v 0 -crf 36 -row-mt 1 assets/video/hero-1080.webm
-ffmpeg -i master.mov -an -vf "scale=1280:-2" -c:v libx264 -preset slow -crf 23 -pix_fmt yuv420p -movflags +faststart assets/video/hero-720.mp4
-ffmpeg -i master.mov -an -vf "scale=1280:-2" -c:v libvpx-vp9 -b:v 0 -crf 36 -row-mt 1 assets/video/hero-720.webm
+ffmpeg -ss 1.33 -i master.mov -vf "fps=6,scale=1062:-2" -c:v libwebp -quality 58 -compression_level 6 assets/build/lg/%03d.webp
+ffmpeg -ss 1.33 -i master.mov -vf "fps=6,scale=640:-2"  -c:v libwebp -quality 58 -compression_level 6 assets/build/sm/%03d.webp
 ```
 
 The reserve form posts to FormSubmit for todd@theloftwarehouse.com. Todd must click FormSubmit's one-time activation email; send one test submission from the live domain to trigger it.

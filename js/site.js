@@ -11,19 +11,85 @@
     if (window.gtag) window.gtag('event', name, params || {});
   }
 
-  // Hero film: play muted inline, fade in over the facade image once frames arrive.
-  var hero = $('[data-hero-video]');
-  if (hero) {
-    hero.muted = true;
-    hero.addEventListener('playing', function () {
-      hero.classList.add('is-playing');
-    });
-    if (!reduceMotion) {
-      hero.preload = 'auto';
-      var p = hero.play();
-      if (p && p.catch) p.catch(function () {});
+  // Hero build: scrolling through the hero (or dragging the bar) runs the construction
+  // sequence from foundations to complete. Frames load progressively: first, every 6th, then the rest.
+  var hb = $('[data-build]');
+  if (hb) (function () {
+    var n = Number(hb.dataset.frames), stagesAt = JSON.parse(hb.dataset.stages);
+    var canvas = $('.hero__canvas', hb), ctx = canvas.getContext('2d');
+    var track = $('.hero__track', hb), sticky = $('.hero__sticky', hb);
+    var range = $('.build__range', hb), fill = $('.build__fill', hb), stageBtns = $$('.build__stage', hb), now = $('[data-build-now]', hb);
+    var dir = window.matchMedia('(max-width: 700px)').matches ? 'sm' : 'lg';
+    var frames = new Array(n), progress = 0, raf = 0;
+    var src = function (i) { return (window.TN_FRAMES && window.TN_FRAMES[i]) || '/assets/build/' + dir + '/' + String(i + 1).padStart(3, '0') + '.webp'; };
+    function load(i) {
+      if (frames[i]) return Promise.resolve();
+      return new Promise(function (res) {
+        var im = new Image(); im.decoding = 'async';
+        im.onload = function () { frames[i] = im; schedule(); res(); };
+        im.onerror = function () { res(); };
+        im.src = src(i);
+      });
     }
-  }
+    function nearest(i) {
+      if (frames[i]) return frames[i];
+      for (var d = 1; d < n; d++) { if (frames[i - d]) return frames[i - d]; if (frames[i + d]) return frames[i + d]; }
+      return null;
+    }
+    function size() {
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(canvas.clientWidth * dpr); canvas.height = Math.round(canvas.clientHeight * dpr);
+      schedule();
+    }
+    function draw(im, alpha) {
+      var cw = canvas.width, ch = canvas.height, s = Math.max(cw / im.naturalWidth, ch / im.naturalHeight);
+      var w = im.naturalWidth * s, h = im.naturalHeight * s;
+      ctx.globalAlpha = alpha; ctx.drawImage(im, (cw - w) / 2, (ch - h) * 0.45, w, h);
+    }
+    function render() {
+      raf = 0;
+      var f = progress * (n - 1), i = Math.floor(f), t = f - i;
+      var a = nearest(i), b = t > 0.01 ? (frames[Math.min(i + 1, n - 1)] || null) : null;
+      if (!a) return;
+      draw(a, 1); if (b) draw(b, t); ctx.globalAlpha = 1;
+      hb.classList.add('is-live');
+      fill.style.width = (progress * 100) + '%';
+      range.value = Math.round(progress * 1000);
+      var on = 0; stagesAt.forEach(function (at, k) { if (progress >= at - 0.001) on = k; });
+      stageBtns.forEach(function (bt, k) { bt.classList.toggle('is-on', k === on); });
+      if (now) now.textContent = stageBtns[on].textContent;
+    }
+    function schedule() { if (!raf) raf = requestAnimationFrame(render); }
+    var scrubbable = !reduceMotion;
+    function span() { return track.offsetHeight - sticky.offsetHeight; }
+    function fromScroll() {
+      if (!scrubbable) return;
+      var top = track.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(sticky).top) || 0);
+      progress = Math.min(1, Math.max(0, (window.scrollY - top) / Math.max(1, span())));
+      schedule();
+    }
+    function setProgress(p) {
+      p = Math.min(1, Math.max(0, p));
+      if (scrubbable) {
+        var top = track.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(sticky).top) || 0);
+        window.scrollTo(0, top + p * span());
+      }
+      progress = p; schedule();
+    }
+    range.addEventListener('input', function () { setProgress(range.value / 1000); });
+    stageBtns.forEach(function (bt) { bt.addEventListener('click', function () { setProgress(Number(bt.dataset.at) + 0.02); }); });
+    if (!scrubbable) { hb.classList.add('is-static'); progress = 1; }
+    window.addEventListener('scroll', fromScroll, { passive: true });
+    window.addEventListener('resize', size);
+    size(); fromScroll();
+    // First frame (or the last, for reduced motion) now, then a coarse pass, then everything.
+    load(scrubbable ? 0 : n - 1).then(function () {
+      var coarse = [], rest = [];
+      for (var i = 0; i < n; i++) (i % 6 === 0 || i === n - 1 ? coarse : rest).push(i);
+      return coarse.reduce(function (p, i) { return p.then(function () { return load(i); }); }, Promise.resolve())
+        .then(function () { return rest.reduce(function (p, i) { return p.then(function () { return load(i); }); }, Promise.resolve()); });
+    });
+  })();
 
   // Mobile sticky bar: only after scrolling past the hero (or one screen on pages without one).
   var sticky = $('[data-sticky-cta]');
