@@ -100,9 +100,11 @@ input::placeholder { color: #9A9184; }
   .nav__links { display: none; }
   .nav__compact { display: flex; }
 }
-@media (max-width: 420px) {
+@media (max-width: 520px) {
+  .nav__in { gap: 12px; }
   .logo svg { display: none; }
-  .logo__name { font-size: 17px; }
+  .logo__name { font-size: 15px; letter-spacing: .05em; }
+  .logo__sub { font-size: 8px; letter-spacing: .26em; }
   .nav__phone { display: none; }
 }
 
@@ -160,6 +162,8 @@ input::placeholder { color: #9A9184; }
   .hero__stats-in { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero__stat:nth-child(2) { border-right: 0; }
   .hero__stat:nth-child(-n+2) { border-bottom: 1px solid rgba(250,248,244,.14); }
+  .hero__stat { padding: 18px 16px; }
+  .hero__stat-n { white-space: normal; font-size: 21px; }
 }
 
 /* 01 Vision */
@@ -223,6 +227,16 @@ input::placeholder { color: #9A9184; }
 .plans__frame { background: var(--ivory); border: 1px solid var(--line); padding: clamp(10px, 1.4vw, 18px); box-shadow: var(--paper); }
 .plans__panel img { width: 100%; height: auto; max-height: 78vh; object-fit: contain; margin: 0 auto; }
 .plans__panel[hidden] { display: none; }
+@media (max-width: 799px) {
+  .plans { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .plans > div:first-child, .plans__info { display: contents; }
+  .plans__info > * { order: -1; }
+  .plans__info > .btn { margin-bottom: 36px; justify-self: start; }
+  .plans__tabs { order: 0; }
+  .plans__frame { order: 1; }
+  .plans__photo { order: 2; }
+  .plans__bath { order: 3; }
+}
 .plans__info .h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.02em; letter-spacing: -.025em; font-size: clamp(28px, 3vw, 40px); line-height: 1.1; margin-bottom: 16px; }
 .plans__info > .copy { font-size: 16px; margin-bottom: 26px; }
 .levels { border-top: 1px solid var(--line); margin-bottom: 30px; }
@@ -322,6 +336,7 @@ input::placeholder { color: #9A9184; }
 .nez__big { font-family: var(--serif); font-weight: 500; letter-spacing: -.02em; font-size: clamp(64px, 7vw, 104px); line-height: .9; color: var(--gold); }
 .nez__big span { font-size: .32em; letter-spacing: .2em; text-transform: uppercase; font-family: var(--sans); color: var(--ivory); font-weight: 600; }
 .nez .btn { white-space: nowrap; }
+@media (max-width: 560px) { .nez__side { padding-left: 20px; } .nez .btn { white-space: normal; width: 100%; } }
 
 /* 06 FAQ */
 .faq { background: var(--ivory); padding: clamp(64px, 7vw, 104px) var(--pad-x); border-top: 1px solid var(--line); }
