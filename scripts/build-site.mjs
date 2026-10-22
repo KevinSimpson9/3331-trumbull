@@ -99,7 +99,7 @@ const PLAN_LEVELS = [
 const PAGES = {
   home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez availability faq', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2.5 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
   residences: { path: '/residences', sections: 'residences rooftop', eyebrow: 'The Residences', h1: '3 bedroom townhomes in North Corktown, Detroit', title: 'Type A Townhomes | 3 Bedroom New Construction in North Corktown, Detroit | Trumbull North', desc: 'The Type A residence: 3 bed, 2.5 bath, 1,535 sq ft across three levels and a private rooftop terrace. New townhomes in Detroit by 4545 Architecture.' },
-  availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 North Corktown townhomes for sale in Phase 1 at 3331 Trumbull. Pick your homesite on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
+  availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 North Corktown townhomes for sale in Phase 1 at 3331 Trumbull. Pick your home on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
   neighborhood: { path: '/neighborhood', sections: 'neighborhood', eyebrow: 'The Neighborhood', h1: 'North Corktown, Detroit: homes near Michigan Central', title: 'Living in North Corktown, Detroit | Homes Near Michigan Central | Trumbull North', desc: 'About a mile to Michigan Central, Corktown and Little Caesars Arena. The Stadium District, Theatre District, CBD and Riverwalk nearby. Distances are estimates.' },
   progress: { path: '/progress', sections: 'availability', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
   faq: { path: '/faq', sections: 'faq', eyebrow: 'FAQ', h1: 'Questions about Trumbull North', title: 'FAQ | NEZ-NC, Pricing and Buying | Trumbull North', desc: 'Answers on NEZ-NC Property Tax Abatement, pricing, timing and buying a new construction townhome in North Corktown, Detroit.' },
@@ -390,7 +390,7 @@ S.availability = () => {
   const units = [];
   for (let i = 0; i < 12; i++) {
     const [b, x0] = PLAN_BUILDINGS[i < 6 ? 0 : 1], num = i + 1, st = HOMESITES[num], w = BLD_W / 6;
-    units.push(`<button class="sp-unit" type="button" style="left:${(x0 + (i % 6) * w).toFixed(2)}%;top:${BLD_Y}%;width:${w.toFixed(2)}%;height:${BLD_H}%" data-unit="${pad2(num)}" data-building="${b}" data-status="${st}" aria-pressed="false" aria-label="Homesite ${num}, ${STATUS_LABEL[st]}">${pad2(num)}</button>`);
+    units.push(`<button class="sp-unit" type="button" style="left:${(x0 + (i % 6) * w).toFixed(2)}%;top:${BLD_Y}%;width:${w.toFixed(2)}%;height:${BLD_H}%" data-unit="${pad2(num)}" data-building="${b}" data-status="${st}" aria-pressed="false" aria-label="Home ${num}, ${STATUS_LABEL[st]}">${pad2(num)}</button>`);
   }
   const future = FUTURE.map(([x, y, w, h]) => `<div class="bp-future" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%"><span>Future release</span></div>`).join('');
   const avail = Object.values(HOMESITES).filter(v => v === 'available').length;
@@ -401,16 +401,15 @@ S.availability = () => {
     <div class="section-head avail-head">
       <div>
         ${eyebrow('', 'Permitted · 4545 Architecture')}
-        <h2 class="h2">Select your <span class="accent">homesite</span></h2>
+        <h2 class="h2">Select your <span class="accent">home</span></h2>
       </div>
       <p class="avail-head__note">The 12 Phase 1 homes face Trumbull. Tap one on the plan.</p>
     </div>
     <div class="avail-grid">
       <div>
-        <p class="bp-swipe">Swipe the plan for homesites 07–12 →</p>
         <div class="bp">
           <div class="bp__inner" data-siteplan>
-            <img src="${img('site-plan.webp')}" width="1884" height="1178" loading="lazy" decoding="async" alt="Architectural site plan SP1.1 by 4545 Architecture with the 12 Phase 1 homesites highlighted on the two buildings facing Trumbull">
+            <img src="${img('site-plan.webp')}" width="1884" height="1178" loading="lazy" decoding="async" alt="Architectural site plan SP1.1 by 4545 Architecture with the 12 Phase 1 homes highlighted on the two buildings facing Trumbull">
             ${future}
             ${units.join('\n            ')}
           </div>
@@ -420,28 +419,35 @@ S.availability = () => {
           <p class="cap">SP1.1 · Architectural site plan · 4545 Architecture</p>
         </div>
       </div>
-      <div class="unit-card" aria-live="polite">
-        <div class="unit-card__top">
-          <p class="unit-card__kicker" data-unit-kicker>Phase 1</p>
-          <span class="chip" data-unit-status hidden></span>
+      <aside class="pick" aria-label="Choose a home">
+        <div class="pick__head">
+          <p class="pick__kicker">Phase 1 · <span data-avail-count>${avail}</span> of 12 available</p>
+          <div class="pick__now">
+            <h3 data-unit-title>Choose your home</h3>
+            <span class="pick__status" data-unit-status hidden></span>
+          </div>
+          <p class="pick__where" data-unit-kicker>Tap the plan or a number below.</p>
         </div>
-        <h3 data-unit-title>Select a homesite on the plan.</h3>
-        <p class="unit-card__avail"><strong data-avail-count>${avail}</strong> of 12 available</p>
-        <ul class="unit-card__specs">
-          <li><strong>3 bed · 2.5 bath</strong></li>
-          <li><strong>1,535</strong> sq ft</li>
-          <li>Private rooftop terrace</li>
-          <li>Private parking court</li>
-          <li>NEZ-NC Abatement Eligible</li>
-          <li>Faces Trumbull</li>
-        </ul>
-        <ol class="unit-card__steps">
-          <li><span>Jun 2026</span>Permitted</li>
-          <li><span>2026–27</span>Construction</li>
-          <li><span>2027–28</span>Move-ins</li>
+        <div class="pick__grid">
+          ${['A', 'B'].map((b, k) => `<div class="pick__row"><span class="pick__bld">Bldg ${b}</span><div class="pick__btns">${Array.from({ length: 6 }, (_, i) => { const num = k * 6 + i + 1, st = HOMESITES[num]; return `<button class="sp-unit pick__btn" type="button" data-unit="${pad2(num)}" data-building="${b}" data-status="${st}" aria-pressed="false" aria-label="Home ${num}, ${STATUS_LABEL[st]}">${pad2(num)}</button>`; }).join('')}</div></div>`).join('\n          ')}
+        </div>
+        <dl class="pick__specs">
+          <div><dt>Home</dt><dd>3 bed · 2.5 bath</dd></div>
+          <div><dt>Size</dt><dd>1,535 sq ft</dd></div>
+          <div><dt>Outdoor</dt><dd>Private rooftop terrace</dd></div>
+          <div><dt>Parking</dt><dd>Private parking court</dd></div>
+          <div><dt>Taxes</dt><dd>NEZ-NC Abatement Eligible</dd></div>
+        </dl>
+        <ol class="pick__steps">
+          <li class="is-done"><i></i><span>Jun 2026</span>Permitted</li>
+          <li class="is-now"><i></i><span>Now</span>Reserving</li>
+          <li><i></i><span>2027–28</span>Move-ins</li>
         </ol>
-        <a class="btn btn--dark btn--block" href="#reserve" data-reserve-unit>Reserve Your Home</a>
-      </div>
+        <div class="pick__cta">
+          <a class="btn btn--gold btn--block" href="#reserve" data-reserve-unit>Reserve Your Home</a>
+          <a class="pick__price" href="#reserve" data-interest="Pricing">Request pricing →</a>
+        </div>
+      </aside>
     </div>
   </div>
 </section>`;

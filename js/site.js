@@ -279,25 +279,28 @@
     return api;
   }
 
-  // Availability: homesite selection.
+  // Availability: homesite selection. Each homesite has a button on the plan and one in the picker;
+  // both stay in sync by data-unit.
   var units = $$('.sp-unit');
+  var planUnits = $$('.bp .sp-unit');
   var selected = null;
+  var reserveUnit = $('[data-reserve-unit]');
   function countAvailable() {
-    var n = units.filter(function (u) { return u.dataset.status === 'available'; }).length;
+    var n = planUnits.filter(function (u) { return u.dataset.status === 'available'; }).length;
     $$('[data-avail-count]').forEach(function (el) { el.textContent = n; });
   }
-  units.forEach(function (u) {
-    u.addEventListener('click', function () {
-      selected = u;
-      units.forEach(function (x) { x.setAttribute('aria-pressed', x === u); });
-      $('[data-unit-kicker]').textContent = 'Building ' + u.dataset.building + ' · Type A';
-      var st = $('[data-unit-status]'); st.textContent = STATUS_LABEL[u.dataset.status]; st.hidden = false;
-      var t = $('[data-unit-title]'); t.textContent = 'Homesite ' + u.dataset.unit; t.classList.add('is-unit');
-    });
-  });
-  var reserveUnit = $('[data-reserve-unit]');
+  function pickUnit(u) {
+    selected = u;
+    var num = u.dataset.unit;
+    units.forEach(function (x) { x.setAttribute('aria-pressed', x.dataset.unit === num); });
+    $('[data-unit-kicker]').textContent = 'Building ' + u.dataset.building + ' · Type A · Faces Trumbull';
+    var st = $('[data-unit-status]'); st.textContent = STATUS_LABEL[u.dataset.status]; st.dataset.s = u.dataset.status; st.hidden = false;
+    var t = $('[data-unit-title]'); t.textContent = 'Home ' + num; t.classList.add('is-unit');
+    if (reserveUnit) reserveUnit.textContent = u.dataset.status === 'available' ? 'Reserve Home ' + num : 'Join the waitlist';
+  }
+  units.forEach(function (u) { u.addEventListener('click', function () { pickUnit(u); }); });
   if (reserveUnit) reserveUnit.addEventListener('click', function () {
-    if (selected) setInterest('Homesite ' + selected.dataset.unit, 'Requesting homesite ' + selected.dataset.unit);
+    if (selected) setInterest('Home ' + selected.dataset.unit, 'Requesting home ' + selected.dataset.unit);
   });
 
   // Homesite status sheet (published Google Sheet CSV). Falls back to built-in statuses.
@@ -309,8 +312,9 @@
         if (k === 'cta_count' && /^\d+$/.test(v)) {
           $$('[data-cta-count]').forEach(function (el) { el.textContent = v; });
         } else if (/^\d+$/.test(k) && STATUS_LABEL[v]) {
-          var u = units.filter(function (x) { return Number(x.dataset.unit) === Number(k); })[0];
-          if (u) { u.dataset.status = v; u.setAttribute('aria-label', 'Homesite ' + Number(k) + ', ' + STATUS_LABEL[v]); }
+          units.filter(function (x) { return Number(x.dataset.unit) === Number(k); }).forEach(function (u) {
+            u.dataset.status = v; u.setAttribute('aria-label', 'Home ' + Number(k) + ', ' + STATUS_LABEL[v]);
+          });
         }
       });
       countAvailable();
