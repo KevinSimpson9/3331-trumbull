@@ -33,30 +33,32 @@ const CAT = {
   work: ['Work', '#201D19'], eat: ['Eat and drink', '#8A5A3B'], everyday: ['Everyday', '#6A6357'],
   outside: ['Outside', '#5E7354'], game: ['Game night', '#B07A4E'], move: ['Getting around', '#4A5A6A']
 };
+// [category, name, map label, what, straight-line distance, lat, lng, label side on the map: 'r' | 'l' | '' (hidden until picked)]
+const SITE = [42.3418, -83.0712];
 const POIS = [
-  ['work', 'Michigan Central', 'Station and Newlab, Corktown', '~1.2 mi'],
-  ['work', "GM at Hudson's Detroit", 'Global HQ, Woodward', '~1.5 mi'],
-  ['work', 'Rocket at Campus Martius', 'Central Business District', '~1.5 mi'],
-  ['work', 'Little Caesars Global HQ', 'District Detroit', '~1.2 mi'],
-  ['work', 'Henry Ford Hospital', 'Henry Ford Health flagship, New Center', '~2.1 mi'],
-  ['work', 'Wayne State University', 'Midtown', '~1.6 mi'],
-  ['work', 'Detroit Medical Center', 'Medical campus', '~1.7 mi'],
-  ['eat', 'Michigan Avenue, Corktown', 'Slows Bar BQ, Takoi, Ottava Via, The Sugar House, Two James', '~0.9 mi'],
-  ['eat', 'Folk', 'All-day cafe on Trumbull', '~0.8 mi'],
-  ['eat', 'Woodbridge Pub', 'Neighborhood pub, Woodbridge', '~1.05 mi'],
-  ['everyday', 'Rosette Market + Cafe', 'Grocery and cafe, Michigan Ave', '~0.75 mi'],
-  ['everyday', 'Whole Foods Market Midtown', 'Full-service supermarket', '~1.1 mi'],
-  ['everyday', 'Eastern Market', 'Saturdays', '~1.9 mi'],
-  ['outside', 'Scripps Park', 'Up Trumbull', '~0.25 mi'],
-  ['outside', 'Roosevelt Park', 'At Michigan Central', '~1.0 mi'],
-  ['outside', 'Detroit Riverwalk', 'Riverfront promenade', '~1.5–1.9 mi'],
-  ['game', 'Little Caesars Arena', 'Red Wings, Pistons, concerts', '~1.1 mi'],
-  ['game', 'Theatre District', 'Fox Theatre, The Fillmore, Masonic Temple', '~1.2 mi'],
-  ['game', 'Stadium District', 'Comerica Park, Ford Field', '~1.25–1.6 mi'],
-  ['move', 'QLINE streetcar', 'Woodward Ave, downtown to New Center', '~1.1 mi'],
-  ['move', 'Freeways on three sides', 'I-75, M-10 Lodge and I-96 border the neighborhood', '~0.5 mi'],
-  ['move', 'Rosa Parks Transit Center', 'DDOT bus hub', '~1.1 mi'],
-  ['move', 'Detroit Metro Airport (DTW)', 'Via I-96 and I-94, without traffic', '~30 min']
+  ['work', 'Michigan Central', 'Michigan Central', 'Station and Newlab, Corktown', '~1.2 mi', 42.3289, -83.0776, 'b*'],
+  ['work', "GM at Hudson's Detroit", 'GM', 'Global HQ, Woodward', '~1.5 mi', 42.3330, -83.0470, 'r'],
+  ['work', 'Rocket at Campus Martius', 'CBD', 'Central Business District', '~1.5 mi', 42.3314, -83.0466, 'r*'],
+  ['work', 'Little Caesars Global HQ', 'Ilitch Cos.', 'District Detroit', '~1.2 mi', 42.3389, -83.0520, 'l'],
+  ['work', 'Henry Ford Hospital', 'Henry Ford', 'Henry Ford Health flagship, New Center', '~2.1 mi', 42.3677, -83.0840, 'l*'],
+  ['work', 'Wayne State University', 'Wayne State', 'Midtown', '~1.6 mi', 42.3510, -83.0640, 'r*'],
+  ['work', 'Detroit Medical Center', 'DMC', 'Medical campus', '~1.7 mi', 42.3530, -83.0560, 'r'],
+  ['eat', 'Michigan Avenue, Corktown', 'Michigan Ave', 'Slows Bar BQ, Takoi, Ottava Via, The Sugar House, Two James', '~0.9 mi', 42.3313, -83.0717, 'b*'],
+  ['eat', 'Folk', 'Folk', 'All-day cafe on Trumbull', '~0.8 mi', 42.3330, -83.0675, 'l'],
+  ['eat', 'Woodbridge Pub', 'Woodbridge Pub', 'Neighborhood pub, Woodbridge', '~1.05 mi', 42.3553, -83.0775, 'l*'],
+  ['everyday', 'Rosette Market + Cafe', 'Rosette', 'Grocery and cafe, Michigan Ave', '~0.75 mi', 42.3320, -83.0650, 'b'],
+  ['everyday', 'Whole Foods Market Midtown', 'Whole Foods', 'Full-service supermarket', '~1.1 mi', 42.3496, -83.0598, 'r*'],
+  ['everyday', 'Eastern Market', 'Eastern Market', 'Saturdays', '~1.9 mi', 42.3478, -83.0410, 'b*'],
+  ['outside', 'Scripps Park', 'Scripps Park', 'Up Trumbull', '~0.25 mi', 42.3446, -83.0690, 't*'],
+  ['outside', 'Roosevelt Park', 'Roosevelt Park', 'At Michigan Central', '~1.0 mi', 42.3303, -83.0748, 'l'],
+  ['outside', 'Detroit Riverwalk', 'Riverwalk', 'Riverfront promenade', '~1.5–1.9 mi', 42.3245, -83.0560, 'r*'],
+  ['game', 'Little Caesars Arena', 'Little Caesars Arena', 'Red Wings, Pistons, concerts', '~1.1 mi', 42.3411, -83.0553, 't*'],
+  ['game', 'Theatre District', 'Theatre District', 'Fox Theatre, The Fillmore, Masonic Temple', '~1.2 mi', 42.3384, -83.0525, 'b'],
+  ['game', 'Stadium District', 'Stadium District', 'Comerica Park, Ford Field', '~1.25–1.6 mi', 42.3395, -83.0470, 'r*'],
+  ['move', 'QLINE streetcar', 'QLINE', 'Woodward Ave, downtown to New Center', '~1.1 mi', 42.3480, -83.0590, 'r'],
+  ['move', 'Freeways on three sides', 'I-75 / M-10', 'I-75, M-10 Lodge and I-96 border the neighborhood', '~0.5 mi', 42.3405, -83.0620, 'b'],
+  ['move', 'Rosa Parks Transit Center', 'Transit Center', 'DDOT bus hub', '~1.1 mi', 42.3326, -83.0530, 'b'],
+  ['move', 'Detroit Metro Airport (DTW)', 'DTW', 'Via I-96 and I-94, without traffic', '~30 min', 42.2162, -83.3554, '']
 ];
 const FAQS = [
   ['Where is Trumbull North?', '3331 Trumbull St, Detroit, MI 48208, in North Corktown, on the block where Trumbull meets Sycamore and Ash.'],
@@ -97,7 +99,7 @@ const PLAN_LEVELS = [
 const PAGES = {
   home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez progress about faq availability', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
   residences: { path: '/residences', sections: 'residences rooftop', eyebrow: 'The Residences', h1: '3 bedroom townhomes in North Corktown, Detroit', title: 'Type A Townhomes | 3 Bedroom New Construction in North Corktown, Detroit | Trumbull North', desc: 'The Type A residence: 3 bed, 2 bath, 1,535 sq ft across three levels and a private rooftop terrace. New townhomes in Detroit by 4545 Architecture.' },
-  availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 Corktown-area townhomes for sale in Phase 1 at 3331 Trumbull. Pick your homesite on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
+  availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 North Corktown townhomes for sale in Phase 1 at 3331 Trumbull. Pick your homesite on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
   neighborhood: { path: '/neighborhood', sections: 'neighborhood', eyebrow: 'The Neighborhood', h1: 'North Corktown, Detroit: homes near Michigan Central', title: 'Living in North Corktown, Detroit | Homes Near Michigan Central | Trumbull North', desc: 'About a mile to Michigan Central, Corktown and Little Caesars Arena. The Stadium District, Theatre District, CBD and Riverwalk nearby. Distances are estimates.' },
   progress: { path: '/progress', sections: 'progress about', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
   faq: { path: '/faq', sections: 'faq', eyebrow: 'FAQ', h1: 'Questions about Trumbull North', title: 'FAQ | NEZ-NC, Pricing and Buying | Trumbull North', desc: 'Answers on NEZ-NC Property Tax Abatement, pricing, timing and buying a new construction townhome in North Corktown, Detroit.' },
@@ -208,7 +210,7 @@ S.residences = () => {
         ${eyebrow('02', 'The Residences')}
         <h2 class="h2">The Type A residence. <span class="accent">Three bedrooms, three levels.</span></h2>
       </div>
-      <p class="res-head__aside">3 bedroom luxury townhomes in Detroit, each with a private rooftop terrace, designed by 4545 Architecture. Floor plans, finishes and pricing come in the full package. <a href="#reserve" data-interest="Full package">Request the full package</a> and it comes straight to you.</p>
+      <p class="res-head__aside">3 bedroom townhomes in Detroit, each with a private rooftop terrace, designed by 4545 Architecture. Floor plans, finishes and pricing come in the full package. <a href="#reserve" data-interest="Full package">Request the full package</a> and it comes straight to you.</p>
     </div>
     <div class="res-grid">
       <div class="res-photo">
@@ -285,6 +287,28 @@ S.gallery = () => `
   </div>
 </section>`;
 
+// Straight-line proximity map: the site at the center, rings every half mile, every place pinned.
+function proximityMap() {
+  const W = 600, R = 2.35, k = (W / 2) / R;                      // px per mile
+  const xy = (lat, lng) => [W / 2 + (lng - SITE[1]) * 51.1 * k, W / 2 - (lat - SITE[0]) * 69.0 * k];
+  const rings = [0.5, 1, 1.5, 2].map(m => `<circle cx="${W / 2}" cy="${W / 2}" r="${(m * k).toFixed(1)}" class="pm-ring"/><text x="${W / 2}" y="${(W / 2 + m * k - 7).toFixed(1)}" text-anchor="middle" class="pm-ring-l">${m === 0.5 ? '½' : m === 1.5 ? '1½' : m} mi</text>`).join('');
+  const pins = POIS.map(([c, name, short, , dist, lat, lng, side]) => {
+    const [x, y] = xy(lat, lng);
+    if (x < 8 || y < 8 || x > W - 8 || y > W - 8) return '';      // off the map (the airport)
+    const d = side[0] || 'r';
+    const [lx, ly, anchor] = { r: [11, 5, 'start'], l: [-11, 5, 'end'], t: [0, -13, 'middle'], b: [0, 24, 'middle'] }[d];
+    return `<g class="pm-pin${side.endsWith('*') ? ' pm-pin--label' : ''}" data-place="${esc(name)}" data-cat="${c}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><circle r="7" fill="${CAT[c][1]}"/><text x="${lx}" y="${ly}" text-anchor="${anchor}">${esc(short)}</text></g>`;
+  }).join('');
+  return `<div class="pm" role="img" aria-label="Map of places within about two miles of Trumbull North, with rings every half mile">
+        <svg viewBox="0 0 ${W} ${W}" aria-hidden="true">
+          <rect width="${W}" height="${W}" class="pm-bg"/>${rings}
+          <g class="pm-north" transform="translate(${W - 34} 40)"><path d="M0 -18 L7 6 L0 1 L-7 6 Z"/><text y="24" text-anchor="middle">N</text></g>
+          ${pins}
+          <g class="pm-site" transform="translate(${W / 2} ${W / 2})"><rect x="-9" y="-9" width="18" height="18"/><text x="-15" y="6" text-anchor="end">Trumbull North</text></g>
+        </svg>
+      </div>`;
+}
+
 S.neighborhood = () => {
   const quad = [
     ['Michigan Central', "Ford's restored station and the Newlab campus around it, about 1.2 miles from your door."],
@@ -312,12 +336,10 @@ S.neighborhood = () => {
   </div>
   <div class="map-grid">
     <div class="map-card">
-      <div class="map-card__map">
-        <iframe data-map title="Google map: Trumbull North, 3331 Trumbull St" src="https://maps.google.com/maps?q=${encodeURIComponent(ADDRESS)}&amp;z=15&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-      </div>
+      ${proximityMap()}
       <div class="map-card__bar">
-        <span>Showing: <strong data-map-label>Trumbull North · 3331 Trumbull St</strong></span>
-        <button class="link-btn" type="button" data-map-home hidden>Back to Trumbull North</button>
+        <span>Showing: <strong data-map-label>Everything within about 2 miles</strong></span>
+        <a class="link-btn" data-map-link href="https://www.google.com/maps/search/?api=1&amp;query=${encodeURIComponent(ADDRESS)}" target="_blank" rel="noopener">Open in Google Maps ↗</a>
       </div>
     </div>
     <div class="nearby">
@@ -326,7 +348,7 @@ S.neighborhood = () => {
         ${cats.map(([k, l], i) => `<button class="pill" type="button" aria-pressed="${i === 0}" data-cat="${k}">${l}</button>`).join('\n        ')}
       </div>
       <ul class="poi-list">
-        ${POIS.map(([c, name, what, dist]) => `<li data-cat="${c}"><button class="poi" type="button" aria-pressed="false" data-place="${esc(name)}"><span class="poi__dot" style="background:${CAT[c][1]}"></span><span class="poi__main"><span class="poi__name">${esc(name)}</span><span class="poi__what">${esc(what)}</span></span><span class="poi__dist"><span>${dist}</span><span>Straight-line</span></span></button></li>`).join('\n        ')}
+        ${POIS.map(([c, name, , what, dist]) => `<li data-cat="${c}"><button class="poi" type="button" aria-pressed="false" data-place="${esc(name)}"><span class="poi__dot" style="background:${CAT[c][1]}"></span><span class="poi__main"><span class="poi__name">${esc(name)}</span><span class="poi__what">${esc(what)}</span></span><span class="poi__dist"><span>${dist}</span><span>Straight-line</span></span></button></li>`).join('\n        ')}
       </ul>
       <p class="small-note">Straight-line distances from 3331 Trumbull. Driving and walking routes are longer.</p>
     </div>
@@ -569,6 +591,10 @@ const jsonld = (key, sections) => {
   return `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })}</script>`;
 };
 
+// Satellite map (Leaflet, self-hosted) gets the site and places as data; the SVG map stays as the fallback.
+const mapAssets = () => `<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+<script>window.TN_MAP = ${JSON.stringify({ site: SITE, pois: POIS.filter(p => p[0] !== 'move' || p[1] !== 'Detroit Metro Airport (DTW)').map(([c, name, short, , , lat, lng, side]) => ({ c, name, short, lat, lng, side, color: CAT[c][1] })) })};</script>`;
+
 const clientSettings = () => `<script>window.TN = ${JSON.stringify({ ctaCount: N, ga4Id: SETTINGS.ga4Id, metaPixelId: SETTINGS.metaPixelId, statusSheetUrl: SETTINGS.statusSheetUrl, formEndpoint: SETTINGS.formEndpoint, thankYouUrl: SETTINGS.thankYouUrl })};</script>`;
 
 const head = ({ title, desc, url, robots = 'index, follow', extra = '' }) => `<!DOCTYPE html>
@@ -610,7 +636,8 @@ function page(key) {
     <h1>${pg.h1}</h1>
   </div>
 </header>`;
-  return `${head({ title: pg.title, desc: pg.desc, url, extra: jsonld(key, sections) + '\n' + clientSettings() })}
+  const mapExtra = sections.includes('neighborhood') ? '\n' + mapAssets() : '';
+  return `${head({ title: pg.title, desc: pg.desc, url, extra: jsonld(key, sections) + '\n' + clientSettings() + mapExtra })}
 <body data-page="${key}">
 ${nav(key)}
 <main>${pageHead}
@@ -619,7 +646,7 @@ ${reserve()}
 </main>
 ${footer()}
 ${chrome()}
-<script src="/js/site.js" defer></script>
+${sections.includes('neighborhood') ? '<script src="/vendor/leaflet/leaflet.js" defer></script>\n' : ''}<script src="/js/site.js" defer></script>
 </body>
 </html>
 `;

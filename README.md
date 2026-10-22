@@ -23,6 +23,7 @@ The pages are generated. **Edit `scripts/build-site.mjs`, run `node scripts/buil
 | `js/site.js` | Hero film, time-lapse, reserve form (FormSubmit → `/thank-you`), plan tabs, map filters, site plan, status sheet, consent + GA4/Meta |
 | `assets/img/` | Renderings, optional floor plan, og.jpg |
 | `assets/video/` | Hero film: `hero-1080` and `hero-720`, each as `.webm` (VP9) and `.mp4` (H.264) |
+| `vendor/leaflet/` | Leaflet 1.9.4 (BSD-2), self-hosted, for the satellite proximity map on the home and Neighborhood pages. Imagery tiles come from Esri World Imagery; the SVG map in the page is the fallback |
 | `site-model/` | Live 3D site model — not linked from the site |
 
 Common edits (all in `scripts/build-site.mjs`, then rebuild):
@@ -30,6 +31,7 @@ Common edits (all in `scripts/build-site.mjs`, then rebuild):
 - **Mark a homesite reserved/sold** — `HOMESITES`, or set `statusSheetUrl` to a published Google Sheet CSV (`homesite,status` rows plus an optional `cta_count,N` row) and edit the sheet instead.
 - **Approve renderings** — set `showDraftNotice: false`.
 - **Swap the hero film** — encode the new master to the same four file names in `assets/video/` (commands below). An empty `heroVideo` turns the film off and leaves the facade image.
+- **Nearby places** — `POIS`: category, name, map label, description, listed distance, lat/lng, and the map label side (`r`/`l`/`t`/`b`, trailing `*` = labelled by default).
 - **Tracking** — set `ga4Id` / `metaPixelId`. The consent banner and tags only appear once an ID is set.
 
 Hero film encodes (from the master file):

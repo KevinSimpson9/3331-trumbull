@@ -119,28 +119,98 @@
     });
   });
 
-  // Neighborhood: category filters and map.
-  var map = $('[data-map]');
-  if (map) {
-    var label = $('[data-map-label]'), home = $('[data-map-home]');
-    var HOME_Q = '3331 Trumbull St, Detroit, MI 48208';
-    var setMap = function (place) {
-      var q = place ? place + ', Detroit, MI' : HOME_Q;
-      map.src = 'https://maps.google.com/maps?q=' + encodeURIComponent(q) + '&z=' + (place ? 14 : 15) + '&output=embed';
-      map.title = 'Google map: ' + (place || 'Trumbull North, 3331 Trumbull St');
-      label.textContent = place || 'Trumbull North · 3331 Trumbull St';
-      home.hidden = !place;
+  // Neighborhood: satellite proximity map (Leaflet + Esri imagery) with the SVG map as fallback,
+  // category filters and the "What's nearby" list.
+  var pm = $('.pm');
+  if (pm) {
+    var label = $('[data-map-label]'), gmap = $('[data-map-link]');
+    var ALL = 'Everything within about 2 miles', HOME_Q = '3331 Trumbull St, Detroit, MI 48208';
+    var api = svgMap(pm);
+    if (window.L && window.TN_MAP) {
+      try { api = satMap(pm, window.TN_MAP); }
+      catch (e) { pm.classList.remove('is-sat'); var sat = $('.pm-sat', pm); if (sat) sat.remove(); }
+    }
+    var pick = function (place) {
+      api.pick(place);
       $$('.poi').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-place') === place); });
+      label.textContent = place || ALL;
+      gmap.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(place ? place + ', Detroit, MI' : HOME_Q);
     };
-    $$('.poi').forEach(function (b) { b.addEventListener('click', function () { setMap(b.getAttribute('data-place')); }); });
-    home.addEventListener('click', function () { setMap(null); });
-    $$('[data-cat]', $('.nearby__filters')).forEach(function (b) {
+    api.onPin = function (p) {
+      var on = label.textContent === p;
+      pick(on ? null : p);
+      var btn = $$('.poi').filter(function (b) { return b.getAttribute('data-place') === p; })[0];
+      if (btn && !btn.closest('li').hidden) btn.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
+    };
+    $$('.poi').forEach(function (b) {
+      b.addEventListener('click', function () { pick(b.getAttribute('aria-pressed') === 'true' ? null : b.getAttribute('data-place')); });
+    });
+    $$('.nearby__filters [data-cat]').forEach(function (b) {
       b.addEventListener('click', function () {
-        var c = b.getAttribute('data-cat');
+        var cat = b.getAttribute('data-cat');
         $$('.nearby__filters [data-cat]').forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
-        $$('.poi-list li').forEach(function (li) { li.hidden = c !== 'all' && li.getAttribute('data-cat') !== c; });
+        $$('.poi-list li').forEach(function (li) { li.hidden = cat !== 'all' && li.getAttribute('data-cat') !== cat; });
+        api.filter(cat);
+        pick(null);
       });
     });
+  }
+
+  function svgMap(root) {
+    var pins = $$('.pm-pin', root), api = {};
+    pins.forEach(function (g) { g.addEventListener('click', function () { api.onPin && api.onPin(g.getAttribute('data-place')); }); });
+    api.pick = function (place) {
+      root.classList.toggle('is-picked', !!place);
+      pins.forEach(function (g) { g.classList.toggle('is-on', g.getAttribute('data-place') === place); });
+    };
+    api.filter = function (cat) {
+      root.classList.toggle('is-filtered', cat !== 'all');
+      pins.forEach(function (g) { g.classList.toggle('is-dim', cat !== 'all' && g.getAttribute('data-cat') !== cat); });
+    };
+    return api;
+  }
+
+  function satMap(root, data) {
+    var L = window.L, api = {}, cat = 'all', picked = null;
+    var el = document.createElement('div'); el.className = 'pm-sat';
+    root.appendChild(el); root.classList.add('is-sat');
+    var site = data.site, MILE = 1609.34;
+    var map = L.map(el, { scrollWheelZoom: false, dragging: !L.Browser.mobile, tap: false, zoomSnap: 0.25, attributionControl: true });
+    map.attributionControl.setPrefix(false);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19, attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics'
+    }).addTo(map);
+    var dLat = (2.15 * MILE) / 111320, dLng = dLat / Math.cos(site[0] * Math.PI / 180);
+    map.fitBounds([[site[0] - dLat, site[1] - dLng], [site[0] + dLat, site[1] + dLng]], { padding: [6, 6] });
+    [0.5, 1, 1.5, 2].forEach(function (m) {
+      L.circle(site, { radius: m * MILE, color: '#FAF8F4', weight: 1.25, opacity: 0.8, dashArray: '4 7', fill: false, interactive: false }).addTo(map);
+      var south = L.latLng(site[0] - (m * MILE) / 111320, site[1]);
+      L.marker(south, { interactive: false, keyboard: false, icon: L.divIcon({ className: 'pm-ring-tip', html: (m === 0.5 ? '½' : m === 1.5 ? '1½' : m) + ' mi', iconSize: null, iconAnchor: [0, 18] }) }).addTo(map);
+    });
+    L.marker(site, { keyboard: false, icon: L.divIcon({ className: 'pm-site-tip', html: '<i></i><span>Trumbull North</span>', iconSize: null, iconAnchor: [9, 9] }) }).addTo(map);
+    var DIR = { r: 'right', l: 'left', t: 'top', b: 'bottom' };
+    // Small screens: label only the anchors by default; the rest appear when filtered or picked.
+    var small = el.clientWidth < 480, KEY = ['Michigan Central', 'Little Caesars Arena', 'Rocket at Campus Martius', 'Detroit Riverwalk', 'Eastern Market', 'Henry Ford Hospital'];
+    var pins = data.pois.map(function (p) {
+      var side = p.side || 'r', d = DIR[side[0]] || 'right';
+      var mk = L.circleMarker([p.lat, p.lng], { radius: 7, color: '#FAF8F4', weight: 2.5, fillColor: p.color, fillOpacity: 1 }).addTo(map);
+      mk.bindTooltip(p.short, { permanent: true, direction: d, offset: d === 'right' ? [8, 0] : d === 'left' ? [-8, 0] : d === 'top' ? [0, -8] : [0, 8], className: 'pm-tip', interactive: false });
+      mk.on('click', function () { api.onPin && api.onPin(p.name); });
+      return { p: p, mk: mk, def: /\*$/.test(side) && (!small || KEY.indexOf(p.name) > -1) };
+    });
+    function render() {
+      pins.forEach(function (x) {
+        var dim = cat !== 'all' && x.p.c !== cat, on = picked === x.p.name;
+        var show = on || (!dim && (cat !== 'all' || (x.def && !picked)));
+        x.mk.setStyle({ opacity: dim ? 0.3 : 1, fillOpacity: dim ? 0.3 : 1, radius: on ? 10 : 7, color: on ? '#201D19' : '#FAF8F4' });
+        if (show) x.mk.openTooltip(); else x.mk.closeTooltip();
+        if (on) x.mk.bringToFront();
+      });
+    }
+    api.pick = function (place) { picked = place; render(); };
+    api.filter = function (c) { cat = c; render(); };
+    render();
+    return api;
   }
 
   // Availability: homesite selection.
