@@ -44,7 +44,7 @@
     function draw(im, alpha) {
       var cw = canvas.width, ch = canvas.height, s = Math.max(cw / im.naturalWidth, ch / im.naturalHeight);
       var w = im.naturalWidth * s, h = im.naturalHeight * s;
-      ctx.globalAlpha = alpha; ctx.drawImage(im, (cw - w) / 2, (ch - h) * 0.45, w, h);
+      ctx.globalAlpha = alpha; ctx.drawImage(im, (cw - w) / 2, (ch - h) * (cw / ch < 1.2 ? 0.5 : 0.45), w, h);
     }
     function render() {
       raf = 0;
@@ -81,6 +81,8 @@
     if (!scrubbable) { hb.classList.add('is-static'); progress = 1; }
     window.addEventListener('scroll', fromScroll, { passive: true });
     window.addEventListener('resize', size);
+    // Re-measure whenever the canvas box itself changes (phone layout, Safari toolbar), so frames never stretch.
+    if ('ResizeObserver' in window) new ResizeObserver(size).observe(canvas);
     size(); fromScroll();
     // First frame (or the last, for reduced motion) now, then a coarse pass, then everything.
     load(scrubbable ? 0 : n - 1).then(function () {
