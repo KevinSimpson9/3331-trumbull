@@ -230,7 +230,10 @@ input::placeholder { color: #9A9184; }
 .level strong { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--cedar); font-weight: 600; padding-top: 2px; }
 @media (max-width: 480px) { .level { grid-template-columns: 1fr; gap: 4px; } }
 .plans__bath { margin-top: 36px; }
-.plans__bath img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: center 60%; }
+.plans__photo { margin-top: clamp(40px, 4vw, 56px); }
+.plans__photo img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; }
+.plans__photo figcaption { margin-top: 12px; }
+.plans__bath img { width: 100%; height: auto; aspect-ratio: 1 / 1; object-fit: cover; object-position: center 55%; }
 .plans__bath figcaption { margin-top: 12px; }
 
 /* 03 Gallery */

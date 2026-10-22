@@ -241,6 +241,10 @@ S.residences = () => {
         <div class="plans__frame">
           ${panels}
         </div>
+        <figure class="plans__photo">
+          <img loading="lazy" decoding="async" src="${img('kitchen.webp')}" width="1248" height="832" alt="Kitchen with a white stone island, four counter stools, oak cabinetry and brass fixtures">
+          <figcaption class="cap">Kitchen</figcaption>
+        </figure>
       </div>
       <div class="plans__info">
         ${eyebrow('', 'Floor plan')}
