@@ -76,7 +76,6 @@ const FAQS = [
   ['Is NEZ-NC the same as the NEZ Homestead program?', 'No. NEZ-NC applies to qualifying new construction homes like Trumbull North. The NEZ Homestead program is separate and covers existing homes. Todd can confirm how NEZ-NC applies to your purchase.']
 ];
 const GALLERY = [
-  ['g-lot.webp', 'The lot today', 'Aerial of the cleared, graded Trumbull North lot with new sidewalks on Trumbull'],
   ['g-corner.webp', 'The corner on Trumbull · Rendering', 'Rendering of the corner townhome on Trumbull with floor-to-ceiling ground-floor glazing'],
   ['g-frontage.webp', 'The Trumbull frontage · Rendering', 'Rendering of the Trumbull frontage: ivory panel, warm grey brick, charcoal siding and cedar'],
   ['g-porches.webp', 'Front porches · Rendering', 'Rendering of brick-pier front porches on new North Corktown townhomes for sale'],
@@ -91,9 +90,9 @@ const GALLERY = [
 const HOMESITES = { 1: 'available', 2: 'available', 3: 'available', 4: 'available', 5: 'available', 6: 'available', 7: 'available', 8: 'available', 9: 'available', 10: 'available', 11: 'available', 12: 'available' };
 const STATUS_LABEL = { available: 'Available', reserved: 'Reserved', contract: 'Under contract', sold: 'Sold' };
 
-// Optional floor plan (supplied by Kevin, Oct 22). The standard Type A stays 3 bed / 2 bath.
+// Floor plan, level by level (supplied by Kevin, Oct 22). The ground-floor den is the 2-or-3-bedroom choice.
 const PLAN_LEVELS = [
-  ['ground', 'Ground level', 'plan-ground.webp', 'Front entry and stair, a den or office facing the street, a laundry and utility room, and parking for one car behind an overhead door to the private parking court.'],
+  ['ground', 'Ground level', 'plan-ground.webp', 'Front entry and stair, a den, office or third bedroom facing the street, a laundry and utility room, and parking for one car behind an overhead door to the private parking court.'],
   ['main', 'Living level', 'plan-main.webp', 'Open kitchen with a seated island, living and dining on one floor, a powder room by the stair and a balcony.'],
   ['upper', 'Bedroom level', 'plan-upper.webp', 'Two bedrooms with walk-in closets, two full baths (one double vanity with shower, one single vanity with tub) and laundry on the same floor.'],
   ['roof', 'Rooftop', 'plan-rooftop.webp', 'A private deck with room to lounge and dine, planters, and a wet bar sink at the top of the stair.']
@@ -205,7 +204,7 @@ S.rooftop = () => `
 
 S.residences = () => {
   const tabs = PLAN_LEVELS.map(([k, label], i) => `<button class="pill" role="tab" id="plan-tab-${k}" aria-controls="plan-${k}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-plan-tab="${k}">${label}</button>`).join('\n          ');
-  const panels = PLAN_LEVELS.map(([k, label, file], i) => `<div class="plans__panel" role="tabpanel" id="plan-${k}" aria-labelledby="plan-tab-${k}"${i ? ' hidden' : ''}><img loading="lazy" decoding="async" src="${img(file)}" alt="Optional floor plan, ${label.toLowerCase()}"></div>`).join('\n          ');
+  const panels = PLAN_LEVELS.map(([k, label, file], i) => `<div class="plans__panel" role="tabpanel" id="plan-${k}" aria-labelledby="plan-tab-${k}"${i ? ' hidden' : ''}><img loading="lazy" decoding="async" src="${img(file)}" alt="Floor plan, ${label.toLowerCase()}"></div>`).join('\n          ');
   const levels = PLAN_LEVELS.map(([, label, , text]) => `<div class="level"><strong>${label}</strong><span>${text}</span></div>`).join('\n        ');
   return `
 <section id="residences" class="band band--sand" data-screen-label="02 The Residences">
@@ -245,7 +244,7 @@ S.residences = () => {
 
     <div class="plans" id="floor-plans">
       <div>
-        <div class="plans__tabs" role="tablist" aria-label="Optional floor plan levels">
+        <div class="plans__tabs" role="tablist" aria-label="Floor plan levels">
           ${tabs}
         </div>
         <div class="plans__frame">
@@ -253,13 +252,13 @@ S.residences = () => {
         </div>
       </div>
       <div class="plans__info">
-        ${eyebrow('', 'Plan option')}
-        <h3 class="h3">An optional layout, <span class="accent">level by level.</span></h3>
-        <p class="copy">One of the optional floor plans for the Type A home. Plan options, finishes and dimensions come in the full package.</p>
+        ${eyebrow('', 'Floor plan')}
+        <h3 class="h3">2 or 3 bedrooms. <span class="accent">Level by level.</span></h3>
+        <p class="copy">The ground-floor den works as an office or a third bedroom. Finishes and dimensions come in the full package.</p>
         <div class="levels">
         ${levels}
         </div>
-        <a class="btn btn--dark" href="#reserve" data-interest="Plan options">Ask about plan options</a>
+        <a class="btn btn--dark" href="#reserve" data-interest="Floor plans">Ask about floor plans</a>
         <figure class="plans__bath">
           <img loading="lazy" decoding="async" src="${img('bath.webp')}" alt="Rendering of a bath with a walk-in glass shower and wood vanity">
           <figcaption class="cap">Bath · Rendering</figcaption>
