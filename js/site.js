@@ -13,8 +13,13 @@
 
   // Hero build: scrolling through the hero (or dragging the bar) runs the construction
   // sequence from foundations to complete. Frames load progressively: first, every 6th, then the rest.
-  var hb = $('[data-build]');
-  if (hb) (function () {
+  // The hero runs it on desktop; on phones the hero is a photo and the Block section runs it (.mbuild).
+  $$('[data-build]').forEach(function (hb) {
+    var cv = $('.hero__canvas', hb);
+    if (!cv || cv.offsetParent === null) return;   // hidden at this screen size
+    initBuild(hb);
+  });
+  function initBuild(hb) {
     var n = Number(hb.dataset.frames), stagesAt = JSON.parse(hb.dataset.stages);
     var canvas = $('.hero__canvas', hb), ctx = canvas.getContext('2d');
     var track = $('.hero__track', hb), sticky = $('.hero__sticky', hb);
@@ -91,7 +96,7 @@
       return coarse.reduce(function (p, i) { return p.then(function () { return load(i); }); }, Promise.resolve())
         .then(function () { return rest.reduce(function (p, i) { return p.then(function () { return load(i); }); }, Promise.resolve()); });
     });
-  })();
+  }
 
   // Mobile sticky bar: only after scrolling past the hero (or one screen on pages without one).
   var sticky = $('[data-sticky-cta]');
