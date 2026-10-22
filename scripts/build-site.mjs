@@ -65,7 +65,7 @@ const POIS = [
 const FAQS = [
   ['Where is Trumbull North?', '3331 Trumbull St, Detroit, MI 48208, in North Corktown, on the block where Trumbull meets Sycamore and Ash.'],
   ['How many homes are for sale?', 'Phase 1 has 12 new construction townhomes for sale, in the two buildings facing Trumbull. The three back buildings are a future release.'],
-  ['What is the floor plan?', 'The Type A residence: 3 bedrooms and 2 baths (one with a double vanity, one single) across three levels, about 1,535 square feet.'],
+  ['What is the floor plan?', 'The Type A residence: 3 bedrooms and 2.5 baths (two full baths, one with a double vanity, plus a powder room) across three levels, about 1,535 square feet.'],
   ['Where do I park?', 'Residents park in the private parking court inside the block.'],
   ['What is the NEZ-NC abatement?', 'Trumbull North is NEZ-NC Property Tax Abatement Eligible. The NEZ-NC Property Tax Abatement is available for 15 years on qualifying homes. Todd can walk you through how it applies to you.'],
   ['When can I move in?', 'Permitting was completed in June 2026. Construction is planned for 2026–27, with Phase 1 move-ins planned for 2027–28.'],
@@ -99,8 +99,8 @@ const PLAN_LEVELS = [
 ];
 
 const PAGES = {
-  home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez progress faq availability', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
-  residences: { path: '/residences', sections: 'residences rooftop', eyebrow: 'The Residences', h1: '3 bedroom townhomes in North Corktown, Detroit', title: 'Type A Townhomes | 3 Bedroom New Construction in North Corktown, Detroit | Trumbull North', desc: 'The Type A residence: 3 bed, 2 bath, 1,535 sq ft across three levels and a private rooftop terrace. New townhomes in Detroit by 4545 Architecture.' },
+  home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez progress faq availability', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2.5 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
+  residences: { path: '/residences', sections: 'residences rooftop', eyebrow: 'The Residences', h1: '3 bedroom townhomes in North Corktown, Detroit', title: 'Type A Townhomes | 3 Bedroom New Construction in North Corktown, Detroit | Trumbull North', desc: 'The Type A residence: 3 bed, 2.5 bath, 1,535 sq ft across three levels and a private rooftop terrace. New townhomes in Detroit by 4545 Architecture.' },
   availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 North Corktown townhomes for sale in Phase 1 at 3331 Trumbull. Pick your homesite on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
   neighborhood: { path: '/neighborhood', sections: 'neighborhood', eyebrow: 'The Neighborhood', h1: 'North Corktown, Detroit: homes near Michigan Central', title: 'Living in North Corktown, Detroit | Homes Near Michigan Central | Trumbull North', desc: 'About a mile to Michigan Central, Corktown and Little Caesars Arena. The Stadium District, Theatre District, CBD and Riverwalk nearby. Distances are estimates.' },
   progress: { path: '/progress', sections: 'progress', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
@@ -154,7 +154,7 @@ S.hero = () => {
   <div class="hero__stats">
     <div class="hero__stats-in">
       ${stat(cta, 'Homes for sale')}
-      ${stat('3 bed · 2 bath', 'Three levels, 1,535 sq ft')}
+      ${stat('3 bed · 2.5 bath', 'Three levels, 1,535 sq ft')}
       ${stat('NEZ-NC', 'Property Tax Abatement Eligible')}
       ${stat('2027–28', 'Phase 1 move-ins, planned')}
     </div>
@@ -226,12 +226,12 @@ S.residences = () => {
           <p class="res-card__type">Type A</p>
           <span class="chip">Phase 1 · For sale now</span>
         </div>
-        <h3>3 Bed · 2 Bath</h3>
+        <h3>3 Bed · 2.5 Bath</h3>
         <p class="res-card__sub">1,535 square feet across three levels</p>
         <ul class="dash-list">
           <li>Rooftop terrace facing the skyline</li>
           <li>Full-width living floor with island kitchen</li>
-          <li>Two baths: one double vanity, one single</li>
+          <li>Two full baths (one double vanity) plus a powder room</li>
           <li>Front porch on a real street, not a corridor</li>
           <li>NEZ-NC Property Tax Abatement Eligible</li>
         </ul>
@@ -472,14 +472,14 @@ S.availability = () => {
           <div><p class="stat__n" style="color:#201D19">12</p><p class="stat__l">Homes in Phase 1</p></div>
         </div>
         <div class="specs">
-          <div><span>Bedrooms / baths</span><span>3 / 2</span></div>
+          <div><span>Bedrooms / baths</span><span>3 / 2.5</span></div>
           <div><span>Living area</span><span>1,535 sq ft</span></div>
           <div><span>Levels</span><span>Three</span></div>
           <div><span>Parking</span><span>Private parking court</span></div>
           <div><span>Outdoor</span><span>Private rooftop terrace</span></div>
           <div><span>Property tax</span><span>NEZ-NC Abatement Eligible</span></div>
         </div>
-        <p class="unit-card__copy">3 bed, 2 bath, 1,535 sq ft across three levels. Private rooftop terrace and parking in the private court. The ${cta} homes for sale face Trumbull in the two front buildings.</p>
+        <p class="unit-card__copy">3 bed, 2.5 bath, 1,535 sq ft across three levels. Private rooftop terrace and parking in the private court. The ${cta} homes for sale face Trumbull in the two front buildings.</p>
         <a class="btn btn--dark btn--block" href="#reserve" data-reserve-unit>Reserve Your Home</a>
       </div>
     </div>
@@ -581,7 +581,7 @@ const jsonld = (key, sections) => {
   const addr = { '@type': 'PostalAddress', streetAddress: '3331 Trumbull St', addressLocality: 'Detroit', addressRegion: 'MI', postalCode: '48208', addressCountry: 'US' };
   const graph = [
     { '@type': 'Organization', '@id': ORIGIN + '/#org', name: 'Trumbull North', url: ORIGIN + '/', telephone: '+1-313-320-8780', email: EMAIL, address: addr },
-    { '@type': 'Residence', '@id': ORIGIN + '/#residence', name: 'Trumbull North Type A Townhome', description: 'New construction North Corktown townhome for sale near Corktown, Detroit. 3 bedroom townhome with 2 baths, 1,535 sq ft across three levels and a private rooftop terrace.', address: addr, geo: { '@type': 'GeoCoordinates', latitude: 42.3418, longitude: -83.0712 }, numberOfRooms: 3, numberOfBedrooms: 3, numberOfBathroomsTotal: 2, floorSize: { '@type': 'QuantitativeValue', value: 1535, unitCode: 'FTK' }, containedInPlace: { '@type': 'Place', name: 'North Corktown, Detroit' } }
+    { '@type': 'Residence', '@id': ORIGIN + '/#residence', name: 'Trumbull North Type A Townhome', description: 'New construction North Corktown townhome for sale near Corktown, Detroit. 3 bedroom townhome with 2.5 baths, 1,535 sq ft across three levels and a private rooftop terrace.', address: addr, geo: { '@type': 'GeoCoordinates', latitude: 42.3418, longitude: -83.0712 }, numberOfRooms: 3, numberOfBedrooms: 3, numberOfBathroomsTotal: 3, numberOfFullBathrooms: 2, numberOfPartialBathrooms: 1, floorSize: { '@type': 'QuantitativeValue', value: 1535, unitCode: 'FTK' }, containedInPlace: { '@type': 'Place', name: 'North Corktown, Detroit' } }
   ];
   if (sections.includes('faq')) graph.push({ '@type': 'FAQPage', mainEntity: FAQS.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) });
   return `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })}</script>`;
