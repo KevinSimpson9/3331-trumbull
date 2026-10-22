@@ -1,0 +1,706 @@
+// Builds the public Trumbull North site into static HTML at the repo root.
+// Run: node scripts/build-site.mjs
+// Edit copy, data and settings here, rebuild, commit the generated files.
+// Source of truth for copy and layout: the Claude Design handoff (Trumbull North Site v2).
+
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ORIGIN = 'https://www.trumbullnorth.com';
+
+// ---------------------------------------------------------------------------
+// Settings. Tracking IDs and the status sheet are read in the browser.
+const SETTINGS = {
+  ctaCount: 12,
+  showDraftNotice: true,                // turn off once renderings are approved
+  heroVideo: '/assets/video/hero',      // base path: -1080/-720 in .webm (VP9) and .mp4 (H.264). Empty hides the film.
+  timelapseVideo: '/assets/video/hero-1080',  // same base-path convention as heroVideo; empty shows "Coming soon"
+  ga4Id: '',
+  metaPixelId: '',
+  statusSheetUrl: '',                   // published Google Sheet CSV: homesite,status and cta_count,N
+  formEndpoint: 'https://formsubmit.co/ajax/todd@theloftwarehouse.com',
+  thankYouUrl: '/thank-you',
+  socials: []                           // AK Capital socials: [['Instagram', 'https://...'], ...]
+};
+
+const PHONE = '313-320-8780', TEL = 'tel:+13133208780', EMAIL = 'todd@theloftwarehouse.com';
+const ADDRESS = '3331 Trumbull St, Detroit, MI 48208';
+
+// ---------------------------------------------------------------------------
+// Data (from the design's logic class)
+const CAT = {
+  work: ['Work', '#201D19'], eat: ['Eat and drink', '#8A5A3B'], everyday: ['Everyday', '#6A6357'],
+  outside: ['Outside', '#5E7354'], game: ['Game night', '#B07A4E'], move: ['Getting around', '#4A5A6A']
+};
+const POIS = [
+  ['work', 'Michigan Central', 'Station and Newlab, Corktown', '~1.2 mi'],
+  ['work', "GM at Hudson's Detroit", 'Global HQ, Woodward', '~1.5 mi'],
+  ['work', 'Rocket at Campus Martius', 'Central Business District', '~1.5 mi'],
+  ['work', 'Little Caesars Global HQ', 'District Detroit', '~1.2 mi'],
+  ['work', 'Henry Ford Hospital', 'Henry Ford Health flagship, New Center', '~2.1 mi'],
+  ['work', 'Wayne State University', 'Midtown', '~1.6 mi'],
+  ['work', 'Detroit Medical Center', 'Medical campus', '~1.7 mi'],
+  ['eat', 'Michigan Avenue, Corktown', 'Slows Bar BQ, Takoi, Ottava Via, The Sugar House, Two James', '~0.9 mi'],
+  ['eat', 'Folk', 'All-day cafe on Trumbull', '~0.8 mi'],
+  ['eat', 'Woodbridge Pub', 'Neighborhood pub, Woodbridge', '~1.05 mi'],
+  ['everyday', 'Rosette Market + Cafe', 'Grocery and cafe, Michigan Ave', '~0.75 mi'],
+  ['everyday', 'Whole Foods Market Midtown', 'Full-service supermarket', '~1.1 mi'],
+  ['everyday', 'Eastern Market', 'Saturdays', '~1.9 mi'],
+  ['outside', 'Scripps Park', 'Up Trumbull', '~0.25 mi'],
+  ['outside', 'Roosevelt Park', 'At Michigan Central', '~1.0 mi'],
+  ['outside', 'Detroit Riverwalk', 'Riverfront promenade', '~1.5–1.9 mi'],
+  ['game', 'Little Caesars Arena', 'Red Wings, Pistons, concerts', '~1.1 mi'],
+  ['game', 'Theatre District', 'Fox Theatre, The Fillmore, Masonic Temple', '~1.2 mi'],
+  ['game', 'Stadium District', 'Comerica Park, Ford Field', '~1.25–1.6 mi'],
+  ['move', 'QLINE streetcar', 'Woodward Ave, downtown to New Center', '~1.1 mi'],
+  ['move', 'Freeways on three sides', 'I-75, M-10 Lodge and I-96 border the neighborhood', '~0.5 mi'],
+  ['move', 'Rosa Parks Transit Center', 'DDOT bus hub', '~1.1 mi'],
+  ['move', 'Detroit Metro Airport (DTW)', 'Via I-96 and I-94, without traffic', '~30 min']
+];
+const FAQS = [
+  ['Where is Trumbull North?', '3331 Trumbull St, Detroit, MI 48208, in North Corktown, on the block where Trumbull meets Sycamore and Ash.'],
+  ['How many homes are for sale?', 'Phase 1 has 12 new construction townhomes for sale, in the two buildings facing Trumbull. The three back buildings are a future release.'],
+  ['What is the floor plan?', 'The Type A residence: 3 bedrooms and 2 baths (one with a double vanity, one single) across three levels, about 1,535 square feet.'],
+  ['Where do I park?', 'Residents park in the private parking court inside the block.'],
+  ['What is the NEZ-NC abatement?', 'Trumbull North is NEZ-NC Property Tax Abatement Eligible. The NEZ-NC Property Tax Abatement is available for 15 years on qualifying homes. Todd can walk you through how it applies to you.'],
+  ['When can I move in?', 'Permitting was completed in June 2026. Construction is planned for 2026–27, with Phase 1 move-ins planned for 2027–28.'],
+  ['How much are the homes?', 'Pricing is in the full package. Submit the Reserve form and it comes straight to you.'],
+  ['Are these homes for sale or for rent?', 'For sale only. All 12 Phase 1 homes are new construction townhomes for sale, each with a private rooftop terrace.'],
+  ['Are these condos or townhomes?', 'Townhomes. Each Type A home is a three-level townhome with its own front door and private rooftop terrace. Nothing is shared above or below you.'],
+  ['Moving to Detroit? How close are the homes to Michigan Central?', 'Michigan Central is about 1.2 miles from Trumbull North, and downtown is about 1.5 miles. For buyers moving to Detroit for work, these are new construction homes for sale near Michigan Central, Newlab and the Central Business District (CBD). Distances are estimates.'],
+  ['Is NEZ-NC the same as the NEZ Homestead program?', 'No. NEZ-NC applies to qualifying new construction homes like Trumbull North. The NEZ Homestead program is separate and covers existing homes. Todd can confirm how NEZ-NC applies to your purchase.']
+];
+const GALLERY = [
+  ['g-lot.webp', 'The lot today', 'Aerial of the cleared, graded Trumbull North lot with new sidewalks on Trumbull'],
+  ['g-corner.webp', 'The corner on Trumbull · Rendering', 'Rendering of the corner townhome on Trumbull with floor-to-ceiling ground-floor glazing'],
+  ['g-frontage.webp', 'The Trumbull frontage · Rendering', 'Rendering of the Trumbull frontage: ivory panel, warm grey brick, charcoal siding and cedar'],
+  ['g-porches.webp', 'Front porches · Rendering', 'Rendering of brick-pier front porches on new North Corktown townhomes for sale'],
+  ['g-entries.webp', 'Entries and the court', 'Rendering of townhome entries with the private parking court behind'],
+  ['g-court-entry.webp', 'Into the private court · Rendering', 'Rendering of the drive into the private parking court'],
+  ['g-garages.webp', 'The private parking court', 'Rendering of the private parking court'],
+  ['g-rooftops.webp', 'Rooftop terraces · Rendering', 'Rendering of private rooftop terraces above the court, Detroit beyond'],
+  ['g-rooftop-view.webp', 'The view from your rooftop · Rendering', 'Rendering of the view across the block from a private rooftop terrace'],
+  ['g-aerial.webp', 'The full block from above · Rendering', 'Aerial rendering of Trumbull North: five buildings around a private court, two fronting Trumbull']
+];
+// Built-in homesite statuses (the status sheet overrides these): available | reserved | contract | sold
+const HOMESITES = { 1: 'available', 2: 'available', 3: 'available', 4: 'available', 5: 'available', 6: 'available', 7: 'available', 8: 'available', 9: 'available', 10: 'available', 11: 'available', 12: 'available' };
+const STATUS_LABEL = { available: 'Available', reserved: 'Reserved', contract: 'Under contract', sold: 'Sold' };
+
+// Optional floor plan (supplied by Kevin, Oct 22). The standard Type A stays 3 bed / 2 bath.
+const PLAN_LEVELS = [
+  ['main', 'Living level', 'plan-main.webp', 'Open kitchen with a seated island, living and dining on one floor, a powder room by the stair and a balcony.'],
+  ['upper', 'Bedroom level', 'plan-upper.webp', 'Two bedrooms with walk-in closets, two full baths (one double vanity with shower, one single vanity with tub) and laundry on the same floor.'],
+  ['roof', 'Rooftop', 'plan-rooftop.webp', 'A private deck with room to lounge and dine, planters, and a wet bar sink at the top of the stair.']
+];
+
+const PAGES = {
+  home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez progress timelapse about faq availability', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
+  residences: { path: '/residences', sections: 'residences rooftop', eyebrow: 'The Residences', h1: '3 bedroom townhomes in North Corktown, Detroit', title: 'Type A Townhomes | 3 Bedroom New Construction in North Corktown, Detroit | Trumbull North', desc: 'The Type A residence: 3 bed, 2 bath, 1,535 sq ft across three levels and a private rooftop terrace. New townhomes in Detroit by 4545 Architecture.' },
+  availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 Corktown-area townhomes for sale in Phase 1 at 3331 Trumbull. Pick your homesite on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
+  neighborhood: { path: '/neighborhood', sections: 'neighborhood', eyebrow: 'The Neighborhood', h1: 'North Corktown, Detroit: homes near Michigan Central', title: 'Living in North Corktown, Detroit | Homes Near Michigan Central | Trumbull North', desc: 'About a mile to Michigan Central, Corktown and Little Caesars Arena. The Stadium District, Theatre District, CBD and Riverwalk nearby. Distances are estimates.' },
+  progress: { path: '/progress', sections: 'progress timelapse about', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
+  faq: { path: '/faq', sections: 'faq', eyebrow: 'FAQ', h1: 'Questions about Trumbull North', title: 'FAQ | NEZ-NC, Pricing and Buying | Trumbull North', desc: 'Answers on NEZ-NC Property Tax Abatement, pricing, timing and buying a new construction townhome in North Corktown, Detroit.' },
+  gallery: { path: '/gallery', sections: 'gallery', eyebrow: 'Gallery', h1: 'Trumbull North renderings', title: 'Gallery | Renderings of Trumbull North Townhomes, Detroit', desc: 'Renderings of Trumbull North: the Trumbull frontage, front porches, private parking court and rooftop terraces with the Detroit skyline.' },
+  about: { path: '/about', sections: 'vision about', eyebrow: 'About', h1: 'About Trumbull North', title: 'About | 3331 Trumbull, North Corktown, Detroit | Trumbull North', desc: "Trumbull North at 3331 Trumbull: five buildings by 4545 Architecture, built by Bondy's Construction, developed by AK Capital." },
+  privacy: { path: '/privacy', sections: 'privacy', eyebrow: 'Legal', h1: 'Privacy Policy', title: 'Privacy Policy | Trumbull North', desc: 'Privacy Policy for trumbullnorth.com.' }
+};
+
+// ---------------------------------------------------------------------------
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const img = n => '/assets/img/' + n;
+const pad2 = n => String(n).padStart(2, '0');
+const N = SETTINGS.ctaCount;
+const cta = `<span data-cta-count>${N}</span>`;
+
+const eyebrow = (num, label, gold) => `<p class="eyebrow${gold ? ' eyebrow--gold' : ''}">${num ? `<span class="eyebrow__num">№ ${num}</span>` : ''}<span class="eyebrow__rule"></span>${label}</p>`;
+const LOGO_MARK = '<svg width="32" height="32" viewBox="0 0 34 34" aria-hidden="true"><rect x="0.5" y="0.5" width="33" height="33" fill="none" stroke="#201D19"/><rect x="5" y="22" width="11" height="5" fill="#8A5A3B"/><rect x="18" y="22" width="11" height="5" fill="#8A5A3B"/><rect x="5" y="7" width="4" height="12" fill="#201D19"/><rect x="25" y="7" width="4" height="12" fill="#201D19"/><rect x="12" y="7" width="10" height="4" fill="#201D19"/></svg>';
+
+const S = {};
+
+S.hero = () => {
+  const v = SETTINGS.heroVideo;
+  // WebM first (about half the size), H.264 MP4 for browsers without VP9. Phones get the 720 cut.
+  const src = (size, media) => `<source src="${v}-${size}.webm" type='video/webm; codecs="vp9"'${media}>
+      <source src="${v}-${size}.mp4" type="video/mp4"${media}>`;
+  const video = v ? `
+    <video data-hero-video muted loop playsinline preload="metadata" poster="${img('facade.webp')}" aria-label="Film of Trumbull North rising from the cleared lot to the finished block">
+      ${src('720', ' media="(max-width: 900px)"')}
+      ${src('1080', '')}
+    </video>` : '';
+  const stat = (n, l, gold) => `<div class="hero__stat"><p class="hero__stat-n${gold ? ' hero__stat-n--gold' : ''}">${n}</p><p class="hero__stat-l">${l}</p></div>`;
+  return `
+<header class="hero" data-screen-label="Hero">
+  <div class="hero__media">
+    <img src="${img('facade.webp')}" fetchpriority="high" decoding="async" width="1885" height="834" alt="Rendering of Trumbull North, new construction North Corktown townhomes for sale on Trumbull">${video}
+    <span class="tag" data-hero-tag data-video-label="From cleared lot to finished block · Rendering">Trumbull frontage · Rendering</span>
+  </div>
+  <div class="hero__band">
+    <div>
+      <p class="hero__kicker"><span></span>3331 Trumbull. North Corktown, Detroit.</p>
+      <h1>Your own private rooftop, <span class="accent-gold">overlooking the Detroit skyline.</span></h1>
+    </div>
+    <div class="hero__side">
+      <p class="hero__lede">Three-bedroom new construction townhomes for sale in North Corktown, designed by 4545 Architecture. A private rooftop terrace with every home.</p>
+      <div class="hero__ctas">
+        <a class="btn btn--light" href="/availability">View Availability</a>
+        <a class="btn btn--ghost" href="/residences">Tour the Residences</a>
+      </div>
+    </div>
+  </div>
+  <div class="hero__stats">
+    <div class="hero__stats-in">
+      ${stat(cta, 'Homes for sale', true)}
+      ${stat('3 bed · 2 bath', 'Three levels, 1,535 sq ft')}
+      ${stat('NEZ-NC', 'Property Tax Abatement Eligible', true)}
+      ${stat('2027–28', 'Phase 1 move-ins, planned')}
+    </div>
+  </div>
+</header>`;
+};
+
+S.vision = () => `
+<section id="vision" class="section" data-screen-label="01 The Block">
+  <div class="two-col vision">
+    <div>
+      ${eyebrow('01', 'The Block')}
+      <h2 class="h2">Five buildings <span class="accent">by 4545 Architecture.</span></h2>
+      <p class="copy">248 feet of frontage where Trumbull meets Sycamore and Ash, arranged around a private parking court.</p>
+      <p class="copy">Michigan Central and Corktown's Michigan Avenue restaurants are each about a mile away. With the design finished and permits in hand, all that's left is choosing which address is yours.</p>
+      <a class="text-link" href="/neighborhood">Explore the neighborhood →</a>
+      <div class="vision__stats">
+        <div><p class="stat__n">248 ft</p><p class="stat__l">Street frontage</p></div>
+        <div><p class="stat__n">5</p><p class="stat__l">Buildings</p></div>
+        <div><p class="stat__n">${cta}</p><p class="stat__l">For sale now</p></div>
+      </div>
+    </div>
+    <figure class="fill-fig">
+      <img loading="lazy" decoding="async" src="${img('court.webp')}" width="1860" height="845" alt="Rendering of the private parking court inside the block">
+      <figcaption class="cap">Private parking court · Rendering</figcaption>
+    </figure>
+  </div>
+</section>`;
+
+S.rooftop = () => `
+<section class="rooftop" data-screen-label="Rooftop statement">
+  <div class="rooftop__media">
+    <img loading="lazy" decoding="async" src="${img('rooftop.webp')}" alt="Rendering of Detroit townhomes with private rooftop terraces and the skyline beyond">
+    <span class="tag">Your rooftop · Rendering</span>
+  </div>
+  <blockquote class="rooftop__quote">
+    <p class="rooftop__line">Sunset dinners. Morning coffee. Fireworks over the city. All from a rooftop that belongs to no one but you.</p>
+    <p class="rooftop__sub">From up here, the city is yours.</p>
+    <div class="rooftop__stats">
+      <div><p class="rooftop__n">~1.2 mi</p><p class="rooftop__l">Michigan Central</p></div>
+      <div><p class="rooftop__n">~1.1 mi</p><p class="rooftop__l">Little Caesars Arena</p></div>
+      <div><p class="rooftop__n">~1.5 mi</p><p class="rooftop__l">Central Business District</p></div>
+    </div>
+    <p class="rooftop__note">Straight-line distances from 3331 Trumbull.</p>
+  </blockquote>
+</section>`;
+
+S.residences = () => {
+  const tabs = PLAN_LEVELS.map(([k, label], i) => `<button class="pill" role="tab" id="plan-tab-${k}" aria-controls="plan-${k}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}" data-plan-tab="${k}">${label}</button>`).join('\n          ');
+  const panels = PLAN_LEVELS.map(([k, label, file], i) => `<div class="plans__panel" role="tabpanel" id="plan-${k}" aria-labelledby="plan-tab-${k}"${i ? ' hidden' : ''}><img loading="lazy" decoding="async" src="${img(file)}" alt="Optional floor plan, ${label.toLowerCase()}"></div>`).join('\n          ');
+  const levels = PLAN_LEVELS.map(([, label, , text]) => `<div class="level"><strong>${label}</strong><span>${text}</span></div>`).join('\n        ');
+  return `
+<section id="residences" class="band band--sand" data-screen-label="02 The Residences">
+  <div class="wrap">
+    <div class="section-head res-head">
+      <div>
+        ${eyebrow('02', 'The Residences')}
+        <h2 class="h2">The Type A residence. <span class="accent">Three bedrooms, three levels.</span></h2>
+      </div>
+      <p class="res-head__aside">3 bedroom luxury townhomes in Detroit, each with a private rooftop terrace, designed by 4545 Architecture. Floor plans, finishes and pricing come in the full package. <a href="#reserve" data-interest="Full package">Request the full package</a> and it comes straight to you.</p>
+    </div>
+    <div class="res-grid">
+      <div class="res-photo">
+        <img src="${img('interior.webp')}" alt="Rendering of the Type A living floor with open kitchen and island" loading="lazy" decoding="async">
+        <span class="label-light">Interior · Living and kitchen · Rendering</span>
+      </div>
+      <div class="res-card">
+        <div class="res-card__top">
+          <p class="res-card__type">Type A</p>
+          <span class="chip">Phase 1 · For sale now</span>
+        </div>
+        <h3>3 Bed · 2 Bath</h3>
+        <p class="res-card__sub">1,535 square feet across three levels</p>
+        <ul class="dash-list">
+          <li>Rooftop terrace facing the skyline</li>
+          <li>Full-width living floor with island kitchen</li>
+          <li>Two baths: one double vanity, one single</li>
+          <li>Front porch on a real street, not a corridor</li>
+          <li>NEZ-NC Property Tax Abatement Eligible</li>
+        </ul>
+        <div class="res-card__ctas">
+          <a class="btn btn--dark btn--block" href="#reserve" data-interest="Pricing">Request pricing</a>
+          <a class="res-card__pkg" href="#reserve" data-interest="Full package">Request the full package →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="plans" id="floor-plans">
+      <div>
+        <div class="plans__tabs" role="tablist" aria-label="Optional floor plan levels">
+          ${tabs}
+        </div>
+        <div class="plans__frame">
+          ${panels}
+        </div>
+      </div>
+      <div class="plans__info">
+        ${eyebrow('', 'Plan option')}
+        <h3 class="h3">An optional layout, <span class="accent">level by level.</span></h3>
+        <p class="copy">One of the optional floor plans for the Type A home. Plan options, finishes and dimensions come in the full package.</p>
+        <div class="levels">
+        ${levels}
+        </div>
+        <a class="btn btn--dark" href="#reserve" data-interest="Plan options">Ask about plan options</a>
+        <figure class="plans__bath">
+          <img loading="lazy" decoding="async" src="${img('bath.webp')}" alt="Rendering of a bath with a walk-in glass shower and wood vanity">
+          <figcaption class="cap">Bath · Rendering</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <p class="res-note">One ground-floor commercial space anchors the block on Trumbull. <a href="#reserve" data-interest="Commercial space">Inquire</a>.</p>
+  </div>
+</section>`;
+};
+
+S.gallery = () => `
+<section id="gallery" class="gallery" data-screen-label="03 Gallery">
+  <div class="section-head gallery__head">
+    <div>
+      ${eyebrow('03', 'Gallery', true)}
+      <h2 class="h2">Walk the block <span class="accent-gold">before it exists.</span></h2>
+    </div>
+    <div class="gallery__hint">
+      <button class="gallery__arrow" type="button" data-strip="-1" aria-label="Previous image">←</button>
+      <button class="gallery__arrow" type="button" data-strip="1" aria-label="Next image">→</button>
+    </div>
+  </div>
+  <div class="strip" data-strip-track tabindex="0" aria-label="Renderings, scroll sideways">
+    ${GALLERY.map(([f, cap, alt], i) => `<figure>
+      <img src="${img(f)}" alt="${esc(alt)}" loading="lazy" decoding="async">
+      <figcaption><span>${cap}</span><span>${pad2(i + 1)} / ${pad2(GALLERY.length)}</span></figcaption>
+    </figure>`).join('\n    ')}
+  </div>
+</section>`;
+
+S.neighborhood = () => {
+  const quad = [
+    ['Michigan Central', "Ford's restored station and the Newlab campus around it, about 1.2 miles from your door."],
+    ['Michigan Avenue', "Corktown's restaurants and bars, about a mile south: Slows Bar BQ, Takoi, Ottava Via, The Sugar House, Two James."],
+    ['Downtown districts', 'The Stadium District, the Theatre District, the Central Business District (CBD) and the Riverwalk. Little Caesars Arena is about a mile away.'],
+    ['Outside', 'Scripps Park about a quarter mile up Trumbull. Roosevelt Park at Michigan Central. The Southwest Greenway to the riverfront.']
+  ];
+  const cats = [['all', 'All'], ...Object.entries(CAT).map(([k, v]) => [k, v[0]])];
+  return `
+<section id="neighborhood" class="section" data-screen-label="04 The Neighborhood">
+  <div class="section-head hood-head">
+    <div>
+      ${eyebrow('04', 'The Neighborhood')}
+      <h2 class="h2">Your new city starts <span class="accent">at your front porch.</span></h2>
+    </div>
+    <p class="copy">You took the job. Now find where your life fits. Trumbull North puts you in North Corktown, between Michigan Central, Corktown and downtown.</p>
+  </div>
+  <div class="scores">
+    <div><p class="stat__n">73</p><p class="stat__l">Walk Score</p></div>
+    <div><p class="stat__n">95</p><p class="stat__l">Bike Score</p></div>
+    <div><p class="stat__n">58</p><p class="stat__l">Transit Score</p></div>
+  </div>
+  <div class="quad">
+    ${quad.map(([h, p], i) => `<div><p class="quad__n">${pad2(i + 1)}</p><h3>${h}</h3><p>${p}</p></div>`).join('\n    ')}
+  </div>
+  <div class="map-grid">
+    <div class="map-card">
+      <div class="map-card__map">
+        <iframe data-map title="Google map: Trumbull North, 3331 Trumbull St" src="https://maps.google.com/maps?q=${encodeURIComponent(ADDRESS)}&amp;z=15&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+      <div class="map-card__bar">
+        <span>Showing: <strong data-map-label>Trumbull North · 3331 Trumbull St</strong></span>
+        <button class="link-btn" type="button" data-map-home hidden>Back to Trumbull North</button>
+      </div>
+    </div>
+    <div class="nearby">
+      <h3>What's nearby</h3>
+      <div class="nearby__filters" role="group" aria-label="Filter places">
+        ${cats.map(([k, l], i) => `<button class="pill" type="button" aria-pressed="${i === 0}" data-cat="${k}">${l}</button>`).join('\n        ')}
+      </div>
+      <ul class="poi-list">
+        ${POIS.map(([c, name, what, dist]) => `<li data-cat="${c}"><button class="poi" type="button" aria-pressed="false" data-place="${esc(name)}"><span class="poi__dot" style="background:${CAT[c][1]}"></span><span class="poi__main"><span class="poi__name">${esc(name)}</span><span class="poi__what">${esc(what)}</span></span><span class="poi__dist"><span>${dist}</span><span>Straight-line</span></span></button></li>`).join('\n        ')}
+      </ul>
+      <p class="small-note">Straight-line distances from 3331 Trumbull. Driving and walking routes are longer.</p>
+    </div>
+  </div>
+</section>`;
+};
+
+S.nez = () => `
+<section class="nez" data-screen-label="NEZ callout">
+  <div class="nez__in">
+    <div>
+      <p class="nez__kicker">NEZ-NC Property Tax Abatement Eligible</p>
+      <h2>NEZ-NC Property Tax Abatement <span class="accent-gold">Available for 15 years</span></h2>
+      <p class="nez__copy">Trumbull North sits in a Detroit Neighborhood Enterprise Zone. Qualifying new construction homes here pay a reduced property tax rate for 15 years. Ask Todd what that means for your monthly payment.</p>
+    </div>
+    <div class="nez__side">
+      <p class="nez__big">15 <span>years</span></p>
+      <a class="btn btn--gold" href="#reserve" data-interest="NEZ savings">Ask About NEZ Savings</a>
+    </div>
+  </div>
+</section>`;
+
+S.progress = () => {
+  const rows = [['June 2026', 'Permitting complete', 'Full construction set documented.'], ['Now', 'Pre-construction', 'Phase 1 reservations open.'], ['2026–27', 'Construction', 'Five buildings.'], ['2027–28', 'Move-ins', 'Phase 1 homes, planned.']];
+  return `
+<section id="progress" class="section" data-screen-label="05 Permitted">
+  <div class="two-col progress">
+    <div>
+      ${eyebrow('05', 'Permitted and engineered')}
+      <h2 class="h2">Not a concept. <span class="accent">A construction masterpiece.</span></h2>
+      <p class="copy">Designed by 4545 Architecture, permitted, and ready to rise.</p>
+      <div class="timeline">
+        ${rows.map(([w, s, t]) => `<div><span class="timeline__when">${w}</span><div class="timeline__what"><strong>${s}</strong><span>. ${t}</span></div></div>`).join('\n        ')}
+      </div>
+      <form class="follow" data-follow>
+        <label for="follow-email">Follow the build</label>
+        <div class="follow__row" data-follow-row>
+          <input id="follow-email" required type="email" name="email" autocomplete="email" placeholder="Email">
+          <button class="btn btn--dark" type="submit">Get updates</button>
+        </div>
+        <p class="follow__done" data-follow-done hidden>You're on the list. Construction updates will come to your inbox.</p>
+      </form>
+    </div>
+    <figure class="framed">
+      <div class="framed__box"><img loading="lazy" decoding="async" src="${img('aerial.webp')}" alt="Aerial rendering of the finished block: five buildings around a private court, two fronting Trumbull"></div>
+      <figcaption class="cap">The full block from above · Rendering</figcaption>
+    </figure>
+  </div>
+</section>`;
+};
+
+S.timelapse = () => {
+  const v = SETTINGS.timelapseVideo;
+  return `
+<section id="timelapse" class="timelapse" data-screen-label="Time-lapse">
+  <div class="timelapse__in">
+    <div class="section-head timelapse__head">
+      <div>
+        ${eyebrow('', 'Time-lapse')}
+        <h2 class="h2">From cleared lot <span class="accent">to finished block.</span></h2>
+      </div>
+      <p class="copy">Watch Trumbull North rise from groundbreaking to move-in, frame by frame.</p>
+    </div>
+    <div class="tl-slot" data-video-slot="construction-timelapse">
+      <img loading="lazy" decoding="async" src="${img('lot.webp')}" alt="Aerial of the cleared Trumbull North site before construction">
+      ${v ? `<video poster="${img('lot.webp')}" data-inview muted playsinline controls preload="none" aria-label="Construction time-lapse of Trumbull North, from cleared lot to finished block"><source src="${v}.webm" type='video/webm; codecs="vp9"'><source src="${v}.mp4" type="video/mp4"></video>` : `<div class="tl-shade"></div>
+      <div class="tl-soon"><span class="tl-play" aria-hidden="true"><span></span></span><span class="tl-soon__label">Construction time-lapse · Coming soon</span></div>
+      <div class="tl-phases">${['Lot today', 'Foundations', 'Framing', 'Exterior', 'Move-in'].map(p => `<div><i></i><span>${p}</span></div>`).join('')}</div>`}
+    </div>
+  </div>
+</section>`;
+};
+
+S.about = () => `
+<section id="about" class="proof" data-screen-label="Proof">
+  <div class="proof__in">
+    <p class="eyebrow"><span class="eyebrow__rule"></span>Built by people who build Detroit<span class="eyebrow__rule"></span></p>
+    <p class="proof__line">Built by Bondy Construction &amp; Design with AK Capital Investments, designed by 4545 Architecture. Same builder as Sycamore Park, a block away and sold out.</p>
+  </div>
+</section>`;
+
+S.faq = () => `
+<section id="faq" class="faq" data-screen-label="06 FAQ">
+  <div class="two-col faq__in">
+    <div>
+      ${eyebrow('06', 'FAQ')}
+      <h2 class="h2">Questions buyers <span class="accent">ask first.</span></h2>
+      <p class="faq__lede">Anything else goes straight to Todd.</p>
+      <div class="faq__contact"><a href="${TEL}">${PHONE}</a><a href="mailto:${EMAIL}">${EMAIL}</a></div>
+    </div>
+    <div class="faq__list">
+      ${FAQS.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('\n      ')}
+    </div>
+  </div>
+</section>`;
+
+S.availability = () => {
+  const units = [];
+  const w = 41 / 6;
+  const box = (x, y, ww, h) => `left:${+x.toFixed(3)}%;top:${y}%;width:calc(${+ww.toFixed(3)}% - 3px);height:calc(${h}% - 3px)`;
+  for (let i = 0; i < 12; i++) {
+    const num = i + 1, b = i < 6 ? 'A' : 'B', x = (i < 6 ? 7 : 52) + (i % 6) * w, st = HOMESITES[num];
+    units.push(`<button class="sp-unit" type="button" style="${box(x, 66, w, 16)}" data-unit="${pad2(num)}" data-building="${b}" data-status="${st}" aria-pressed="false" aria-label="Homesite ${num}, ${STATUS_LABEL[st]}">${pad2(num)}</button>`);
+  }
+  const fut = [];
+  for (let i = 0; i < 4; i++) fut.push(box(7, 9 + i * 12, 12, 12), box(81, 9 + i * 12, 12, 12));
+  for (let i = 0; i < 5; i++) fut.push(box(25 + i * 10, 7, 10, 16));
+  const avail = Object.values(HOMESITES).filter(v => v === 'available').length;
+  const legend = [['Available', '#8A5A3B'], ['Reserved', '#E3C9A8'], ['Under contract', '#6A6357'], ['Sold', '#201D19']];
+  return `
+<section id="availability" class="band band--sand" data-screen-label="07 Availability">
+  <div class="wrap">
+    <div class="section-head avail-head">
+      <div>
+        ${eyebrow('07', 'Availability')}
+        <h2 class="h2">${cta} homes now. <span class="accent">Choose yours first.</span></h2>
+      </div>
+      <p class="copy">Phase 1 releases ${cta} Type A homes for sale: new construction North Corktown townhomes, just north of Corktown. Pick your homesite on the site plan, see what is open, and reserve it. The earlier you reserve, the more homesites you choose from.</p>
+    </div>
+    <div class="avail-grid">
+      <div>
+        <div class="siteplan-frame">
+          <div class="siteplan" data-siteplan>
+            <div class="sp-court"><span>Private parking court</span></div>
+            <div class="sp-drive"></div>
+            ${fut.map(s => `<div class="sp-future" style="${s}" aria-hidden="true"></div>`).join('\n            ')}
+            ${units.join('\n            ')}
+            <div class="sp-commercial"><i></i><span>Commercial, ground floor</span></div>
+            <div class="sp-street"><span>Trumbull Ave</span></div>
+            <span class="sp-side sp-side--l">Sycamore</span>
+            <span class="sp-side sp-side--r">Ash</span>
+          </div>
+        </div>
+        <div class="legend">
+          ${legend.map(([l, c]) => `<span><i style="background:${c}"></i>${l}</span>`).join('\n          ')}
+          <span><i style="background:#FAF8F4;border:1px dashed #C9BBA6"></i>Future release</span>
+        </div>
+      </div>
+      <div class="unit-card" aria-live="polite">
+        <div class="unit-card__top">
+          <p class="unit-card__kicker" data-unit-kicker>Phase 1</p>
+          <span class="chip" data-unit-status hidden></span>
+        </div>
+        <h3 data-unit-title>Select a homesite on the site plan.</h3>
+        <div class="unit-card__counts">
+          <div><p class="stat__n" data-avail-count>${avail}</p><p class="stat__l">Available</p></div>
+          <div><p class="stat__n" style="color:#201D19">12</p><p class="stat__l">Homes in Phase 1</p></div>
+        </div>
+        <div class="specs">
+          <div><span>Bedrooms / baths</span><span>3 / 2</span></div>
+          <div><span>Living area</span><span>1,535 sq ft</span></div>
+          <div><span>Levels</span><span>Three</span></div>
+          <div><span>Parking</span><span>Private parking court</span></div>
+          <div><span>Outdoor</span><span>Private rooftop terrace</span></div>
+          <div><span>Property tax</span><span>NEZ-NC Abatement Eligible</span></div>
+        </div>
+        <p class="unit-card__copy">3 bed, 2 bath, 1,535 sq ft across three levels. Private rooftop terrace and parking in the private court. The ${cta} homes for sale face Trumbull in the two front buildings.</p>
+        <a class="btn btn--dark btn--block" href="#reserve" data-reserve-unit>Reserve Your Home</a>
+      </div>
+    </div>
+  </div>
+</section>`;
+};
+
+S.privacy = () => `
+<section id="privacy" class="privacy" data-screen-label="Privacy">
+  <p class="privacy__kicker">Pending legal review</p>
+  <p class="copy">The Privacy Policy text is being finalized and will appear here before launch. Questions about your information: <a href="mailto:${EMAIL}">${EMAIL}</a>.</p>
+</section>`;
+
+const reserve = () => `
+<section id="reserve" class="reserve" data-screen-label="Reserve">
+  <img loading="lazy" decoding="async" src="${img('court-low.webp')}" alt="">
+  <div class="reserve__shade"></div>
+  <div class="reserve__in">
+    <p class="reserve__kicker">Phase 1 · ${cta} homes for sale</p>
+    <h2>Reserve Your Home. <span class="accent-gold">Only ${cta} left.</span></h2>
+    <p class="reserve__lede">Name, email, phone. That's it. The full package (floor plans, finishes, pricing, availability) comes straight to you, and Todd follows up personally.</p>
+    <form data-reserve-form novalidate>
+      <p class="reserve__msg" role="alert" data-form-error hidden>Something went wrong. Please call Todd at ${PHONE}.</p>
+      <p class="reserve__msg" data-form-note hidden></p>
+      <input type="hidden" name="interest" value="Reserve">
+      <div class="reserve__fields">
+        <input required name="name" autocomplete="name" placeholder="Full name" aria-label="Full name">
+        <input required type="email" name="email" autocomplete="email" placeholder="Email" aria-label="Email">
+        <input required type="tel" name="phone" autocomplete="tel" placeholder="Phone" aria-label="Phone">
+        <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+      </div>
+      <button class="btn btn--gold" type="submit">Reserve Your Home</button>
+      <p class="reserve__legal">By submitting, you agree to be contacted about Trumbull North. See our <a href="/privacy">Privacy Policy</a>.</p>
+    </form>
+    <div class="reserve__contact">
+      <span>Todd · <a href="mailto:${EMAIL}">${EMAIL}</a></span>
+      <a href="${TEL}">${PHONE}</a>
+      <span>${ADDRESS}</span>
+    </div>
+  </div>
+</section>`;
+
+const NAV_LINKS = [['residences', 'Residences'], ['availability', 'Availability'], ['neighborhood', 'Neighborhood'], ['progress', 'Progress']];
+const nav = key => `
+<nav class="nav" aria-label="Main">
+  <div class="nav__in">
+    <a class="logo" href="/" aria-label="Trumbull North home">${LOGO_MARK}<span class="logo__text"><span class="logo__name">TRUMBULL NORTH</span><span class="logo__sub">NORTH CORKTOWN · DETROIT</span></span></a>
+    <div class="nav__links">
+      ${NAV_LINKS.map(([k, l]) => `<a href="/${k}"${k === key ? ' aria-current="page"' : ''}>${l}</a>`).join('\n      ')}
+      <a class="nav__cta" href="#reserve">Reserve Your Home</a>
+    </div>
+    <div class="nav__compact">
+      <a class="nav__compact-cta" href="#reserve">Reserve</a>
+      <a class="nav__phone" href="${TEL}">${PHONE}</a>
+    </div>
+  </div>
+</nav>`;
+
+const footer = () => `
+<footer class="footer">
+  <div class="footer__in">
+    <div class="footer__top">
+      <div class="footer__addr">
+        <span class="footer__name">TRUMBULL NORTH</span>
+        <span>${ADDRESS}</span>
+        <span>One ground-floor commercial space on Trumbull. <a href="#reserve" data-interest="Commercial space">Inquire.</a></span>
+      </div>
+      <nav class="footer__nav" aria-label="Footer">
+        <a href="/residences">Residences</a><a href="/availability">Availability</a>
+        <a href="/neighborhood">Neighborhood</a><a href="/progress">Progress</a>
+        <a href="/gallery">Gallery</a><a href="/about">About</a>
+        <a href="/faq">FAQ</a><a href="/privacy">Privacy Policy</a>
+      </nav>
+    </div>
+    <div class="footer__partners"><span>Bondy's Construction &amp; Design</span><span>AK Capital</span><span>4545 Architecture</span></div>
+    ${SETTINGS.socials.length ? `<div class="footer__social">${SETTINGS.socials.map(([l, u]) => `<a href="${esc(u)}" rel="noopener">AK Capital on ${esc(l)}</a>`).join('')}</div>` : ''}
+    <div class="footer__legal">
+      <p>Renderings are illustrative. Pricing, availability and specifications are subject to change without notice. Straight-line distances from 3331 Trumbull. Driving and walking routes are longer.</p>
+      <p class="footer__eho"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Equal Housing Opportunity logo"><path d="M12 2 1.5 10.5h2.6V22h15.8V10.5h2.6Z" fill="none" stroke="#B5A998" stroke-width="1.6"/><rect x="7.5" y="12" width="9" height="2" fill="#B5A998"/><rect x="7.5" y="16" width="9" height="2" fill="#B5A998"/></svg>Equal Housing Opportunity · © 2026 Trumbull North</p>
+    </div>
+  </div>
+</footer>`;
+
+const chrome = () => `
+<a class="sticky-cta" href="#reserve" data-sticky-cta>Reserve Your Home · Only ${cta} left</a>
+<div class="consent" role="dialog" aria-label="Cookie notice" data-consent hidden>
+  <p>We use cookies for analytics and advertising, only with your consent. See our <a href="/privacy">Privacy Policy</a>.</p>
+  <div class="consent__btns"><button class="consent__no" type="button" data-consent-choice="denied">Decline</button><button class="consent__yes" type="button" data-consent-choice="granted">Accept</button></div>
+</div>
+${SETTINGS.showDraftNotice ? '<div class="draft-note" aria-hidden="true">Draft renderings · pending construction partner + CEO review</div>' : ''}`;
+
+// ---------------------------------------------------------------------------
+const FAVICON = '/assets/favicon.svg';
+const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Hanken+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">`;
+
+const jsonld = (key, sections) => {
+  const addr = { '@type': 'PostalAddress', streetAddress: '3331 Trumbull St', addressLocality: 'Detroit', addressRegion: 'MI', postalCode: '48208', addressCountry: 'US' };
+  const graph = [
+    { '@type': 'Organization', '@id': ORIGIN + '/#org', name: 'Trumbull North', url: ORIGIN + '/', telephone: '+1-313-320-8780', email: EMAIL, address: addr },
+    { '@type': 'Residence', '@id': ORIGIN + '/#residence', name: 'Trumbull North Type A Townhome', description: 'New construction North Corktown townhome for sale near Corktown, Detroit. 3 bedroom townhome with 2 baths, 1,535 sq ft across three levels and a private rooftop terrace.', address: addr, geo: { '@type': 'GeoCoordinates', latitude: 42.3418, longitude: -83.0712 }, numberOfRooms: 3, numberOfBedrooms: 3, numberOfBathroomsTotal: 2, floorSize: { '@type': 'QuantitativeValue', value: 1535, unitCode: 'FTK' }, containedInPlace: { '@type': 'Place', name: 'North Corktown, Detroit' } }
+  ];
+  if (sections.includes('faq')) graph.push({ '@type': 'FAQPage', mainEntity: FAQS.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) });
+  return `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })}</script>`;
+};
+
+const clientSettings = () => `<script>window.TN = ${JSON.stringify({ ctaCount: N, ga4Id: SETTINGS.ga4Id, metaPixelId: SETTINGS.metaPixelId, statusSheetUrl: SETTINGS.statusSheetUrl, formEndpoint: SETTINGS.formEndpoint, thankYouUrl: SETTINGS.thankYouUrl })};</script>`;
+
+const head = ({ title, desc, url, robots = 'index, follow', extra = '' }) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${url}">
+<meta name="robots" content="${robots}">
+<meta name="theme-color" content="#FAF8F4">
+<link rel="icon" type="image/svg+xml" href="${FAVICON}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Trumbull North">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${ORIGIN}/assets/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="${ORIGIN}/assets/img/og.jpg">
+${FONTS}
+<link rel="stylesheet" href="/css/site.css">
+${extra}
+</head>`;
+
+function page(key) {
+  const pg = PAGES[key];
+  const sections = pg.sections.split(' ');
+  const url = ORIGIN + pg.path;
+  const pageHead = key === 'home' ? '' : `
+<header class="page-head" data-screen-label="Page header">
+  <div class="page-head__in">
+    <p class="eyebrow"><span class="eyebrow__rule"></span>${pg.eyebrow}</p>
+    <h1>${pg.h1}</h1>
+  </div>
+</header>`;
+  return `${head({ title: pg.title, desc: pg.desc, url, extra: jsonld(key, sections) + '\n' + clientSettings() })}
+<body data-page="${key}">
+${nav(key)}
+<main>${pageHead}
+${sections.map(s => S[s]()).join('\n')}
+${reserve()}
+</main>
+${footer()}
+${chrome()}
+<script src="/js/site.js" defer></script>
+</body>
+</html>
+`;
+}
+
+const solo = ({ title, desc, url, robots, h1, accent, body, extra = '' }) => `${head({ title, desc, url, robots })}
+<body>
+<main class="solo">
+  <img src="${img('court-low.webp')}" alt="">
+  <div class="reserve__shade"></div>
+  <div class="solo__in">
+    <a class="solo__brand" href="/">TRUMBULL NORTH</a>
+    <h1>${h1} <span>${accent}</span></h1>
+    <p>${body}</p>
+    ${extra}
+  </div>
+</main>
+</body>
+</html>
+`;
+
+function write(rel, html) {
+  const p = join(ROOT, rel);
+  mkdirSync(dirname(p), { recursive: true });
+  writeFileSync(p, html);
+  console.log('wrote', rel);
+}
+
+for (const key of Object.keys(PAGES)) write(key === 'home' ? 'index.html' : key + '.html', page(key));
+
+write('thank-you.html', solo({
+  title: 'Thank you | Trumbull North', desc: 'Thank you for your interest in Trumbull North.', url: ORIGIN + '/thank-you', robots: 'noindex, nofollow',
+  h1: 'Thank you.', accent: "It's on its way.",
+  body: 'The full package (floor plans, finishes, pricing, availability) is coming to your inbox, and Todd will follow up personally.',
+  extra: `<div class="solo__links"><a href="${TEL}">${PHONE}</a><a href="mailto:${EMAIL}">${EMAIL}</a></div>
+    <a class="btn btn--ghost" href="/neighborhood">Explore the neighborhood</a>`
+}));
+
+write('404.html', solo({
+  title: 'Page not found | Trumbull North', desc: 'Page not found.', url: ORIGIN + '/404', robots: 'noindex, nofollow',
+  h1: 'Page not found.', accent: 'The homes are still here.',
+  body: '12 new construction townhomes for sale in North Corktown, Detroit.',
+  extra: '<a class="btn btn--ghost" href="/">Back to Trumbull North</a>'
+}));
+
+const today = new Date().toISOString().slice(0, 10);
+write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${Object.values(PAGES).map(p => `  <url><loc>${ORIGIN}${p.path}</loc><lastmod>${today}</lastmod></url>`).join('\n')}
+</urlset>
+`);
+write('robots.txt', `User-agent: *
+Disallow: /thank-you
+Disallow: /scripts/
+Disallow: /portal/
+
+Sitemap: ${ORIGIN}/sitemap.xml
+`);

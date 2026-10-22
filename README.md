@@ -1,37 +1,47 @@
 # 3331 Trumbull
 
-Detroit townhome development — $700K capital raise by AK Capital Investments LLC × Bondy Construction & Design.
+Trumbull North: 12 new construction townhomes for sale at 3331 Trumbull St, North Corktown, Detroit. AK Capital with Bondy's Construction & Design, designed by 4545 Architecture.
 
 This repo holds both sites:
 
 | Path | What | Deployed |
 | --- | --- | --- |
-| repo root | Public marketing site (trumbullnorth.com) | Existing Vercel project, serves the repo root as a static site |
+| repo root | Public sales site (trumbullnorth.com) for the 12 Phase 1 homes | Existing Vercel project, serves the repo root as a static site |
 | `portal/` | Private investor portal — Next.js + Supabase. Investor documents are executed in DocuSign and uploaded here from the back office. | Separate Vercel project with Root Directory set to `portal/` |
 
-## Marketing site (repo root)
+## Sales site (repo root)
 
-Plain static HTML/CSS/JS — no build step. Push to the default branch and Vercel deploys it.
+Static HTML, one real file per page, no build step on Vercel. Rebuilt from the Claude Design handoff (Trumbull North Site v2). No investor content belongs on this site.
 
-The site is a gated investor page: a public project showcase (vision, renderings, plans, builder) with the offering terms, pricing, comps, document library, and indication-of-interest form locked behind an access code.
+The pages are generated. **Edit `scripts/build-site.mjs`, run `node scripts/build-site.mjs`, commit the regenerated files.** Don't hand-edit the `.html` files at the root; the next build overwrites them.
 
-| File | Edit this for… |
+| File | What it holds |
 | --- | --- |
-| `index.html` | All page copy and sections (hero, vision, milestones, renderings rail, plans, builder, gated investor area, footer). Section layout/colors are inline on the elements. Fonts (Instrument Serif + Jost) load from Google Fonts via `<link>` in the head. |
-| `css/site.css` | Base styles, access-gate show/hide, hover/focus states, renderings rail, lightbox + PDF overlays, responsive breakpoints |
-| `js/main.js` | Access gate, rail arrows, lightbox, PDF viewer, interest form (composes a mailto — nothing is stored) |
-| `assets/images/` | Site plan and renderings (referenced by name from `index.html`) |
-| `assets/docs/` | PDFs listed in the investor document library |
-| `css/fonts.css`, `assets/fonts/` | Legacy self-hosted fonts (Archivo, Playfair) — currently unused but harmless |
-| `site-model/` | The live 3D site model (three.js from CDN + `three-d-stage.js` viewer + the block geometry inline in `site-model/index.html`) — currently not linked from the page |
+| `scripts/build-site.mjs` | All copy, data and settings: `SETTINGS` (video paths, draft notice, GA4/Meta IDs, status sheet, form endpoint, socials), `POIS`, `FAQS`, `GALLERY`, `HOMESITES`, `PLAN_LEVELS`, `PAGES` (title/description per route), and every section's markup |
+| `index.html`, `residences.html`, … `thank-you.html`, `404.html`, `sitemap.xml`, `robots.txt` | Generated output. `vercel.json` sets `cleanUrls`, so `/residences` serves `residences.html` |
+| `css/site.css` | Design tokens and all styles |
+| `js/site.js` | Hero film, time-lapse, reserve form (FormSubmit → `/thank-you`), plan tabs, map filters, site plan, status sheet, consent + GA4/Meta |
+| `assets/img/` | Renderings, optional floor plan, og.jpg |
+| `assets/video/` | Hero film: `hero-1080` and `hero-720`, each as `.webm` (VP9) and `.mp4` (H.264) |
+| `site-model/` | Live 3D site model — not linked from the site |
 
-Common edits:
+Common edits (all in `scripts/build-site.mjs`, then rebuild):
 
-- **Change the access code** — `ACCESS_CODE` at the top of `js/main.js` (case-insensitive). Note the check is client-side: it screens casual visitors only. Anyone can read the code in the JS source and the PDFs in `assets/docs/` are fetchable by direct URL; for real protection move documents behind the portal.
-- **Change the contact email** — it appears in `index.html` (gate + footer) and at the top of `js/main.js`.
-- **Swap a rendering** — replace the file in `assets/images/` keeping the same name, or update the `src` and matching `data-full` attribute in `index.html`.
-- **Add a document** — drop the PDF in `assets/docs/` and copy an existing `.doc-row` block in `index.html` (or convert a "Coming soon" row to a live `<a class="doc-row doc-open">`).
-- **Update comps / pricing / terms** — the terms cards, comp table rows, homes cards, and FAQ are plain repeated HTML blocks in `index.html`; copy an existing block and edit the text.
+- **Mark a homesite reserved/sold** — `HOMESITES`, or set `statusSheetUrl` to a published Google Sheet CSV (`homesite,status` rows plus an optional `cta_count,N` row) and edit the sheet instead.
+- **Approve renderings** — set `showDraftNotice: false`.
+- **Swap the hero film** — encode the new master to the same four file names in `assets/video/` (commands below). An empty `heroVideo` turns the film off and leaves the facade image.
+- **Tracking** — set `ga4Id` / `metaPixelId`. The consent banner and tags only appear once an ID is set.
+
+Hero film encodes (from the master file):
+
+```
+ffmpeg -i master.mov -an -vf "scale=1920:-2:flags=lanczos" -c:v libx264 -preset slow -crf 22 -pix_fmt yuv420p -movflags +faststart assets/video/hero-1080.mp4
+ffmpeg -i master.mov -an -vf "scale=1920:-2:flags=lanczos" -c:v libvpx-vp9 -b:v 0 -crf 36 -row-mt 1 assets/video/hero-1080.webm
+ffmpeg -i master.mov -an -vf "scale=1280:-2" -c:v libx264 -preset slow -crf 23 -pix_fmt yuv420p -movflags +faststart assets/video/hero-720.mp4
+ffmpeg -i master.mov -an -vf "scale=1280:-2" -c:v libvpx-vp9 -b:v 0 -crf 36 -row-mt 1 assets/video/hero-720.webm
+```
+
+The reserve form posts to FormSubmit for todd@theloftwarehouse.com. Todd must click FormSubmit's one-time activation email; send one test submission from the live domain to trigger it.
 
 ## Investor portal (`portal/`)
 
