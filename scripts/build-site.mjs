@@ -14,7 +14,7 @@ const ORIGIN = 'https://www.trumbullnorth.com';
 // Settings. Tracking IDs and the status sheet are read in the browser.
 const SETTINGS = {
   ctaCount: 12,
-  showDraftNotice: true,                // turn off once renderings are approved
+  showDraftNotice: false,               // 'Draft renderings · pending review' tag; removed at Kevin's request (Oct 22)
   // Hero build sequence: frames 001..N.webp in /assets/build/lg (desktop) and /sm (phones), cut from Kevin's film at 6 fps from about 1.3s
   // (after the blurred machines) to the end. Stage values are where each stage starts, as a fraction of the sequence.
   build: { frames: 82, stages: [['Foundations', 0], ['Framing', 0.16], ['Weather wrap', 0.40], ['Exterior', 0.56], ['Complete', 0.78]] },
@@ -76,14 +76,14 @@ const FAQS = [
   ['Is NEZ-NC the same as the NEZ Homestead program?', 'No. NEZ-NC applies to qualifying new construction homes like Trumbull North. The NEZ Homestead program is separate and covers existing homes. Todd can confirm how NEZ-NC applies to your purchase.']
 ];
 const GALLERY = [
-  ['g-frontage.webp', 'The Trumbull frontage · Rendering', 'Rendering of the Trumbull frontage: ivory panel, warm grey brick, charcoal siding and cedar'],
-  ['g-porches.webp', 'Front porches · Rendering', 'Rendering of brick-pier front porches on new North Corktown townhomes for sale'],
+  ['g-frontage.webp', 'The Trumbull frontage', 'Rendering of the Trumbull frontage: ivory panel, warm grey brick, charcoal siding and cedar'],
+  ['g-porches.webp', 'Front porches', 'Rendering of brick-pier front porches on new North Corktown townhomes for sale'],
   ['g-entries.webp', 'Entries and the court', 'Rendering of townhome entries with the private parking court behind'],
-  ['g-court-entry.webp', 'Into the private court · Rendering', 'Rendering of the drive into the private parking court'],
+  ['g-court-entry.webp', 'Into the private court', 'Rendering of the drive into the private parking court'],
   ['g-garages.webp', 'The private parking court', 'Rendering of the private parking court'],
-  ['g-rooftops.webp', 'Rooftop terraces · Rendering', 'Rendering of private rooftop terraces above the court, Detroit beyond'],
-  ['g-rooftop-view.webp', 'The view from your rooftop · Rendering', 'Rendering of the view across the block from a private rooftop terrace'],
-  ['g-aerial.webp', 'The full block from above · Rendering', 'Aerial rendering of Trumbull North: five buildings around a private court, two fronting Trumbull']
+  ['g-rooftops.webp', 'Rooftop terraces', 'Rendering of private rooftop terraces above the court, Detroit beyond'],
+  ['g-rooftop-view.webp', 'The view from your rooftop', 'Rendering of the view across the block from a private rooftop terrace'],
+  ['g-aerial.webp', 'The full block from above', 'Aerial rendering of Trumbull North: five buildings around a private court, two fronting Trumbull']
 ];
 // Built-in homesite statuses (the status sheet overrides these): available | reserved | contract | sold
 const HOMESITES = { 1: 'available', 2: 'available', 3: 'available', 4: 'available', 5: 'available', 6: 'available', 7: 'available', 8: 'available', 9: 'available', 10: 'available', 11: 'available', 12: 'available' };
@@ -104,7 +104,7 @@ const PAGES = {
   neighborhood: { path: '/neighborhood', sections: 'neighborhood', eyebrow: 'The Neighborhood', h1: 'North Corktown, Detroit: homes near Michigan Central', title: 'Living in North Corktown, Detroit | Homes Near Michigan Central | Trumbull North', desc: 'About a mile to Michigan Central, Corktown and Little Caesars Arena. The Stadium District, Theatre District, CBD and Riverwalk nearby. Distances are estimates.' },
   progress: { path: '/progress', sections: 'progress', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
   faq: { path: '/faq', sections: 'faq', eyebrow: 'FAQ', h1: 'Questions about Trumbull North', title: 'FAQ | NEZ-NC, Pricing and Buying | Trumbull North', desc: 'Answers on NEZ-NC Property Tax Abatement, pricing, timing and buying a new construction townhome in North Corktown, Detroit.' },
-  gallery: { path: '/gallery', sections: 'gallery', eyebrow: 'Gallery', h1: 'Trumbull North renderings', title: 'Gallery | Renderings of Trumbull North Townhomes, Detroit', desc: 'Renderings of Trumbull North: the Trumbull frontage, front porches, private parking court and rooftop terraces with the Detroit skyline.' },
+  gallery: { path: '/gallery', sections: 'gallery', eyebrow: 'Gallery', h1: 'Trumbull North gallery', title: 'Gallery | Trumbull North Townhomes, Detroit', desc: 'Trumbull North: the Trumbull frontage, front porches, private parking court and rooftop terraces with the Detroit skyline.' },
   about: { path: '/about', sections: 'vision', eyebrow: 'About', h1: 'About Trumbull North', title: 'About | 3331 Trumbull, North Corktown, Detroit | Trumbull North', desc: "Trumbull North at 3331 Trumbull: five buildings by 4545 Architecture, built by Bondy's Construction, developed by AK Capital." },
   privacy: { path: '/privacy', sections: 'privacy', eyebrow: 'Legal', h1: 'Privacy Policy', title: 'Privacy Policy | Trumbull North', desc: 'Privacy Policy for trumbullnorth.com.' }
 };
@@ -144,7 +144,7 @@ S.hero = () => {
         </div>
       </div>
       <div class="build" data-build-ui>
-        <div class="build__head"><span class="build__hint">Scroll or drag to build Trumbull North</span><span class="build__now" data-build-now>Foundations</span><span class="build__tag">Rendering</span></div>
+        <div class="build__head"><span class="build__hint">Scroll or drag to build Trumbull North</span><span class="build__now" data-build-now>Foundations</span></div>
         <div class="build__stages">${stages}</div>
         <div class="build__bar"><i class="build__fill"></i><input class="build__range" type="range" min="0" max="1000" value="0" aria-label="Construction stage, from foundations to complete"></div>
       </div>
@@ -181,7 +181,7 @@ S.vision = () => `
   </div>
   <figure class="wide-fig">
     <img loading="lazy" decoding="async" src="${img('g-corner.webp')}" width="2054" height="766" alt="Rendering of the Trumbull North corner on Trumbull, with ground-floor glazing and tree-lined sidewalks">
-    <figcaption class="cap">The corner on Trumbull · Rendering</figcaption>
+    <figcaption class="cap">The corner on Trumbull</figcaption>
   </figure>
 </section>`;
 
@@ -189,7 +189,6 @@ S.rooftop = () => `
 <section class="rooftop" data-screen-label="Rooftop statement">
   <div class="rooftop__media">
     <img loading="lazy" decoding="async" src="${img('rooftop.webp')}" alt="Rendering of Detroit townhomes with private rooftop terraces and the skyline beyond">
-    <span class="tag">Your rooftop · Rendering</span>
   </div>
   <blockquote class="rooftop__quote">
     <p class="rooftop__line">Sunset dinners. Morning coffee. Fireworks over the city. All from a rooftop that belongs to no one but you.</p>
@@ -213,7 +212,6 @@ S.residences = () => {
     <div class="res-grid">
       <div class="res-photo">
         <img src="${img('facade.webp')}" alt="Rendering of Trumbull North townhomes on Trumbull: ivory panel, warm grey brick, charcoal siding and cedar" loading="lazy" decoding="async">
-        <span class="label-light">Trumbull frontage · Rendering</span>
       </div>
       <div class="res-card">
         <div class="res-card__top">
@@ -255,7 +253,7 @@ S.residences = () => {
         <a class="btn btn--dark" href="#reserve" data-interest="Floor plans">Ask about floor plans</a>
         <figure class="plans__bath">
           <img loading="lazy" decoding="async" src="${img('bath.webp')}" alt="Rendering of a bath with a walk-in glass shower and wood vanity">
-          <figcaption class="cap">Bath · Rendering</figcaption>
+          <figcaption class="cap">Bath</figcaption>
         </figure>
       </div>
     </div>
@@ -277,7 +275,7 @@ S.gallery = () => `
       <button class="gallery__arrow" type="button" data-strip="1" aria-label="Next image">→</button>
     </div>
   </div>
-  <div class="strip" data-strip-track tabindex="0" aria-label="Renderings, scroll sideways">
+  <div class="strip" data-strip-track tabindex="0" aria-label="Gallery, scroll sideways">
     ${GALLERY.map(([f, cap, alt], i) => `<figure>
       <img src="${img(f)}" alt="${esc(alt)}" loading="lazy" decoding="async">
       <figcaption><span>${cap}</span><span>${pad2(i + 1)} / ${pad2(GALLERY.length)}</span></figcaption>
@@ -392,7 +390,7 @@ S.progress = () => {
     </div>
     <figure class="framed">
       <div class="framed__box"><img loading="lazy" decoding="async" src="${img('aerial.webp')}" alt="Aerial rendering of the finished block: five buildings around a private court, two fronting Trumbull"></div>
-      <figcaption class="cap">The full block from above · Rendering</figcaption>
+      <figcaption class="cap">The full block from above</figcaption>
     </figure>
   </div>
 </section>`;
