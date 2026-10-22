@@ -14,32 +14,15 @@
   // Hero film: play muted inline, fade in over the facade image once frames arrive.
   var hero = $('[data-hero-video]');
   if (hero) {
-    var tag = $('[data-hero-tag]');
     hero.muted = true;
     hero.addEventListener('playing', function () {
       hero.classList.add('is-playing');
-      if (tag && tag.dataset.videoLabel) tag.textContent = tag.dataset.videoLabel;
     });
     if (!reduceMotion) {
       hero.preload = 'auto';
       var p = hero.play();
       if (p && p.catch) p.catch(function () {});
     }
-  }
-
-  // Time-lapse: play while at least half visible, muted.
-  var inview = $$('video[data-inview]');
-  if (inview.length && 'IntersectionObserver' in window) {
-    var vio = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        var v = e.target; v.muted = true;
-        if (e.isIntersecting && e.intersectionRatio >= 0.5 && !reduceMotion) {
-          if (v.preload === 'none') v.preload = 'auto';
-          var p = v.play(); if (p && p.catch) p.catch(function () {});
-        } else if (!v.paused) v.pause();
-      });
-    }, { threshold: [0, 0.5] });
-    inview.forEach(function (v) { vio.observe(v); });
   }
 
   // Mobile sticky bar: only after scrolling past the hero (or one screen on pages without one).

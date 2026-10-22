@@ -16,7 +16,6 @@ const SETTINGS = {
   ctaCount: 12,
   showDraftNotice: true,                // turn off once renderings are approved
   heroVideo: '/assets/video/hero',      // base path: -1080/-720 in .webm (VP9) and .mp4 (H.264). Empty hides the film.
-  timelapseVideo: '/assets/video/hero-1080',  // same base-path convention as heroVideo; empty shows "Coming soon"
   ga4Id: '',
   metaPixelId: '',
   statusSheetUrl: '',                   // published Google Sheet CSV: homesite,status and cta_count,N
@@ -96,11 +95,11 @@ const PLAN_LEVELS = [
 ];
 
 const PAGES = {
-  home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez progress timelapse about faq availability', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
+  home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez progress about faq availability', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
   residences: { path: '/residences', sections: 'residences rooftop', eyebrow: 'The Residences', h1: '3 bedroom townhomes in North Corktown, Detroit', title: 'Type A Townhomes | 3 Bedroom New Construction in North Corktown, Detroit | Trumbull North', desc: 'The Type A residence: 3 bed, 2 bath, 1,535 sq ft across three levels and a private rooftop terrace. New townhomes in Detroit by 4545 Architecture.' },
   availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 Corktown-area townhomes for sale in Phase 1 at 3331 Trumbull. Pick your homesite on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
   neighborhood: { path: '/neighborhood', sections: 'neighborhood', eyebrow: 'The Neighborhood', h1: 'North Corktown, Detroit: homes near Michigan Central', title: 'Living in North Corktown, Detroit | Homes Near Michigan Central | Trumbull North', desc: 'About a mile to Michigan Central, Corktown and Little Caesars Arena. The Stadium District, Theatre District, CBD and Riverwalk nearby. Distances are estimates.' },
-  progress: { path: '/progress', sections: 'progress timelapse about', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
+  progress: { path: '/progress', sections: 'progress about', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
   faq: { path: '/faq', sections: 'faq', eyebrow: 'FAQ', h1: 'Questions about Trumbull North', title: 'FAQ | NEZ-NC, Pricing and Buying | Trumbull North', desc: 'Answers on NEZ-NC Property Tax Abatement, pricing, timing and buying a new construction townhome in North Corktown, Detroit.' },
   gallery: { path: '/gallery', sections: 'gallery', eyebrow: 'Gallery', h1: 'Trumbull North renderings', title: 'Gallery | Renderings of Trumbull North Townhomes, Detroit', desc: 'Renderings of Trumbull North: the Trumbull frontage, front porches, private parking court and rooftop terraces with the Detroit skyline.' },
   about: { path: '/about', sections: 'vision about', eyebrow: 'About', h1: 'About Trumbull North', title: 'About | 3331 Trumbull, North Corktown, Detroit | Trumbull North', desc: "Trumbull North at 3331 Trumbull: five buildings by 4545 Architecture, built by Bondy's Construction, developed by AK Capital." },
@@ -114,7 +113,7 @@ const pad2 = n => String(n).padStart(2, '0');
 const N = SETTINGS.ctaCount;
 const cta = `<span data-cta-count>${N}</span>`;
 
-const eyebrow = (num, label, gold) => `<p class="eyebrow${gold ? ' eyebrow--gold' : ''}">${num ? `<span class="eyebrow__num">№ ${num}</span>` : ''}<span class="eyebrow__rule"></span>${label}</p>`;
+const eyebrow = (num, label, gold) => `<p class="eyebrow${gold ? ' eyebrow--gold' : ''}">${label}</p>`;
 const LOGO_MARK = '<svg width="32" height="32" viewBox="0 0 34 34" aria-hidden="true"><rect x="0.5" y="0.5" width="33" height="33" fill="none" stroke="#201D19"/><rect x="5" y="22" width="11" height="5" fill="#8A5A3B"/><rect x="18" y="22" width="11" height="5" fill="#8A5A3B"/><rect x="5" y="7" width="4" height="12" fill="#201D19"/><rect x="25" y="7" width="4" height="12" fill="#201D19"/><rect x="12" y="7" width="10" height="4" fill="#201D19"/></svg>';
 
 const S = {};
@@ -125,35 +124,32 @@ S.hero = () => {
   const src = (size, media) => `<source src="${v}-${size}.webm" type='video/webm; codecs="vp9"'${media}>
       <source src="${v}-${size}.mp4" type="video/mp4"${media}>`;
   const video = v ? `
-    <video data-hero-video muted loop playsinline preload="metadata" poster="${img('facade.webp')}" aria-label="Film of Trumbull North rising from the cleared lot to the finished block">
+    <video data-hero-video muted loop playsinline preload="metadata" poster="${img('facade.webp')}" aria-hidden="true">
       ${src('720', ' media="(max-width: 900px)"')}
       ${src('1080', '')}
     </video>` : '';
-  const stat = (n, l, gold) => `<div class="hero__stat"><p class="hero__stat-n${gold ? ' hero__stat-n--gold' : ''}">${n}</p><p class="hero__stat-l">${l}</p></div>`;
+  const stat = (n, l) => `<div class="hero__stat"><p class="hero__stat-n">${n}</p><p class="hero__stat-l">${l}</p></div>`;
   return `
 <header class="hero" data-screen-label="Hero">
   <div class="hero__media">
     <img src="${img('facade.webp')}" fetchpriority="high" decoding="async" width="1885" height="834" alt="Rendering of Trumbull North, new construction North Corktown townhomes for sale on Trumbull">${video}
-    <span class="tag" data-hero-tag data-video-label="From cleared lot to finished block · Rendering">Trumbull frontage · Rendering</span>
+    <div class="hero__scrim"></div>
   </div>
-  <div class="hero__band">
-    <div>
-      <p class="hero__kicker"><span></span>3331 Trumbull. North Corktown, Detroit.</p>
-      <h1>Your own private rooftop, <span class="accent-gold">overlooking the Detroit skyline.</span></h1>
+  <div class="hero__content">
+    <p class="hero__kicker">3331 Trumbull · North Corktown, Detroit</p>
+    <h1>Your own private rooftop, <span class="accent-gold">overlooking the Detroit skyline.</span></h1>
+    <p class="hero__lede">Three-bedroom new construction townhomes for sale in North Corktown, designed by 4545 Architecture. A private rooftop terrace with every home.</p>
+    <div class="hero__ctas">
+      <a class="btn btn--gold" href="#reserve">Reserve Your Home</a>
+      <a class="btn btn--ghost" href="/availability">View Availability</a>
     </div>
-    <div class="hero__side">
-      <p class="hero__lede">Three-bedroom new construction townhomes for sale in North Corktown, designed by 4545 Architecture. A private rooftop terrace with every home.</p>
-      <div class="hero__ctas">
-        <a class="btn btn--light" href="/availability">View Availability</a>
-        <a class="btn btn--ghost" href="/residences">Tour the Residences</a>
-      </div>
-    </div>
+    <p class="hero__tag">Rendering</p>
   </div>
   <div class="hero__stats">
     <div class="hero__stats-in">
-      ${stat(cta, 'Homes for sale', true)}
+      ${stat(cta, 'Homes for sale')}
       ${stat('3 bed · 2 bath', 'Three levels, 1,535 sq ft')}
-      ${stat('NEZ-NC', 'Property Tax Abatement Eligible', true)}
+      ${stat('NEZ-NC', 'Property Tax Abatement Eligible')}
       ${stat('2027–28', 'Phase 1 move-ins, planned')}
     </div>
   </div>
@@ -382,32 +378,10 @@ S.progress = () => {
 </section>`;
 };
 
-S.timelapse = () => {
-  const v = SETTINGS.timelapseVideo;
-  return `
-<section id="timelapse" class="timelapse" data-screen-label="Time-lapse">
-  <div class="timelapse__in">
-    <div class="section-head timelapse__head">
-      <div>
-        ${eyebrow('', 'Time-lapse')}
-        <h2 class="h2">From cleared lot <span class="accent">to finished block.</span></h2>
-      </div>
-      <p class="copy">Watch Trumbull North rise from groundbreaking to move-in, frame by frame.</p>
-    </div>
-    <div class="tl-slot" data-video-slot="construction-timelapse">
-      <img loading="lazy" decoding="async" src="${img('lot.webp')}" alt="Aerial of the cleared Trumbull North site before construction">
-      ${v ? `<video poster="${img('lot.webp')}" data-inview muted playsinline controls preload="none" aria-label="Construction time-lapse of Trumbull North, from cleared lot to finished block"><source src="${v}.webm" type='video/webm; codecs="vp9"'><source src="${v}.mp4" type="video/mp4"></video>` : `<div class="tl-shade"></div>
-      <div class="tl-soon"><span class="tl-play" aria-hidden="true"><span></span></span><span class="tl-soon__label">Construction time-lapse · Coming soon</span></div>
-      <div class="tl-phases">${['Lot today', 'Foundations', 'Framing', 'Exterior', 'Move-in'].map(p => `<div><i></i><span>${p}</span></div>`).join('')}</div>`}
-    </div>
-  </div>
-</section>`;
-};
-
 S.about = () => `
 <section id="about" class="proof" data-screen-label="Proof">
   <div class="proof__in">
-    <p class="eyebrow"><span class="eyebrow__rule"></span>Built by people who build Detroit<span class="eyebrow__rule"></span></p>
+    <p class="eyebrow">Built by people who build Detroit</p>
     <p class="proof__line">Built by Bondy Construction &amp; Design with AK Capital Investments, designed by 4545 Architecture. Same builder as Sycamore Park, a block away and sold out.</p>
   </div>
 </section>`;
@@ -583,7 +557,7 @@ ${SETTINGS.showDraftNotice ? '<div class="draft-note" aria-hidden="true">Draft r
 const FAVICON = '/assets/favicon.svg';
 const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&amp;family=Hanken+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">`;
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,300..700&amp;display=swap" rel="stylesheet">`;
 
 const jsonld = (key, sections) => {
   const addr = { '@type': 'PostalAddress', streetAddress: '3331 Trumbull St', addressLocality: 'Detroit', addressRegion: 'MI', postalCode: '48208', addressCountry: 'US' };
@@ -632,7 +606,7 @@ function page(key) {
   const pageHead = key === 'home' ? '' : `
 <header class="page-head" data-screen-label="Page header">
   <div class="page-head__in">
-    <p class="eyebrow"><span class="eyebrow__rule"></span>${pg.eyebrow}</p>
+    <p class="eyebrow">${pg.eyebrow}</p>
     <h1>${pg.h1}</h1>
   </div>
 </header>`;
