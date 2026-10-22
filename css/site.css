@@ -169,6 +169,12 @@ input::placeholder { color: #9A9184; }
 .vision .copy + .copy { margin-bottom: 34px; }
 .vision .text-link { margin: -14px 0 34px; }
 .vision__stats { display: flex; gap: 36px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 26px; }
+.vision .h2 { margin-bottom: 0; }
+.vision__body { padding-top: 8px; }
+.wide-fig { margin-top: clamp(40px, 5vw, 72px); }
+.wide-fig img { width: 100%; height: auto; aspect-ratio: 2054 / 766; object-fit: cover; }
+.wide-fig figcaption { margin-top: 12px; }
+@media (max-width: 700px) { .wide-fig { margin-left: calc(-1 * var(--pad-x)); margin-right: calc(-1 * var(--pad-x)); } .wide-fig img { aspect-ratio: 4 / 3; object-position: 52% center; } .wide-fig figcaption { padding: 0 var(--pad-x); } }
 .fill-fig { display: flex; flex-direction: column; }
 .fill-fig img { width: 100%; flex: 1 1 auto; min-height: 340px; object-fit: cover; object-position: 30% center; }
 .fill-fig figcaption { margin-top: 12px; }

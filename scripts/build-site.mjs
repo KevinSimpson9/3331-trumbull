@@ -76,7 +76,6 @@ const FAQS = [
   ['Is NEZ-NC the same as the NEZ Homestead program?', 'No. NEZ-NC applies to qualifying new construction homes like Trumbull North. The NEZ Homestead program is separate and covers existing homes. Todd can confirm how NEZ-NC applies to your purchase.']
 ];
 const GALLERY = [
-  ['g-corner.webp', 'The corner on Trumbull · Rendering', 'Rendering of the corner townhome on Trumbull with floor-to-ceiling ground-floor glazing'],
   ['g-frontage.webp', 'The Trumbull frontage · Rendering', 'Rendering of the Trumbull frontage: ivory panel, warm grey brick, charcoal siding and cedar'],
   ['g-porches.webp', 'Front porches · Rendering', 'Rendering of brick-pier front porches on new North Corktown townhomes for sale'],
   ['g-entries.webp', 'Entries and the court', 'Rendering of townhome entries with the private parking court behind'],
@@ -168,6 +167,8 @@ S.vision = () => `
     <div>
       ${eyebrow('01', 'The Block')}
       <h2 class="h2">A whole block on Trumbull. <span class="accent">Twelve front doors on the street.</span></h2>
+    </div>
+    <div class="vision__body">
       <p class="copy">248 feet of frontage where Trumbull meets Sycamore and Ash. Every home parks off the street, in a private parking court inside the block.</p>
       <p class="copy">Michigan Central and Corktown's Michigan Avenue restaurants are each about a mile away. With the design finished and permits in hand, all that's left is choosing which address is yours.</p>
       <a class="text-link" href="/neighborhood">Explore the neighborhood →</a>
@@ -177,11 +178,11 @@ S.vision = () => `
         <div><p class="stat__n">${cta}</p><p class="stat__l">For sale now</p></div>
       </div>
     </div>
-    <figure class="fill-fig">
-      <img loading="lazy" decoding="async" src="${img('court.webp')}" width="1860" height="845" alt="Rendering of Trumbull North front entries along the street">
-      <figcaption class="cap">Front entries · Rendering</figcaption>
-    </figure>
   </div>
+  <figure class="wide-fig">
+    <img loading="lazy" decoding="async" src="${img('g-corner.webp')}" width="2054" height="766" alt="Rendering of the Trumbull North corner on Trumbull, with ground-floor glazing and tree-lined sidewalks">
+    <figcaption class="cap">The corner on Trumbull · Rendering</figcaption>
+  </figure>
 </section>`;
 
 S.rooftop = () => `
