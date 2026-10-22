@@ -347,6 +347,16 @@ input::placeholder { color: #9A9184; }
 .framed--plan .framed__box { flex: none; background: #fff; }
 .framed--plan .framed__box img { height: auto; min-height: 0; object-fit: contain; }
 
+/* Spec bar (under Progress) */
+.specbar { margin-top: clamp(48px, 5vw, 72px); background: var(--ivory); border: 1px solid var(--line); }
+.specbar__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.specbar__grid > div { padding: 20px clamp(14px, 1.4vw, 22px); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.specbar__v { font-family: var(--serif); font-weight: 600; font-size: clamp(18px, 1.5vw, 24px); line-height: 1.15; letter-spacing: -.02em; color: var(--cedar); }
+.specbar__l { margin-top: 4px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--body); }
+.specbar__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 32px; padding: 22px clamp(16px, 1.8vw, 26px); }
+.specbar__foot p { flex: 1 1 420px; font-size: 15px; line-height: 1.6; color: var(--body); }
+@media (max-width: 560px) { .specbar__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .specbar__foot .btn { width: 100%; } }
+
 /* 06 FAQ */
 .faq { background: var(--ivory); padding: clamp(64px, 7vw, 104px) var(--pad-x); border-top: 1px solid var(--line); }
 .faq__in { max-width: 1400px; margin: 0 auto; align-items: start; }

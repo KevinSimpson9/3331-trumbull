@@ -366,6 +366,21 @@ S.nez = () => `
   </div>
 </section>`;
 
+// Horizontal spec bar under the Progress section (same facts as the Availability card).
+const specBar = () => {
+  const avail = Object.values(HOMESITES).filter(v => v === 'available').length;
+  const items = [[`<span data-avail-count>${avail}</span>`, 'Available'], ['12', 'Homes in Phase 1'], ['3 / 2.5', 'Bedrooms / baths'], ['1,535 sq ft', 'Living area'], ['Three', 'Levels'], ['Private court', 'Parking'], ['Rooftop terrace', 'Outdoor, private'], ['NEZ-NC', 'Abatement eligible']];
+  return `<div class="specbar">
+    <div class="specbar__grid">
+      ${items.map(([v, l]) => `<div><p class="specbar__v">${v}</p><p class="specbar__l">${l}</p></div>`).join('\n      ')}
+    </div>
+    <div class="specbar__foot">
+      <p>3 bed, 2.5 bath, 1,535 sq ft across three levels. Private rooftop terrace and parking in the private court. The ${cta} homes for sale face Trumbull in the two front buildings.</p>
+      <a class="btn btn--dark" href="#reserve">Reserve Your Home</a>
+    </div>
+  </div>`;
+};
+
 S.progress = () => {
   const rows = [['June 2026', 'Permitting complete', 'Full construction set documented.'], ['Now', 'Pre-construction', 'Phase 1 reservations open.'], ['2026–27', 'Construction', 'Five buildings.'], ['2027–28', 'Move-ins', 'Phase 1 homes, planned.']];
   return `
@@ -392,6 +407,7 @@ S.progress = () => {
       <figcaption class="cap">SP1.1 · Architectural site plan · 4545 Architecture</figcaption>
     </figure>
   </div>
+  ${specBar()}
 </section>`;
 };
 

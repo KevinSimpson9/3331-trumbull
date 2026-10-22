@@ -283,8 +283,8 @@
   var units = $$('.sp-unit');
   var selected = null;
   function countAvailable() {
-    var el = $('[data-avail-count]');
-    if (el) el.textContent = units.filter(function (u) { return u.dataset.status === 'available'; }).length;
+    var n = units.filter(function (u) { return u.dataset.status === 'available'; }).length;
+    $$('[data-avail-count]').forEach(function (el) { el.textContent = n; });
   }
   units.forEach(function (u) {
     u.addEventListener('click', function () {
