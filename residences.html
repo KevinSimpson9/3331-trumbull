@@ -92,12 +92,14 @@
     <div class="plans" id="floor-plans">
       <div>
         <div class="plans__tabs" role="tablist" aria-label="Optional floor plan levels">
-          <button class="pill" role="tab" id="plan-tab-main" aria-controls="plan-main" aria-selected="true" tabindex="0" data-plan-tab="main">Living level</button>
+          <button class="pill" role="tab" id="plan-tab-ground" aria-controls="plan-ground" aria-selected="true" tabindex="0" data-plan-tab="ground">Ground level</button>
+          <button class="pill" role="tab" id="plan-tab-main" aria-controls="plan-main" aria-selected="false" tabindex="-1" data-plan-tab="main">Living level</button>
           <button class="pill" role="tab" id="plan-tab-upper" aria-controls="plan-upper" aria-selected="false" tabindex="-1" data-plan-tab="upper">Bedroom level</button>
           <button class="pill" role="tab" id="plan-tab-roof" aria-controls="plan-roof" aria-selected="false" tabindex="-1" data-plan-tab="roof">Rooftop</button>
         </div>
         <div class="plans__frame">
-          <div class="plans__panel" role="tabpanel" id="plan-main" aria-labelledby="plan-tab-main"><img loading="lazy" decoding="async" src="/assets/img/plan-main.webp" alt="Optional floor plan, living level"></div>
+          <div class="plans__panel" role="tabpanel" id="plan-ground" aria-labelledby="plan-tab-ground"><img loading="lazy" decoding="async" src="/assets/img/plan-ground.webp" alt="Optional floor plan, ground level"></div>
+          <div class="plans__panel" role="tabpanel" id="plan-main" aria-labelledby="plan-tab-main" hidden><img loading="lazy" decoding="async" src="/assets/img/plan-main.webp" alt="Optional floor plan, living level"></div>
           <div class="plans__panel" role="tabpanel" id="plan-upper" aria-labelledby="plan-tab-upper" hidden><img loading="lazy" decoding="async" src="/assets/img/plan-upper.webp" alt="Optional floor plan, bedroom level"></div>
           <div class="plans__panel" role="tabpanel" id="plan-roof" aria-labelledby="plan-tab-roof" hidden><img loading="lazy" decoding="async" src="/assets/img/plan-rooftop.webp" alt="Optional floor plan, rooftop"></div>
         </div>
@@ -107,6 +109,7 @@
         <h3 class="h3">An optional layout, <span class="accent">level by level.</span></h3>
         <p class="copy">One of the optional floor plans for the Type A home. Plan options, finishes and dimensions come in the full package.</p>
         <div class="levels">
+        <div class="level"><strong>Ground level</strong><span>Front entry and stair, a den or office facing the street, a laundry and utility room, and parking for one car behind an overhead door to the private parking court.</span></div>
         <div class="level"><strong>Living level</strong><span>Open kitchen with a seated island, living and dining on one floor, a powder room by the stair and a balcony.</span></div>
         <div class="level"><strong>Bedroom level</strong><span>Two bedrooms with walk-in closets, two full baths (one double vanity with shower, one single vanity with tub) and laundry on the same floor.</span></div>
         <div class="level"><strong>Rooftop</strong><span>A private deck with room to lounge and dine, planters, and a wet bar sink at the top of the stair.</span></div>

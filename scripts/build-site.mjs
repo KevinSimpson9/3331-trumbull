@@ -93,6 +93,7 @@ const STATUS_LABEL = { available: 'Available', reserved: 'Reserved', contract: '
 
 // Optional floor plan (supplied by Kevin, Oct 22). The standard Type A stays 3 bed / 2 bath.
 const PLAN_LEVELS = [
+  ['ground', 'Ground level', 'plan-ground.webp', 'Front entry and stair, a den or office facing the street, a laundry and utility room, and parking for one car behind an overhead door to the private parking court.'],
   ['main', 'Living level', 'plan-main.webp', 'Open kitchen with a seated island, living and dining on one floor, a powder room by the stair and a balcony.'],
   ['upper', 'Bedroom level', 'plan-upper.webp', 'Two bedrooms with walk-in closets, two full baths (one double vanity with shower, one single vanity with tub) and laundry on the same floor.'],
   ['roof', 'Rooftop', 'plan-rooftop.webp', 'A private deck with room to lounge and dine, planters, and a wet bar sink at the top of the stair.']
