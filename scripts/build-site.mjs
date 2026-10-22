@@ -267,7 +267,7 @@ S.gallery = () => `
   <div class="section-head gallery__head">
     <div>
       ${eyebrow('03', 'Gallery', true)}
-      <h2 class="h2">Walk the block <span class="accent-gold">before it exists.</span></h2>
+      <h2 class="h2">Walk the block <span class="accent-gold">before you buy.</span></h2>
     </div>
     <div class="gallery__hint">
       <button class="gallery__arrow" type="button" data-strip="-1" aria-label="Previous image">←</button>
