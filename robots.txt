@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /thank-you
+Disallow: /scripts/
+Disallow: /portal/
+
+Sitemap: https://www.trumbullnorth.com/sitemap.xml
