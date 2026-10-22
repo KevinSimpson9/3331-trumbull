@@ -426,13 +426,6 @@ S.availability = () => {
   return `
 <section id="availability" class="band band--sand" data-screen-label="07 Availability">
   <div class="wrap">
-    <div class="section-head avail-head">
-      <div>
-        ${eyebrow('07', 'Availability')}
-        <h2 class="h2">${cta} homes now. <span class="accent">Choose yours first.</span></h2>
-      </div>
-      <p class="copy">Phase 1 releases ${cta} Type A homes for sale: new construction North Corktown townhomes, just north of Corktown. Pick your homesite on the site plan, see what is open, and reserve it. The earlier you reserve, the more homesites you choose from.</p>
-    </div>
     <div class="avail-grid">
       <div>
         <div class="siteplan-frame">

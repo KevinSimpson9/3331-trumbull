@@ -363,8 +363,6 @@ input::placeholder { color: #9A9184; }
 .faq details p { margin: 0 0 20px; font-size: 16px; line-height: 1.7; color: var(--body); max-width: 640px; }
 
 /* 07 Availability */
-.avail-head { margin-bottom: 52px; }
-.avail-head .copy { max-width: 440px; font-size: 16px; line-height: 1.7; }
 .avail-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); gap: clamp(24px, 3vw, 44px); align-items: start; }
 @media (max-width: 1099px) { .avail-grid { grid-template-columns: minmax(0, 1fr); } }
 .siteplan-frame { background: var(--ivory); border: 1px solid var(--line); padding: clamp(12px, 1.6vw, 22px); box-shadow: 24px 24px 0 var(--line); }
