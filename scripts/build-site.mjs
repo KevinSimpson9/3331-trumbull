@@ -210,7 +210,7 @@ S.residences = () => {
   <div class="wrap">
     <div class="res-grid">
       <div class="res-photo">
-        <img src="${img('facade.webp')}" alt="Rendering of Trumbull North townhomes on Trumbull: ivory panel, warm grey brick, charcoal siding and cedar" loading="lazy" decoding="async">
+        <img src="${img('bedroom.webp')}" width="1360" height="768" alt="Bedroom with an upholstered bed, oak nightstands, a pendant light and a tall window" loading="lazy" decoding="async">
       </div>
       <div class="res-card">
         <div class="res-card__top">
