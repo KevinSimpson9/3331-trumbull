@@ -154,8 +154,35 @@ input::placeholder { color: #9A9184; }
 .hero__stat:last-child { border-right: 0; }
 .hero__stat-n { font-family: var(--serif); font-weight: 600; font-size: clamp(22px, 2.2vw, 32px); letter-spacing: -.02em; white-space: nowrap; color: var(--ivory); }
 .hero__stat-l { margin-top: 4px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--on-dark); }
+/* Phones: the hero is the corner rendering (static); the scroll-to-build lives in the Block section (.mbuild). */
+.hero__photo, .mbuild { display: none; }
 @media (max-width: 700px) {
-  .hero__lede { display: none; }
+  .hero__track { height: auto; }
+  .hero__sticky { position: relative; top: 0; height: auto; min-height: 0; justify-content: flex-start; }
+  .hero__media { position: relative; inset: auto; width: 100%; aspect-ratio: 4 / 3; }
+  .hero .hero__canvas, .hero .hero__still, .hero .build { display: none; }
+  .hero__photo { display: block; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 54% center; }
+  .hero__scrim { background: linear-gradient(to top, rgba(16,13,10,.55) 0%, rgba(16,13,10,0) 45%); }
+  .hero__content { padding-top: 22px; padding-bottom: 28px; }
+  .hero h1 { font-size: clamp(32px, 9.5vw, 40px); }
+  .hero__kicker { margin-bottom: 12px; font-size: 11px; }
+  .hero__ctas { margin-top: 20px; gap: 10px; }
+
+  .wide-fig { display: none; }
+  .mbuild { display: block; margin: clamp(36px, 8vw, 48px) calc(-1 * var(--pad-x)) 0; background: var(--deep); color: var(--ivory); }
+  .mbuild .hero__track { height: calc(100svh - var(--nav-h) + 120vh); }
+  .mbuild .hero__sticky { position: sticky; top: var(--nav-h); height: calc(100svh - var(--nav-h)); display: flex; flex-direction: column; justify-content: center; gap: 16px; overflow: hidden; }
+  .mbuild__head { padding: 0 var(--pad-x) 6px; }
+  .mbuild__kicker { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+  .mbuild__head h3 { margin-top: 8px; font-family: var(--serif); font-weight: 600; letter-spacing: -.025em; font-size: clamp(30px, 8.5vw, 38px); line-height: 1; color: var(--ivory); }
+  .mbuild__steps { list-style: none; margin: 4px 0 0; padding: 14px var(--pad-x) 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; border-top: 1px solid rgba(250,248,244,.14); font-size: 13px; font-weight: 600; color: var(--ivory); }
+  .mbuild__steps span { display: block; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
+  .mbuild__media { position: relative; width: 100%; aspect-ratio: 16 / 9; background: var(--deep); }
+  .mbuild .hero__canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 1; }
+  .mbuild .build { padding-top: 4px; }
+}
+@media (max-width: 700px) {
+  .hero__lede { margin-top: 12px; font-size: 15px; line-height: 1.55; }
   .hero__ctas .btn { flex: 1 1 100%; padding: 15px 20px; }
   .build__stages, .build__tag { display: none; }
   .build__now { display: inline; }
@@ -189,8 +216,7 @@ input::placeholder { color: #9A9184; }
 .rooftop__media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 45%; }
 .rooftop__quote { position: relative; flex: 0 0 auto; width: 100%; margin: 0 auto; max-width: 940px; padding: clamp(14px, 4vh, 44px) var(--pad-x) clamp(10px, 2.6vh, 32px); text-align: center; }
 .rooftop__line { font-family: var(--serif); font-weight: 500; letter-spacing: -.02em; font-size: clamp(18px, min(2.7vw, 4.4vh), 38px); line-height: 1.2; color: var(--ivory); text-wrap: balance; }
-.rooftop__sub { margin: clamp(8px, 2vh, 18px) 0 clamp(6px, 1.6vh, 16px); font-family: var(--serif); font-weight: 500; letter-spacing: -.02em; font-size: clamp(16px, min(1.8vw, 3.2vh), 24px); color: var(--gold); }
-.rooftop__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); border-top: 1px solid rgba(250,248,244,.25); }
+.rooftop__stats { margin-top: clamp(12px, 2.6vh, 28px); display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); border-top: 1px solid rgba(250,248,244,.25); }
 .rooftop__stats > div { padding: clamp(6px, 1.6vh, 14px) 12px; }
 .rooftop__stats > div + div { border-left: 1px solid rgba(250,248,244,.18); }
 .rooftop__n { font-family: var(--serif); font-weight: 500; letter-spacing: -.02em; font-size: clamp(18px, min(2.2vw, 3.8vh), 28px); color: var(--ivory); }

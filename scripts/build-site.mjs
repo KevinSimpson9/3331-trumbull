@@ -120,17 +120,25 @@ const LOGO_MARK = '<svg width="32" height="32" viewBox="0 0 34 34" aria-hidden="
 
 const S = {};
 
+const buildStages = () => SETTINGS.build.stages.map(([l, at], i) => `<button type="button" class="build__stage${i === 0 ? ' is-on' : ''}" data-at="${at}">${l}</button>`).join('');
+const buildBar = () => `<div class="build" data-build-ui>
+        <div class="build__head"><span class="build__hint">Scroll or drag to build Trumbull North</span><span class="build__now" data-build-now>Foundations</span></div>
+        <div class="build__stages">${buildStages()}</div>
+        <div class="build__bar"><i class="build__fill"></i><input class="build__range" type="range" min="0" max="1000" value="0" aria-label="Construction stage, from foundations to complete"></div>
+      </div>`;
+const buildAttrs = () => `data-build data-frames="${SETTINGS.build.frames}" data-stages='${JSON.stringify(SETTINGS.build.stages.map(s => s[1]))}'`;
+
 S.hero = () => {
   const B = SETTINGS.build, n = B.frames, last = String(n).padStart(3, '0');
   const stat = (n, l) => `<div class="hero__stat"><p class="hero__stat-n">${n}</p><p class="hero__stat-l">${l}</p></div>`;
-  const stages = B.stages.map(([l, at], i) => `<button type="button" class="build__stage${i === 0 ? ' is-on' : ''}" data-at="${at}">${l}</button>`).join('');
   return `
-<header class="hero hero--build" data-screen-label="Hero" data-build data-frames="${n}" data-stages='${JSON.stringify(B.stages.map(s => s[1]))}'>
+<header class="hero hero--build" data-screen-label="Hero" ${buildAttrs()}>
   <div class="hero__track">
     <div class="hero__sticky">
       <div class="hero__media">
         <img class="hero__still" src="/assets/build/lg/${last}.webp" width="1062" height="596" fetchpriority="high" decoding="async" alt="Aerial rendering of Trumbull North, five buildings around a private court on Trumbull">
         <canvas class="hero__canvas" aria-hidden="true"></canvas>
+        <img class="hero__photo" src="${img('g-corner.webp')}" width="2054" height="766" decoding="async" alt="Rendering of the Trumbull North corner on Trumbull">
         <div class="hero__scrim"></div>
       </div>
       <div class="hero__content">
@@ -142,11 +150,7 @@ S.hero = () => {
           <a class="btn btn--ghost" href="/availability">View Availability</a>
         </div>
       </div>
-      <div class="build" data-build-ui>
-        <div class="build__head"><span class="build__hint">Scroll or drag to build Trumbull North</span><span class="build__now" data-build-now>Foundations</span></div>
-        <div class="build__stages">${stages}</div>
-        <div class="build__bar"><i class="build__fill"></i><input class="build__range" type="range" min="0" max="1000" value="0" aria-label="Construction stage, from foundations to complete"></div>
-      </div>
+      ${buildBar()}
     </div>
   </div>
   <div class="hero__stats">
@@ -178,6 +182,16 @@ S.vision = () => `
       </div>
     </div>
   </div>
+  <div class="mbuild" ${buildAttrs()}>
+    <div class="hero__track">
+      <div class="hero__sticky">
+        <div class="mbuild__head"><p class="mbuild__kicker">Permitted · 4545 Architecture</p><h3>Watch it rise</h3></div>
+        <div class="mbuild__media"><canvas class="hero__canvas" aria-hidden="true"></canvas></div>
+        ${buildBar()}
+        <ol class="mbuild__steps"><li><span>Jun 2026</span>Permitted</li><li><span>2026–27</span>Construction</li><li><span>2027–28</span>Move-ins</li></ol>
+      </div>
+    </div>
+  </div>
   <figure class="wide-fig">
     <img loading="lazy" decoding="async" src="${img('g-corner.webp')}" width="2054" height="766" alt="Rendering of the Trumbull North corner on Trumbull, with ground-floor glazing and tree-lined sidewalks">
     <figcaption class="cap">The corner on Trumbull</figcaption>
@@ -191,7 +205,6 @@ S.rooftop = () => `
   </div>
   <blockquote class="rooftop__quote">
     <p class="rooftop__line">Sunset dinners. Morning coffee. Fireworks over the city. All from a rooftop that belongs to no one but you.</p>
-    <p class="rooftop__sub">From up here, the city is yours.</p>
     <div class="rooftop__stats">
       <div><p class="rooftop__n">~1.2 mi</p><p class="rooftop__l">Michigan Central</p></div>
       <div><p class="rooftop__n">~1.1 mi</p><p class="rooftop__l">Little Caesars Arena</p></div>

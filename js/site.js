@@ -13,8 +13,13 @@
 
   // Hero build: scrolling through the hero (or dragging the bar) runs the construction
   // sequence from foundations to complete. Frames load progressively: first, every 6th, then the rest.
-  var hb = $('[data-build]');
-  if (hb) (function () {
+  // The hero runs it on desktop; on phones the hero is a photo and the Block section runs it (.mbuild).
+  $$('[data-build]').forEach(function (hb) {
+    var cv = $('.hero__canvas', hb);
+    if (!cv || cv.offsetParent === null) return;   // hidden at this screen size
+    initBuild(hb);
+  });
+  function initBuild(hb) {
     var n = Number(hb.dataset.frames), stagesAt = JSON.parse(hb.dataset.stages);
     var canvas = $('.hero__canvas', hb), ctx = canvas.getContext('2d');
     var track = $('.hero__track', hb), sticky = $('.hero__sticky', hb);
@@ -44,7 +49,7 @@
     function draw(im, alpha) {
       var cw = canvas.width, ch = canvas.height, s = Math.max(cw / im.naturalWidth, ch / im.naturalHeight);
       var w = im.naturalWidth * s, h = im.naturalHeight * s;
-      ctx.globalAlpha = alpha; ctx.drawImage(im, (cw - w) / 2, (ch - h) * 0.45, w, h);
+      ctx.globalAlpha = alpha; ctx.drawImage(im, (cw - w) / 2, (ch - h) * (cw / ch < 1.2 ? 0.5 : 0.45), w, h);
     }
     function render() {
       raf = 0;
@@ -81,6 +86,8 @@
     if (!scrubbable) { hb.classList.add('is-static'); progress = 1; }
     window.addEventListener('scroll', fromScroll, { passive: true });
     window.addEventListener('resize', size);
+    // Re-measure whenever the canvas box itself changes (phone layout, Safari toolbar), so frames never stretch.
+    if ('ResizeObserver' in window) new ResizeObserver(size).observe(canvas);
     size(); fromScroll();
     // First frame (or the last, for reduced motion) now, then a coarse pass, then everything.
     load(scrubbable ? 0 : n - 1).then(function () {
@@ -89,7 +96,7 @@
       return coarse.reduce(function (p, i) { return p.then(function () { return load(i); }); }, Promise.resolve())
         .then(function () { return rest.reduce(function (p, i) { return p.then(function () { return load(i); }); }, Promise.resolve()); });
     });
-  })();
+  }
 
   // Mobile sticky bar: only after scrolling past the hero (or one screen on pages without one).
   var sticky = $('[data-sticky-cta]');
