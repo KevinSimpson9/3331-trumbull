@@ -97,7 +97,7 @@ const PLAN_LEVELS = [
 ];
 
 const PAGES = {
-  home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez progress faq availability', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2.5 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
+  home: { path: '/', sections: 'hero vision rooftop residences gallery neighborhood nez progress availability faq', title: 'Trumbull North | New Construction Townhomes for Sale in North Corktown, Detroit', desc: 'New construction townhomes for sale in North Corktown, Detroit, about a mile from Michigan Central. 3 bed, 2.5 bath, private rooftop terrace. NEZ-NC Property Tax Abatement Eligible.' },
   residences: { path: '/residences', sections: 'residences rooftop', eyebrow: 'The Residences', h1: '3 bedroom townhomes in North Corktown, Detroit', title: 'Type A Townhomes | 3 Bedroom New Construction in North Corktown, Detroit | Trumbull North', desc: 'The Type A residence: 3 bed, 2.5 bath, 1,535 sq ft across three levels and a private rooftop terrace. New townhomes in Detroit by 4545 Architecture.' },
   availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 North Corktown townhomes for sale in Phase 1 at 3331 Trumbull. Pick your homesite on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
   neighborhood: { path: '/neighborhood', sections: 'neighborhood', eyebrow: 'The Neighborhood', h1: 'North Corktown, Detroit: homes near Michigan Central', title: 'Living in North Corktown, Detroit | Homes Near Michigan Central | Trumbull North', desc: 'About a mile to Michigan Central, Corktown and Little Caesars Arena. The Stadium District, Theatre District, CBD and Riverwalk nearby. Distances are estimates.' },
@@ -366,21 +366,6 @@ S.nez = () => `
   </div>
 </section>`;
 
-// Horizontal spec bar under the Progress section (same facts as the Availability card).
-const specBar = () => {
-  const avail = Object.values(HOMESITES).filter(v => v === 'available').length;
-  const items = [[`<span data-avail-count>${avail}</span>`, 'Available'], ['12', 'Homes in Phase 1'], ['3 / 2.5', 'Bedrooms / baths'], ['1,535 sq ft', 'Living area'], ['Three', 'Levels'], ['Private court', 'Parking'], ['Rooftop terrace', 'Outdoor, private'], ['NEZ-NC', 'Abatement eligible']];
-  return `<div class="specbar">
-    <div class="specbar__grid">
-      ${items.map(([v, l]) => `<div><p class="specbar__v">${v}</p><p class="specbar__l">${l}</p></div>`).join('\n      ')}
-    </div>
-    <div class="specbar__foot">
-      <p>3 bed, 2.5 bath, 1,535 sq ft across three levels. Private rooftop terrace and parking in the private court. The ${cta} homes for sale face Trumbull in the two front buildings.</p>
-      <a class="btn btn--dark" href="#reserve">Reserve Your Home</a>
-    </div>
-  </div>`;
-};
-
 S.progress = () => {
   const rows = [['June 2026', 'Permitting complete', 'Full construction set documented.'], ['Now', 'Pre-construction', 'Phase 1 reservations open.'], ['2026–27', 'Construction', 'Five buildings.'], ['2027–28', 'Move-ins', 'Phase 1 homes, planned.']];
   return `
@@ -407,7 +392,6 @@ S.progress = () => {
       <figcaption class="cap">SP1.1 · Architectural site plan · 4545 Architecture</figcaption>
     </figure>
   </div>
-  ${specBar()}
 </section>`;
 };
 
