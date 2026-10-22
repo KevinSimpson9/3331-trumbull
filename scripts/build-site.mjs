@@ -314,13 +314,6 @@ S.neighborhood = () => {
   const cats = [['all', 'All'], ...Object.entries(CAT).map(([k, v]) => [k, v[0]])];
   return `
 <section id="neighborhood" class="section" data-screen-label="04 The Neighborhood">
-  <div class="section-head hood-head">
-    <div>
-      ${eyebrow('04', 'The Neighborhood')}
-      <h2 class="h2">Your new city starts <span class="accent">at your front porch.</span></h2>
-    </div>
-    <p class="copy">You took the job. Now find where your life fits. Trumbull North puts you in North Corktown, between Michigan Central, Corktown and downtown.</p>
-  </div>
   <div class="scores">
     <div><p class="stat__n">73</p><p class="stat__l">Walk Score</p></div>
     <div><p class="stat__n">95</p><p class="stat__l">Bike Score</p></div>

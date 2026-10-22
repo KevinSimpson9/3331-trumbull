@@ -247,10 +247,7 @@ input::placeholder { color: #9A9184; }
 .strip figcaption span + span { color: var(--gold); }
 
 /* 04 Neighborhood */
-.hood-head { gap: 24px 64px; margin-bottom: 64px; }
-.hood-head .h2 { max-width: 760px; }
-.hood-head .copy { max-width: 440px; }
-.scores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: -24px 0 64px; }
+.scores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 0 56px; }
 .scores > div { padding: 18px 0; }
 .scores > div + div { padding-left: 20px; border-left: 1px solid var(--line); }
 .scores .stat__n { font-size: 34px; }
