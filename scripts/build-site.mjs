@@ -185,7 +185,7 @@ S.vision = () => `
   <div class="mbuild" ${buildAttrs()}>
     <div class="hero__track">
       <div class="hero__sticky">
-        <div class="mbuild__head"><p class="mbuild__kicker">3331 Trumbull</p><h3>Watch it rise</h3></div>
+        <div class="mbuild__head"><h3>Watch it rise</h3></div>
         <div class="mbuild__media"><canvas class="hero__canvas" aria-hidden="true"></canvas></div>
         ${buildBar()}
         <ol class="mbuild__steps"><li><span>2026–27</span>Construction</li><li><span>2027–28</span>Move-ins</li></ol>
@@ -410,7 +410,6 @@ S.availability = () => {
   <div class="wrap">
     <div class="section-head avail-head">
       <div>
-        ${eyebrow('', '3331 Trumbull')}
         <h2 class="h2">Select your <span class="accent">home</span></h2>
       </div>
       <p class="avail-head__note">The 12 Phase 1 homes face Trumbull. Tap one on the plan.</p>
