@@ -68,7 +68,7 @@ const FAQS = [
   ['What is the floor plan?', 'The Type A residence: 3 bedrooms and 2.5 baths (two full baths, one with a double vanity, plus a powder room) across three levels, about 1,535 square feet.'],
   ['Where do I park?', 'Residents park in the private parking court inside the block.'],
   ['What is the NEZ-NC abatement?', 'Trumbull North is NEZ-NC Property Tax Abatement Eligible. The NEZ-NC Property Tax Abatement is available for 15 years on qualifying homes. Todd can walk you through how it applies to you.'],
-  ['When can I move in?', 'Permitting was completed in June 2026. Construction is planned for 2026–27, with Phase 1 move-ins planned for 2027–28.'],
+  ['When can I move in?', 'Permits were submitted in June 2026. Construction is planned for 2026–27, with Phase 1 move-ins planned for 2027–28.'],
   ['How much are the homes?', 'Pricing is in the full package. Submit the Reserve form and it comes straight to you.'],
   ['Are these homes for sale or for rent?', 'For sale only. All 12 Phase 1 homes are new construction townhomes for sale, each with a private rooftop terrace.'],
   ['Are these condos or townhomes?', 'Townhomes. Each Type A home is a three-level townhome with its own front door and private rooftop terrace. Nothing is shared above or below you.'],
@@ -101,7 +101,7 @@ const PAGES = {
   residences: { path: '/residences', sections: 'residences rooftop', eyebrow: 'The Residences', h1: '3 bedroom townhomes in North Corktown, Detroit', title: 'Type A Townhomes | 3 Bedroom New Construction in North Corktown, Detroit | Trumbull North', desc: 'The Type A residence: 3 bed, 2.5 bath, 1,535 sq ft across three levels and a private rooftop terrace. New townhomes in Detroit by 4545 Architecture.' },
   availability: { path: '/availability', sections: 'availability nez', eyebrow: 'Availability', h1: 'North Corktown homes for sale: Phase 1 availability', title: 'North Corktown Homes for Sale | Phase 1 Availability | Trumbull North', desc: '12 North Corktown townhomes for sale in Phase 1 at 3331 Trumbull. Pick your home on the site plan and reserve. NEZ-NC Property Tax Abatement Eligible.' },
   neighborhood: { path: '/neighborhood', sections: 'neighborhood', eyebrow: 'The Neighborhood', h1: 'North Corktown, Detroit: homes near Michigan Central', title: 'Living in North Corktown, Detroit | Homes Near Michigan Central | Trumbull North', desc: 'About a mile to Michigan Central, Corktown and Little Caesars Arena. The Stadium District, Theatre District, CBD and Riverwalk nearby. Distances are estimates.' },
-  progress: { path: '/progress', sections: 'availability', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Permitted and engineered. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
+  progress: { path: '/progress', sections: 'availability', eyebrow: 'Progress', h1: 'Construction progress at 3331 Trumbull', title: 'Construction Progress | New Construction in North Corktown | Trumbull North', desc: 'Engineered and submitted for permits. Follow construction of Trumbull North, new construction townhomes for sale in North Corktown, Detroit.' },
   faq: { path: '/faq', sections: 'faq', eyebrow: 'FAQ', h1: 'Questions about Trumbull North', title: 'FAQ | NEZ-NC, Pricing and Buying | Trumbull North', desc: 'Answers on NEZ-NC Property Tax Abatement, pricing, timing and buying a new construction townhome in North Corktown, Detroit.' },
   gallery: { path: '/gallery', sections: 'gallery', eyebrow: 'Gallery', h1: 'Trumbull North gallery', title: 'Gallery | Trumbull North Townhomes, Detroit', desc: 'Trumbull North: the Trumbull frontage, front porches, private parking court and rooftop terraces with the Detroit skyline.' },
   about: { path: '/about', sections: 'vision', eyebrow: 'About', h1: 'About Trumbull North', title: 'About | 3331 Trumbull, North Corktown, Detroit | Trumbull North', desc: "Trumbull North at 3331 Trumbull: five buildings by 4545 Architecture, built by Bondy's Construction, developed by AK Capital." },
@@ -173,7 +173,7 @@ S.vision = () => `
     </div>
     <div class="vision__body">
       <p class="copy">248 feet of frontage where Trumbull meets Sycamore and Ash. Every home parks off the street, in a private parking court inside the block.</p>
-      <p class="copy">Michigan Central and Corktown's Michigan Avenue restaurants are each about a mile away. With the design finished and permits in hand, all that's left is choosing which address is yours.</p>
+      <p class="copy">Michigan Central and Corktown's Michigan Avenue restaurants are each about a mile away. With the design finished and permits submitted, all that's left is choosing which address is yours.</p>
       <a class="text-link" href="/neighborhood">Explore the neighborhood →</a>
       <div class="vision__stats">
         <div><p class="stat__n">248 ft</p><p class="stat__l">Street frontage</p></div>
@@ -185,10 +185,10 @@ S.vision = () => `
   <div class="mbuild" ${buildAttrs()}>
     <div class="hero__track">
       <div class="hero__sticky">
-        <div class="mbuild__head"><p class="mbuild__kicker">Permitted · 4545 Architecture</p><h3>Watch it rise</h3></div>
+        <div class="mbuild__head"><p class="mbuild__kicker">Permits submitted · 4545 Architecture</p><h3>Watch it rise</h3></div>
         <div class="mbuild__media"><canvas class="hero__canvas" aria-hidden="true"></canvas></div>
         ${buildBar()}
-        <ol class="mbuild__steps"><li><span>Jun 2026</span>Permitted</li><li><span>2026–27</span>Construction</li><li><span>2027–28</span>Move-ins</li></ol>
+        <ol class="mbuild__steps"><li><span>Jun 2026</span>Permits submitted</li><li><span>2026–27</span>Construction</li><li><span>2027–28</span>Move-ins</li></ol>
       </div>
     </div>
   </div>
@@ -410,7 +410,7 @@ S.availability = () => {
   <div class="wrap">
     <div class="section-head avail-head">
       <div>
-        ${eyebrow('', 'Permitted · 4545 Architecture')}
+        ${eyebrow('', 'Permits submitted · 4545 Architecture')}
         <h2 class="h2">Select your <span class="accent">home</span></h2>
       </div>
       <p class="avail-head__note">The 12 Phase 1 homes face Trumbull. Tap one on the plan.</p>
@@ -449,7 +449,7 @@ S.availability = () => {
           <div><dt>Taxes</dt><dd>NEZ-NC Abatement Eligible</dd></div>
         </dl>
         <ol class="pick__steps">
-          <li class="is-done"><i></i><span>Jun 2026</span>Permitted</li>
+          <li class="is-done"><i></i><span>Jun 2026</span>Permits submitted</li>
           <li class="is-now"><i></i><span>Now</span>Reserving</li>
           <li><i></i><span>2027–28</span>Move-ins</li>
         </ol>
